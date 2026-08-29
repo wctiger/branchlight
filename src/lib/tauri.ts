@@ -3,6 +3,7 @@ import { open } from "@tauri-apps/plugin-dialog";
 
 import type { GitError, GitErrorCode, GitOutput } from "../types/git";
 import type { Repository } from "../types/repository";
+import type { RepositoryStatus } from "../types/status";
 
 const gitErrorCodes: GitErrorCode[] = [
   "workingDirectoryUnavailable",
@@ -11,6 +12,7 @@ const gitErrorCodes: GitErrorCode[] = [
   "invalidRepositoryPath",
   "repositoryUnavailable",
   "invalidRepositoryResponse",
+  "invalidStatusResponse",
 ];
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -50,6 +52,11 @@ export async function chooseRepositoryFolder(): Promise<string | null> {
 
 export function openRepository(path: string): Promise<Repository> {
   return invoke<Repository>("open_repository", { path });
+}
+
+/** Requests a fresh, fully parsed status snapshot from system Git. */
+export function getRepositoryStatus(path: string): Promise<RepositoryStatus> {
+  return invoke<RepositoryStatus>("get_repository_status", { path });
 }
 
 export function normalizeGitError(error: unknown): GitError {
