@@ -10,6 +10,9 @@ pub(crate) enum GitError {
     WorkingDirectoryUnavailable { message: String },
     ProcessStartFailed { message: String },
     CommandFailed { message: String, output: GitOutput },
+    InvalidRepositoryPath { message: String },
+    RepositoryUnavailable { message: String, output: GitOutput },
+    InvalidRepositoryResponse { message: String, output: GitOutput },
 }
 
 impl fmt::Display for GitError {
@@ -17,7 +20,10 @@ impl fmt::Display for GitError {
         let message = match self {
             Self::WorkingDirectoryUnavailable { message }
             | Self::ProcessStartFailed { message }
-            | Self::CommandFailed { message, .. } => message,
+            | Self::CommandFailed { message, .. }
+            | Self::InvalidRepositoryPath { message }
+            | Self::RepositoryUnavailable { message, .. }
+            | Self::InvalidRepositoryResponse { message, .. } => message,
         };
 
         formatter.write_str(message)
@@ -54,6 +60,33 @@ mod tests {
                     "stdout": "",
                     "stderr": "failure",
                     "exitCode": 1
+                }
+            })
+        );
+    }
+
+    #[test]
+    fn repository_failure_serializes_with_actionable_context() {
+        let error = GitError::RepositoryUnavailable {
+            message: "Choose a folder inside an existing Git repository.".to_owned(),
+            output: GitOutput {
+                stdout: String::new(),
+                stderr: "fatal: not a git repository".to_owned(),
+                exit_code: Some(128),
+            },
+        };
+
+        let serialized = serde_json::to_value(error).expect("the error should serialize");
+
+        assert_eq!(
+            serialized,
+            json!({
+                "code": "repositoryUnavailable",
+                "message": "Choose a folder inside an existing Git repository.",
+                "output": {
+                    "stdout": "",
+                    "stderr": "fatal: not a git repository",
+                    "exitCode": 128
                 }
             })
         );

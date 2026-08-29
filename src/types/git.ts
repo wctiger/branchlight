@@ -8,6 +8,9 @@ export type GitErrorCode =
   | "workingDirectoryUnavailable"
   | "processStartFailed"
   | "commandFailed"
+  | "invalidRepositoryPath"
+  | "repositoryUnavailable"
+  | "invalidRepositoryResponse"
   | "unknown";
 
 export interface GitError {
