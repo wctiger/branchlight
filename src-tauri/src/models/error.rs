@@ -48,6 +48,7 @@ mod tests {
                 stdout: String::new(),
                 stderr: "failure".to_owned(),
                 exit_code: Some(1),
+                stdout_bytes: Vec::new(),
             },
         };
 
@@ -75,6 +76,7 @@ mod tests {
                 stdout: String::new(),
                 stderr: "fatal: not a git repository".to_owned(),
                 exit_code: Some(128),
+                stdout_bytes: Vec::new(),
             },
         };
 

@@ -642,7 +642,7 @@ button:disabled {
 
 .change-section__header p {
   margin: 0;
-  color: #879189;
+  color: #626d65;
   font-size: 0.66rem;
 }
 
@@ -665,7 +665,7 @@ button:disabled {
 .change-section__empty {
   margin: 0;
   padding: 24px 17px;
-  color: #96a098;
+  color: #626d65;
   font-size: 0.72rem;
 }
 
@@ -737,7 +737,7 @@ button:disabled {
   display: block;
   overflow: hidden;
   margin-top: 2px;
-  color: #8a958d;
+  color: #626d65;
   font-size: 0.61rem;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -748,7 +748,7 @@ button:disabled {
 }
 
 .change-kind {
-  color: #8a958d;
+  color: #626d65;
   font-size: 0.61rem;
 }
 

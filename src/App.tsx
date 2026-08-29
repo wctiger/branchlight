@@ -416,6 +416,8 @@ function App() {
 
       setOpenState("validating");
       const openedRepository = await openRepository(selectedPath);
+      statusRequestId.current += 1;
+      setRepositoryStatus({ state: "idle" });
       setRepository(openedRepository);
     } catch (error) {
       setRepositoryError(normalizeGitError(error));

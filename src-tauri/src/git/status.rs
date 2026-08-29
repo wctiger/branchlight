@@ -2,15 +2,22 @@ use std::path::Path;
 
 use crate::models::{BranchStatus, FileChange, FileStatus, GitError, RepositoryStatus};
 
-use super::runner::run_git;
+use super::runner::{decode_git_bytes, run_git};
 
 /// Reads and parses the complete working-tree status reported by system Git.
 pub(crate) fn get_repository_status(repository: &Path) -> Result<RepositoryStatus, GitError> {
     let output = run_git(
         repository,
-        &["status", "--porcelain=v2", "--branch", "--show-stash", "-z"],
+        &[
+            "status",
+            "--porcelain=v2",
+            "--branch",
+            "--show-stash",
+            "--untracked-files=normal",
+            "-z",
+        ],
     )?;
-    let parsed = parse_porcelain_v2(&output.stdout);
+    let parsed = parse_porcelain_v2(&output.stdout_bytes);
 
     match parsed {
         Ok(status) => Ok(status),
@@ -19,7 +26,7 @@ pub(crate) fn get_repository_status(repository: &Path) -> Result<RepositoryStatu
 }
 
 /// Converts NUL-delimited porcelain-v2 output into Branchlight's domain model.
-fn parse_porcelain_v2(output: &str) -> Result<RepositoryStatus, String> {
+fn parse_porcelain_v2(output: &[u8]) -> Result<RepositoryStatus, String> {
     let mut branch_name = None;
     let mut oid = None;
     let mut is_detached = false;
@@ -31,40 +38,44 @@ fn parse_porcelain_v2(output: &str) -> Result<RepositoryStatus, String> {
     let mut staged = Vec::new();
     let mut unstaged = Vec::new();
     let mut conflicts = Vec::new();
-    let mut records = output.split_terminator('\0');
+    let mut records = output
+        .split(|byte| *byte == b'\0')
+        .filter(|record| !record.is_empty());
 
     while let Some(record) = records.next() {
-        if record.is_empty() {
-            continue;
-        }
-
-        if let Some(value) = record.strip_prefix("# branch.oid ") {
-            oid = (value != "(initial)").then(|| value.to_owned());
-        } else if let Some(value) = record.strip_prefix("# branch.head ") {
+        if let Some(value) = record.strip_prefix(b"# branch.oid ") {
+            oid = (value != b"(initial)").then(|| decode_git_bytes(value));
+        } else if let Some(value) = record.strip_prefix(b"# branch.head ") {
             saw_branch_head = true;
-            is_detached = value == "(detached)";
-            branch_name = (!is_detached).then(|| value.to_owned());
-        } else if let Some(value) = record.strip_prefix("# branch.upstream ") {
-            upstream = Some(value.to_owned());
-        } else if let Some(value) = record.strip_prefix("# branch.ab ") {
-            let (parsed_ahead, parsed_behind) = parse_ahead_behind(value)?;
+            is_detached = value == b"(detached)";
+            branch_name = (!is_detached).then(|| decode_git_bytes(value));
+        } else if let Some(value) = record.strip_prefix(b"# branch.upstream ") {
+            upstream = Some(decode_git_bytes(value));
+        } else if let Some(value) = record.strip_prefix(b"# branch.ab ") {
+            let (parsed_ahead, parsed_behind) =
+                parse_ahead_behind(parse_text_field(value, "ahead/behind header")?)?;
             ahead = Some(parsed_ahead);
             behind = Some(parsed_behind);
-        } else if let Some(value) = record.strip_prefix("# stash ") {
-            stash_count = value
+        } else if let Some(value) = record.strip_prefix(b"# stash ") {
+            stash_count = parse_text_field(value, "stash header")?
                 .parse::<u32>()
-                .map_err(|_| format!("Invalid stash count in Git status header: {value}"))?;
-        } else if record.starts_with("# ") || record.starts_with("! ") {
+                .map_err(|_| {
+                    format!(
+                        "Invalid stash count in Git status header: {}",
+                        decode_git_bytes(value)
+                    )
+                })?;
+        } else if record.starts_with(b"# ") || record.starts_with(b"! ") {
             continue;
-        } else if let Some(payload) = record.strip_prefix("1 ") {
+        } else if let Some(payload) = record.strip_prefix(b"1 ") {
             let fields = split_fields(payload, 8, "ordinary change")?;
             push_tracked_change(fields[0], fields[7], None, &mut staged, &mut unstaged)?;
-        } else if let Some(payload) = record.strip_prefix("2 ") {
+        } else if let Some(payload) = record.strip_prefix(b"2 ") {
             let fields = split_fields(payload, 9, "renamed or copied change")?;
             let original_path = records.next().ok_or_else(|| {
                 format!(
                     "Git omitted the original path for renamed file '{}'.",
-                    fields[8]
+                    decode_git_bytes(fields[8])
                 )
             })?;
             push_tracked_change(
@@ -74,25 +85,26 @@ fn parse_porcelain_v2(output: &str) -> Result<RepositoryStatus, String> {
                 &mut staged,
                 &mut unstaged,
             )?;
-        } else if let Some(payload) = record.strip_prefix("u ") {
+        } else if let Some(payload) = record.strip_prefix(b"u ") {
             let fields = split_fields(payload, 10, "unmerged change")?;
             validate_xy(fields[0])?;
             validate_path(fields[9])?;
             conflicts.push(FileChange {
-                path: fields[9].to_owned(),
+                path: decode_git_bytes(fields[9]),
                 original_path: None,
                 status: FileStatus::Conflicted,
             });
-        } else if let Some(path) = record.strip_prefix("? ") {
+        } else if let Some(path) = record.strip_prefix(b"? ") {
             validate_path(path)?;
             unstaged.push(FileChange {
-                path: path.to_owned(),
+                path: decode_git_bytes(path),
                 original_path: None,
                 status: FileStatus::Untracked,
             });
         } else {
             return Err(format!(
-                "System Git returned an unknown porcelain-v2 record: {record}"
+                "System Git returned an unknown porcelain-v2 record: {}",
+                decode_git_bytes(record)
             ));
         }
     }
@@ -135,6 +147,10 @@ fn parse_ahead_behind(value: &str) -> Result<(u32, u32), String> {
     Ok((ahead, behind))
 }
 
+fn parse_text_field<'a>(value: &'a [u8], label: &str) -> Result<&'a str, String> {
+    std::str::from_utf8(value).map_err(|_| format!("Git returned non-UTF-8 bytes in the {label}."))
+}
+
 fn parse_prefixed_count(value: Option<&str>, prefix: char, label: &str) -> Result<u32, String> {
     value
         .and_then(|count| count.strip_prefix(prefix))
@@ -143,11 +159,11 @@ fn parse_prefixed_count(value: Option<&str>, prefix: char, label: &str) -> Resul
 }
 
 fn split_fields<'a>(
-    payload: &'a str,
+    payload: &'a [u8],
     expected: usize,
     record_name: &str,
-) -> Result<Vec<&'a str>, String> {
-    let fields: Vec<_> = payload.splitn(expected, ' ').collect();
+) -> Result<Vec<&'a [u8]>, String> {
+    let fields: Vec<_> = payload.splitn(expected, |byte| *byte == b' ').collect();
 
     if fields.len() != expected {
         return Err(format!(
@@ -160,9 +176,9 @@ fn split_fields<'a>(
 }
 
 fn push_tracked_change(
-    xy: &str,
-    path: &str,
-    original_path: Option<&str>,
+    xy: &[u8],
+    path: &[u8],
+    original_path: Option<&[u8]>,
     staged: &mut Vec<FileChange>,
     unstaged: &mut Vec<FileChange>,
 ) -> Result<(), String> {
@@ -171,16 +187,16 @@ fn push_tracked_change(
 
     if let Some(status) = file_status(index_status)? {
         staged.push(FileChange {
-            path: path.to_owned(),
-            original_path: original_path.map(str::to_owned),
+            path: decode_git_bytes(path),
+            original_path: original_path.map(decode_git_bytes),
             status,
         });
     }
 
     if let Some(status) = file_status(worktree_status)? {
         unstaged.push(FileChange {
-            path: path.to_owned(),
-            original_path: original_path.map(str::to_owned),
+            path: decode_git_bytes(path),
+            original_path: original_path.map(decode_git_bytes),
             status,
         });
     }
@@ -188,39 +204,39 @@ fn push_tracked_change(
     Ok(())
 }
 
-fn validate_xy(xy: &str) -> Result<(char, char), String> {
-    let mut statuses = xy.chars();
-    let index_status = statuses
-        .next()
-        .ok_or_else(|| "Git returned an empty XY status field.".to_owned())?;
-    let worktree_status = statuses
-        .next()
-        .ok_or_else(|| format!("Git returned an incomplete XY status field: {xy}"))?;
-
-    if statuses.next().is_some() || !index_status.is_ascii() || !worktree_status.is_ascii() {
-        return Err(format!("Git returned an invalid XY status field: {xy}"));
+fn validate_xy(xy: &[u8]) -> Result<(u8, u8), String> {
+    if xy.len() != 2 || !xy.iter().all(u8::is_ascii) {
+        return Err(format!(
+            "Git returned an invalid XY status field: {}",
+            decode_git_bytes(xy)
+        ));
     }
 
-    Ok((index_status, worktree_status))
+    Ok((xy[0], xy[1]))
 }
 
-fn file_status(status: char) -> Result<Option<FileStatus>, String> {
+fn file_status(status: u8) -> Result<Option<FileStatus>, String> {
     let status = match status {
-        '.' => None,
-        'A' => Some(FileStatus::Added),
-        'M' => Some(FileStatus::Modified),
-        'D' => Some(FileStatus::Deleted),
-        'R' => Some(FileStatus::Renamed),
-        'C' => Some(FileStatus::Copied),
-        'T' => Some(FileStatus::TypeChanged),
-        'U' => Some(FileStatus::Conflicted),
-        other => return Err(format!("Git returned an unknown file status: {other}")),
+        b'.' => None,
+        b'A' => Some(FileStatus::Added),
+        b'M' => Some(FileStatus::Modified),
+        b'D' => Some(FileStatus::Deleted),
+        b'R' => Some(FileStatus::Renamed),
+        b'C' => Some(FileStatus::Copied),
+        b'T' => Some(FileStatus::TypeChanged),
+        b'U' => Some(FileStatus::Conflicted),
+        other => {
+            return Err(format!(
+                "Git returned an unknown file status: {}",
+                decode_git_bytes(&[other])
+            ))
+        }
     };
 
     Ok(status)
 }
 
-fn validate_path(path: &str) -> Result<(), String> {
+fn validate_path(path: &[u8]) -> Result<(), String> {
     if path.is_empty() {
         Err("Git returned a status record with an empty path.".to_owned())
     } else {
@@ -258,7 +274,7 @@ mod tests {
             "# branch.oid abc123\0# branch.head feature/status\0# branch.upstream origin/feature/status\0# branch.ab +2 -3\0# stash 4\01 M. {ORDINARY_METADATA} staged file.txt\01 .D {ORDINARY_METADATA} deleted file.txt\01 MM {ORDINARY_METADATA} both.txt\0? folder/untracked file\nwith newline.txt\0"
         );
 
-        let status = parse_porcelain_v2(&output).expect("the status should parse");
+        let status = parse_porcelain_v2(output.as_bytes()).expect("the status should parse");
 
         assert_eq!(status.branch.name.as_deref(), Some("feature/status"));
         assert_eq!(status.branch.oid.as_deref(), Some("abc123"));
@@ -285,7 +301,7 @@ mod tests {
             "# branch.oid abc123\0# branch.head main\02 R. {ORDINARY_METADATA} R100 new name.txt\0old name.txt\0u UU {UNMERGED_METADATA} conflicted name.txt\0"
         );
 
-        let status = parse_porcelain_v2(&output).expect("the status should parse");
+        let status = parse_porcelain_v2(output.as_bytes()).expect("the status should parse");
 
         assert_eq!(status.staged.len(), 1);
         assert_eq!(status.staged[0].status, FileStatus::Renamed);
@@ -303,7 +319,7 @@ mod tests {
     fn represents_detached_head_without_an_upstream() {
         let output = "# branch.oid deadbeef\0# branch.head (detached)\0";
 
-        let status = parse_porcelain_v2(output).expect("the status should parse");
+        let status = parse_porcelain_v2(output.as_bytes()).expect("the status should parse");
 
         assert!(status.branch.is_detached);
         assert_eq!(status.branch.name, None);
@@ -317,7 +333,7 @@ mod tests {
     fn represents_an_initial_branch_without_an_upstream() {
         let output = "# branch.oid (initial)\0# branch.head main\0";
 
-        let status = parse_porcelain_v2(output).expect("the status should parse");
+        let status = parse_porcelain_v2(output.as_bytes()).expect("the status should parse");
 
         assert_eq!(status.branch.name.as_deref(), Some("main"));
         assert_eq!(status.branch.oid, None);
@@ -331,7 +347,7 @@ mod tests {
             "# branch.oid abc123\0# branch.head main\02 R. {ORDINARY_METADATA} R100 new.txt\0"
         );
 
-        let error = parse_porcelain_v2(&output)
+        let error = parse_porcelain_v2(output.as_bytes())
             .expect_err("a rename without its original path should not parse");
 
         assert!(error.contains("omitted the original path"));
@@ -352,6 +368,13 @@ mod tests {
             .expect("the initial repository status should be read");
         assert!(initial_status.unstaged.is_empty());
 
+        let hide_untracked = Command::new("git")
+            .args(["config", "status.showUntrackedFiles", "no"])
+            .current_dir(&repository)
+            .output()
+            .expect("system Git should be available while building Branchlight");
+        assert!(hide_untracked.status.success());
+
         fs::write(repository.join("untracked file.txt"), "hello")
             .expect("the untracked test file should be written");
 
@@ -363,6 +386,34 @@ mod tests {
         assert_eq!(refreshed_status.unstaged.len(), 1);
         assert_eq!(refreshed_status.unstaged[0].path, "untracked file.txt");
         assert_eq!(refreshed_status.unstaged[0].status, FileStatus::Untracked);
+
+        fs::remove_dir_all(repository).expect("the test repository should be removed");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn escapes_invalid_utf8_in_file_paths_without_replacement_characters() {
+        use std::{ffi::OsString, os::unix::ffi::OsStringExt};
+
+        let repository = temporary_directory("invalid-utf8");
+        fs::create_dir_all(&repository).expect("the test repository should be created");
+        let git_init = Command::new("git")
+            .args(["init", "-b", "main"])
+            .arg(&repository)
+            .output()
+            .expect("system Git should be available while building Branchlight");
+        assert!(git_init.status.success());
+
+        let invalid_name = OsString::from_vec(b"invalid-\xff.txt".to_vec());
+        fs::write(repository.join(invalid_name), "hello")
+            .expect("the invalid UTF-8 test file should be written");
+
+        let status = get_repository_status(&repository)
+            .expect("status should preserve the invalid path bytes");
+
+        assert_eq!(status.unstaged.len(), 1);
+        assert_eq!(status.unstaged[0].path, "invalid-\\xff.txt");
+        assert!(!status.unstaged[0].path.contains('\u{fffd}'));
 
         fs::remove_dir_all(repository).expect("the test repository should be removed");
     }
