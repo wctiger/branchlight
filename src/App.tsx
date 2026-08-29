@@ -1,14 +1,21 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import "./App.css";
 import {
   chooseRepositoryFolder,
   getGitVersion,
+  getRepositoryStatus,
   normalizeGitError,
   openRepository,
 } from "./lib/tauri";
 import type { GitError, GitOutput } from "./types/git";
 import type { Repository } from "./types/repository";
+import type {
+  BranchStatus,
+  FileChange,
+  FileStatus,
+  RepositoryStatus,
+} from "./types/status";
 
 type GitStatus =
   | { state: "checking" }
@@ -16,6 +23,34 @@ type GitStatus =
   | { state: "error"; error: GitError };
 
 type OpenState = "idle" | "choosing" | "validating";
+
+type RepositoryStatusState =
+  | { state: "idle" }
+  | { state: "loading" }
+  | { state: "ready"; status: RepositoryStatus }
+  | { state: "error"; error: GitError };
+
+const fileStatusLabels: Record<FileStatus, string> = {
+  added: "Added",
+  modified: "Modified",
+  deleted: "Deleted",
+  renamed: "Renamed",
+  copied: "Copied",
+  typeChanged: "Type changed",
+  untracked: "Untracked",
+  conflicted: "Conflicted",
+};
+
+const fileStatusSymbols: Record<FileStatus, string> = {
+  added: "A",
+  modified: "M",
+  deleted: "D",
+  renamed: "R",
+  copied: "C",
+  typeChanged: "T",
+  untracked: "?",
+  conflicted: "!",
+};
 
 function BranchlightMark() {
   return (
@@ -35,7 +70,21 @@ function FolderIcon() {
   );
 }
 
-function ErrorNotice({ error }: { error: GitError }) {
+function RefreshIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M19.1 7.4A8 8 0 1 0 20 14h-2.1a6 6 0 1 1-.4-4.9L14 12.5h7V5.4l-1.9 2Z" />
+    </svg>
+  );
+}
+
+function ErrorNotice({
+  error,
+  title = "That folder couldn’t be opened",
+}: {
+  error: GitError;
+  title?: string;
+}) {
   const details =
     error.output?.stderr.trim() || error.output?.stdout.trim() || undefined;
 
@@ -45,11 +94,258 @@ function ErrorNotice({ error }: { error: GitError }) {
         !
       </span>
       <div>
-        <strong>That folder couldn’t be opened</strong>
+        <strong>{title}</strong>
         <p>{error.message}</p>
         {details && <pre>{details}</pre>}
       </div>
     </div>
+  );
+}
+
+function BranchSummary({ branch }: { branch: BranchStatus }) {
+  const branchLabel = branch.isDetached
+    ? "Detached HEAD"
+    : (branch.name ?? "Unknown branch");
+  const trackingLabel = branch.isDetached
+    ? branch.oid?.slice(0, 10) ?? "No commit"
+    : branch.upstream ?? (branch.oid ? "No upstream" : "No commits yet");
+
+  return (
+    <div className="branch-summary">
+      <span className="branch-symbol" aria-hidden="true">
+        <span />
+        <span />
+        <span />
+      </span>
+      <div className="branch-summary__identity">
+        <strong>{branchLabel}</strong>
+        <span>{trackingLabel}</span>
+      </div>
+      {branch.upstream && (
+        <div className="branch-counts" aria-label="Upstream divergence">
+          <span title="Commits ahead of upstream">↑ {branch.ahead ?? 0}</span>
+          <span title="Commits behind upstream">↓ {branch.behind ?? 0}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ChangeSection({
+  title,
+  description,
+  emptyMessage,
+  changes,
+  tone,
+}: {
+  title: string;
+  description: string;
+  emptyMessage: string;
+  changes: FileChange[];
+  tone: "staged" | "unstaged" | "conflict";
+}) {
+  return (
+    <section className={`change-section change-section--${tone}`}>
+      <header className="change-section__header">
+        <div>
+          <h3>{title}</h3>
+          <p>{description}</p>
+        </div>
+        <span className="change-count" aria-label={`${changes.length} files`}>
+          {changes.length}
+        </span>
+      </header>
+
+      {changes.length === 0 ? (
+        <p className="change-section__empty">{emptyMessage}</p>
+      ) : (
+        <ul className="change-list">
+          {changes.map((change) => (
+            <li key={`${change.status}:${change.path}:${change.originalPath ?? ""}`}>
+              <span
+                className={`change-symbol change-symbol--${change.status}`}
+                title={fileStatusLabels[change.status]}
+                aria-label={fileStatusLabels[change.status]}
+              >
+                {fileStatusSymbols[change.status]}
+              </span>
+              <div className="change-path">
+                <code title={change.path}>{change.path}</code>
+                {change.originalPath && (
+                  <span title={change.originalPath}>
+                    from <code>{change.originalPath}</code>
+                  </span>
+                )}
+              </div>
+              <span className="change-kind">{fileStatusLabels[change.status]}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+function RepositoryWorkspace({
+  state,
+  onRefresh,
+}: {
+  state: RepositoryStatusState;
+  onRefresh: () => void;
+}) {
+  if (state.state === "idle" || state.state === "loading") {
+    return (
+      <section className="status-loading" aria-live="polite">
+        <span className="workspace-spinner" aria-hidden="true" />
+        <strong>Reading repository status…</strong>
+        <p>Asking system Git for the latest working-tree state.</p>
+      </section>
+    );
+  }
+
+  if (state.state === "error") {
+    return (
+      <section className="status-error">
+        <ErrorNotice
+          error={state.error}
+          title="Repository status couldn’t be refreshed"
+        />
+        <button className="secondary-button" type="button" onClick={onRefresh}>
+          <RefreshIcon />
+          Try again
+        </button>
+      </section>
+    );
+  }
+
+  const { status } = state;
+  const changeCount =
+    status.staged.length + status.unstaged.length + status.conflicts.length;
+
+  return (
+    <section className="repository-workspace" aria-labelledby="changes-title">
+      <header className="workspace-heading">
+        <div>
+          <p className="eyebrow">Working tree</p>
+          <h2 id="changes-title">Repository changes</h2>
+          <p>
+            {changeCount === 0
+              ? "Everything is clean and up to date."
+              : `${changeCount} ${changeCount === 1 ? "change" : "changes"} reported by Git.`}
+          </p>
+        </div>
+        <div className="workspace-facts">
+          <span>{status.stashCount} stashed</span>
+          <span>{changeCount} total</span>
+        </div>
+      </header>
+
+      <div className="changes-grid">
+        <ChangeSection
+          title="Conflicts"
+          description="Files that need manual resolution"
+          emptyMessage="No conflicted files"
+          changes={status.conflicts}
+          tone="conflict"
+        />
+        <ChangeSection
+          title="Unstaged"
+          description="Working-tree changes not in the index"
+          emptyMessage="No unstaged changes"
+          changes={status.unstaged}
+          tone="unstaged"
+        />
+        <ChangeSection
+          title="Staged"
+          description="Changes ready for the next commit"
+          emptyMessage="No staged changes"
+          changes={status.staged}
+          tone="staged"
+        />
+      </div>
+    </section>
+  );
+}
+
+function RepositoryScreen({
+  repository,
+  repositoryError,
+  openState,
+  statusState,
+  onOpenRepository,
+  onRefresh,
+}: {
+  repository: Repository;
+  repositoryError: GitError | null;
+  openState: OpenState;
+  statusState: RepositoryStatusState;
+  onOpenRepository: () => void;
+  onRefresh: () => void;
+}) {
+  const status = statusState.state === "ready" ? statusState.status : null;
+  const isRefreshing = statusState.state === "loading";
+
+  return (
+    <main className="repository-screen">
+      <header className="repository-bar">
+        <div className="repository-brand">
+          <BranchlightMark />
+          <div className="repository-identity">
+            <h1>{repository.name}</h1>
+            <span title={repository.path}>{repository.path}</span>
+          </div>
+        </div>
+
+        <div className="repository-branch" aria-live="polite">
+          {status ? (
+            <BranchSummary branch={status.branch} />
+          ) : (
+            <div className="branch-summary branch-summary--loading">
+              <span className="status-dot status-dot--checking" />
+              <div className="branch-summary__identity">
+                <strong>
+                  {statusState.state === "error"
+                    ? "Status unavailable"
+                    : "Reading branch…"}
+                </strong>
+                <span>System Git</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="repository-actions">
+          <button
+            className="secondary-button"
+            type="button"
+            disabled={isRefreshing || openState !== "idle"}
+            aria-busy={isRefreshing}
+            onClick={onRefresh}
+          >
+            {isRefreshing ? <span className="small-spinner" /> : <RefreshIcon />}
+            {isRefreshing ? "Refreshing…" : "Refresh"}
+          </button>
+          <button
+            className="secondary-button"
+            type="button"
+            disabled={openState !== "idle"}
+            aria-busy={openState !== "idle"}
+            onClick={onOpenRepository}
+          >
+            <FolderIcon />
+            {openState === "idle" ? "Open another" : "Opening…"}
+          </button>
+        </div>
+      </header>
+
+      {repositoryError && (
+        <div className="repository-alert">
+          <ErrorNotice error={repositoryError} />
+        </div>
+      )}
+
+      <RepositoryWorkspace state={statusState} onRefresh={onRefresh} />
+    </main>
   );
 }
 
@@ -60,6 +356,9 @@ function App() {
   const [repository, setRepository] = useState<Repository | null>(null);
   const [repositoryError, setRepositoryError] = useState<GitError | null>(null);
   const [openState, setOpenState] = useState<OpenState>("idle");
+  const [repositoryStatus, setRepositoryStatus] =
+    useState<RepositoryStatusState>({ state: "idle" });
+  const statusRequestId = useRef(0);
 
   const checkGitVersion = useCallback(async () => {
     setGitStatus({ state: "checking" });
@@ -75,6 +374,31 @@ function App() {
   useEffect(() => {
     void checkGitVersion();
   }, [checkGitVersion]);
+
+  const refreshRepositoryStatus = useCallback(async (repositoryPath: string) => {
+    const requestId = ++statusRequestId.current;
+    setRepositoryStatus({ state: "loading" });
+
+    try {
+      const status = await getRepositoryStatus(repositoryPath);
+      if (requestId === statusRequestId.current) {
+        setRepositoryStatus({ state: "ready", status });
+      }
+    } catch (error) {
+      if (requestId === statusRequestId.current) {
+        setRepositoryStatus({
+          state: "error",
+          error: normalizeGitError(error),
+        });
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (repository) {
+      void refreshRepositoryStatus(repository.path);
+    }
+  }, [refreshRepositoryStatus, repository]);
 
   const handleOpenRepository = useCallback(async () => {
     if (openState !== "idle" || gitStatus.state !== "ready") {
@@ -92,6 +416,8 @@ function App() {
 
       setOpenState("validating");
       const openedRepository = await openRepository(selectedPath);
+      statusRequestId.current += 1;
+      setRepositoryStatus({ state: "idle" });
       setRepository(openedRepository);
     } catch (error) {
       setRepositoryError(normalizeGitError(error));
@@ -102,53 +428,14 @@ function App() {
 
   if (repository) {
     return (
-      <main className="repository-screen">
-        <header className="repository-bar">
-          <div className="repository-brand">
-            <BranchlightMark />
-            <div className="repository-identity">
-              <p>Open repository</p>
-              <h1>{repository.name}</h1>
-              <span title={repository.path}>{repository.path}</span>
-            </div>
-          </div>
-
-          <button
-            className="secondary-button"
-            type="button"
-            disabled={openState !== "idle"}
-            aria-busy={openState !== "idle"}
-            onClick={() => void handleOpenRepository()}
-          >
-            <FolderIcon />
-            {openState === "idle" ? "Open another" : "Opening…"}
-          </button>
-        </header>
-
-        {repositoryError && (
-          <div className="repository-alert">
-            <ErrorNotice error={repositoryError} />
-          </div>
-        )}
-
-        <section className="repository-content" aria-labelledby="repository-title">
-          <div className="repository-folder" aria-hidden="true">
-            <FolderIcon />
-            <span className="repository-check">✓</span>
-          </div>
-          <p className="eyebrow">Repository ready</p>
-          <h2 id="repository-title">{repository.name} is open.</h2>
-          <p className="repository-copy">
-            Branchlight found the repository root through system Git and is
-            ready to load its branches, changes, and history.
-          </p>
-
-          <div className="path-card">
-            <span>Canonical repository path</span>
-            <code>{repository.path}</code>
-          </div>
-        </section>
-      </main>
+      <RepositoryScreen
+        repository={repository}
+        repositoryError={repositoryError}
+        openState={openState}
+        statusState={repositoryStatus}
+        onOpenRepository={() => void handleOpenRepository()}
+        onRefresh={() => void refreshRepositoryStatus(repository.path)}
+      />
     );
   }
 

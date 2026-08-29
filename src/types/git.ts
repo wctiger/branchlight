@@ -11,6 +11,7 @@ export type GitErrorCode =
   | "invalidRepositoryPath"
   | "repositoryUnavailable"
   | "invalidRepositoryResponse"
+  | "invalidStatusResponse"
   | "unknown";
 
 export interface GitError {

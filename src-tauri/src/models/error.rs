@@ -13,6 +13,7 @@ pub(crate) enum GitError {
     InvalidRepositoryPath { message: String },
     RepositoryUnavailable { message: String, output: GitOutput },
     InvalidRepositoryResponse { message: String, output: GitOutput },
+    InvalidStatusResponse { message: String, output: GitOutput },
 }
 
 impl fmt::Display for GitError {
@@ -23,7 +24,8 @@ impl fmt::Display for GitError {
             | Self::CommandFailed { message, .. }
             | Self::InvalidRepositoryPath { message }
             | Self::RepositoryUnavailable { message, .. }
-            | Self::InvalidRepositoryResponse { message, .. } => message,
+            | Self::InvalidRepositoryResponse { message, .. }
+            | Self::InvalidStatusResponse { message, .. } => message,
         };
 
         formatter.write_str(message)
@@ -46,6 +48,7 @@ mod tests {
                 stdout: String::new(),
                 stderr: "failure".to_owned(),
                 exit_code: Some(1),
+                stdout_bytes: Vec::new(),
             },
         };
 
@@ -73,6 +76,7 @@ mod tests {
                 stdout: String::new(),
                 stderr: "fatal: not a git repository".to_owned(),
                 exit_code: Some(128),
+                stdout_bytes: Vec::new(),
             },
         };
 
