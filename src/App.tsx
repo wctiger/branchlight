@@ -1,49 +1,115 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import { invoke } from "@tauri-apps/api/core";
+import { useCallback, useEffect, useState } from "react";
+
 import "./App.css";
+import { getGitVersion, normalizeGitError } from "./lib/tauri";
+import type { GitError, GitOutput } from "./types/git";
+
+type GitStatus =
+  | { state: "checking" }
+  | { state: "ready"; output: GitOutput }
+  | { state: "error"; error: GitError };
 
 function App() {
-  const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
+  const [gitStatus, setGitStatus] = useState<GitStatus>({
+    state: "checking",
+  });
 
-  async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    setGreetMsg(await invoke("greet", { name }));
-  }
+  const checkGitVersion = useCallback(async () => {
+    setGitStatus({ state: "checking" });
+
+    try {
+      const output = await getGitVersion();
+      setGitStatus({ state: "ready", output });
+    } catch (error) {
+      setGitStatus({ state: "error", error: normalizeGitError(error) });
+    }
+  }, []);
+
+  useEffect(() => {
+    void checkGitVersion();
+  }, [checkGitVersion]);
+
+  const errorDetails =
+    gitStatus.state === "error"
+      ? gitStatus.error.output?.stderr.trim() ||
+        gitStatus.error.output?.stdout.trim()
+      : undefined;
 
   return (
-    <main className="container">
-      <h1>Welcome to Tauri + React</h1>
+    <main className="app-shell">
+      <section className="foundation-card" aria-labelledby="page-title">
+        <header className="hero">
+          <div className="brand-mark" aria-hidden="true">
+            <span />
+            <span />
+            <span />
+          </div>
+          <p className="eyebrow">Branchlight foundation</p>
+          <h1 id="page-title">Your Git, connected.</h1>
+          <p className="hero-copy">
+            Branchlight talks to the Git already configured on this Mac through
+            a small, typed Rust boundary.
+          </p>
+        </header>
 
-      <div className="row">
-        <a href="https://vite.dev" target="_blank">
-          <img src="/vite.svg" className="logo vite" alt="Vite logo" />
-        </a>
-        <a href="https://tauri.app" target="_blank">
-          <img src="/tauri.svg" className="logo tauri" alt="Tauri logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <p>Click on the Tauri, Vite, and React logos to learn more.</p>
+        <section className="git-card" aria-labelledby="git-status-title">
+          <div className="git-card-heading">
+            <div>
+              <p className="section-label">Environment check</p>
+              <h2 id="git-status-title">System Git</h2>
+            </div>
+            <span
+              className={`status-pill status-pill--${gitStatus.state}`}
+              aria-live="polite"
+            >
+              {gitStatus.state === "checking" && "Checking"}
+              {gitStatus.state === "ready" && "Available"}
+              {gitStatus.state === "error" && "Unavailable"}
+            </span>
+          </div>
 
-      <form
-        className="row"
-        onSubmit={(e) => {
-          e.preventDefault();
-          greet();
-        }}
-      >
-        <input
-          id="greet-input"
-          onChange={(e) => setName(e.currentTarget.value)}
-          placeholder="Enter a name..."
-        />
-        <button type="submit">Greet</button>
-      </form>
-      <p>{greetMsg}</p>
+          {gitStatus.state === "checking" && (
+            <div className="status-message" aria-live="polite">
+              <span className="spinner" aria-hidden="true" />
+              <div>
+                <strong>Finding Git on this Mac…</strong>
+                <p>The request is running through Tauri and Rust.</p>
+              </div>
+            </div>
+          )}
+
+          {gitStatus.state === "ready" && (
+            <div className="status-message status-message--success">
+              <span className="success-mark" aria-hidden="true">
+                ✓
+              </span>
+              <div>
+                <strong>
+                  {gitStatus.output.stdout.trim() || "System Git responded"}
+                </strong>
+                <p>Branchlight is ready to use the existing Git installation.</p>
+              </div>
+            </div>
+          )}
+
+          {gitStatus.state === "error" && (
+            <div className="error-panel" role="alert">
+              <strong>{gitStatus.error.message}</strong>
+              {errorDetails && <pre>{errorDetails}</pre>}
+              <button type="button" onClick={() => void checkGitVersion()}>
+                Check again
+              </button>
+            </div>
+          )}
+        </section>
+
+        <ol className="request-path" aria-label="Git version request path">
+          <li>React</li>
+          <li>Tauri</li>
+          <li>Rust</li>
+          <li>System Git</li>
+        </ol>
+      </section>
     </main>
   );
 }
