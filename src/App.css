@@ -41,7 +41,7 @@ button:disabled {
   place-content: center;
   gap: 22px;
   padding: 38px;
-  overflow: hidden;
+  overflow-x: hidden;
   background:
     radial-gradient(circle at 17% 5%, rgba(82, 159, 106, 0.19), transparent 35%),
     radial-gradient(circle at 92% 92%, rgba(223, 164, 78, 0.17), transparent 34%),
@@ -92,7 +92,7 @@ button:disabled {
 .brand-mark > span {
   width: 4px;
   border-radius: 3px;
-  background: currentColor;
+  background: currentcolor;
 }
 
 .brand-mark > span:nth-child(1) {
@@ -170,7 +170,7 @@ button:disabled {
 .secondary-button svg {
   width: 18px;
   height: 18px;
-  fill: currentColor;
+  fill: currentcolor;
 }
 
 .button-spinner {
@@ -228,7 +228,7 @@ button:disabled {
   border-radius: 7px;
   color: #7c473d;
   background: rgba(136, 68, 53, 0.08);
-  font: 0.69rem/1.4 ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font: 0.69rem/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
   white-space: pre-wrap;
 }
 
@@ -254,7 +254,7 @@ button:disabled {
 
 .git-status > p span {
   color: #909b93;
-  font: 0.67rem ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font: 0.67rem ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 .status-dot {
@@ -366,7 +366,7 @@ button:disabled {
   display: block;
   overflow: hidden;
   color: #77837b;
-  font: 0.66rem ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font: 0.66rem ui-monospace, SFMono-Regular, Menlo, monospace;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -421,7 +421,7 @@ button:disabled {
 .repository-folder svg {
   width: 34px;
   height: 34px;
-  fill: currentColor;
+  fill: currentcolor;
 }
 
 .repository-check {
@@ -480,7 +480,7 @@ button:disabled {
   display: block;
   overflow-wrap: anywhere;
   color: #294d37;
-  font: 0.75rem/1.5 ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font: 0.75rem/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 @keyframes spin {

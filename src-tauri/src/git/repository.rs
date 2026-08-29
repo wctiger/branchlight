@@ -32,7 +32,7 @@ pub(crate) fn open_repository(selected_path: &Path) -> Result<Repository, GitErr
         Err(error) => return Err(error),
     };
 
-    let repository_path = output.stdout.trim();
+    let repository_path = output.stdout.strip_suffix('\n').unwrap_or(&output.stdout);
     if repository_path.is_empty() {
         return Err(GitError::InvalidRepositoryResponse {
             message: "System Git did not return a repository root for the selected folder."
@@ -102,6 +102,28 @@ mod tests {
         );
 
         fs::remove_dir_all(repository_root).expect("the test repository should be removed");
+    }
+
+    #[test]
+    fn preserves_whitespace_in_the_repository_name() {
+        let parent_directory = temporary_directory("whitespace-parent");
+        let repository_root = parent_directory.join(" repository ");
+        fs::create_dir_all(&repository_root).expect("the test repository should be created");
+
+        let git_init = Command::new("git")
+            .arg("init")
+            .arg(&repository_root)
+            .output()
+            .expect("system Git should be available while building Branchlight");
+        assert!(git_init.status.success());
+
+        let repository = open_repository(&repository_root)
+            .expect("a repository name containing whitespace should be preserved");
+
+        assert_eq!(repository.name, " repository ");
+        assert!(repository.path.ends_with(" repository "));
+
+        fs::remove_dir_all(parent_directory).expect("the test directory should be removed");
     }
 
     #[test]
