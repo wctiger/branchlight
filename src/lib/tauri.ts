@@ -13,6 +13,7 @@ const gitErrorCodes: GitErrorCode[] = [
   "repositoryUnavailable",
   "invalidRepositoryResponse",
   "invalidStatusResponse",
+  "invalidOperationInput",
 ];
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -57,6 +58,21 @@ export function openRepository(path: string): Promise<Repository> {
 /** Requests a fresh, fully parsed status snapshot from system Git. */
 export function getRepositoryStatus(path: string): Promise<RepositoryStatus> {
   return invoke<RepositoryStatus>("get_repository_status", { path });
+}
+
+/** Stages all changes for one repository-relative path. */
+export function stageFile(path: string, filePath: string): Promise<GitOutput> {
+  return invoke<GitOutput>("stage_file", { path, filePath });
+}
+
+/** Removes all staged changes for one repository-relative path. */
+export function unstageFile(path: string, filePath: string): Promise<GitOutput> {
+  return invoke<GitOutput>("unstage_file", { path, filePath });
+}
+
+/** Creates a commit using the repository's configured Git identity. */
+export function commitChanges(path: string, message: string): Promise<GitOutput> {
+  return invoke<GitOutput>("commit", { path, message });
 }
 
 export function normalizeGitError(error: unknown): GitError {

@@ -390,7 +390,8 @@ mod tests {
         fs::remove_dir_all(repository).expect("the test repository should be removed");
     }
 
-    #[cfg(unix)]
+    // macOS rejects filenames containing invalid UTF-8 before Git can inspect them.
+    #[cfg(all(unix, not(target_os = "macos")))]
     #[test]
     fn escapes_invalid_utf8_in_file_paths_without_replacement_characters() {
         use std::{ffi::OsString, os::unix::ffi::OsStringExt};

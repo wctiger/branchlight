@@ -10,7 +10,10 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::system::get_git_version,
             commands::repository::open_repository,
-            commands::repository::get_repository_status
+            commands::repository::get_repository_status,
+            commands::operations::stage_file,
+            commands::operations::unstage_file,
+            commands::operations::commit
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

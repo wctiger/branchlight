@@ -752,6 +752,148 @@ button:disabled {
   font-size: 0.61rem;
 }
 
+.change-action {
+  min-width: 80px;
+  min-height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 9px;
+  border: 1px solid rgba(42, 91, 57, 0.14);
+  border-radius: 8px;
+  color: #376045;
+  background: #f5f9f6;
+  cursor: pointer;
+  font-size: 0.64rem;
+  font-weight: 740;
+}
+
+.change-action:hover:not(:disabled) {
+  border-color: rgba(42, 91, 57, 0.25);
+  background: #eaf3ed;
+}
+
+.stage-icon {
+  width: 15px;
+  height: 15px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: white;
+  background: #3c7950;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.workspace-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.workspace-error .error-notice {
+  flex: 1;
+  margin-top: 0;
+}
+
+.workspace-error > .secondary-button {
+  margin-top: 4px;
+}
+
+.commit-panel {
+  margin-top: 14px;
+  padding: 18px;
+  border: 1px solid rgba(40, 70, 49, 0.1);
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 9px 26px rgba(33, 60, 41, 0.045);
+}
+
+.commit-panel__heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 14px;
+}
+
+.commit-panel__heading .eyebrow {
+  margin-bottom: 4px;
+  font-size: 0.58rem;
+}
+
+.commit-panel__heading h3 {
+  margin: 0;
+  color: #24372a;
+  font-size: 0.93rem;
+  letter-spacing: -0.015em;
+}
+
+.commit-panel__heading > span {
+  padding: 5px 8px;
+  border-radius: 999px;
+  color: #3f6a4c;
+  background: #e7f1e9;
+  font-size: 0.62rem;
+  font-weight: 760;
+}
+
+.commit-panel label {
+  display: block;
+  margin-bottom: 6px;
+  color: #506057;
+  font-size: 0.65rem;
+  font-weight: 720;
+}
+
+.commit-controls {
+  display: flex;
+  align-items: stretch;
+  gap: 9px;
+}
+
+.commit-controls input {
+  min-width: 0;
+  min-height: 43px;
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid rgba(39, 75, 50, 0.16);
+  border-radius: 10px;
+  outline: 0;
+  color: #263a2c;
+  background: #fbfcfb;
+  font: 0.78rem ui-monospace, SFMono-Regular, Menlo, monospace;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.commit-controls input:focus {
+  border-color: rgba(43, 113, 66, 0.55);
+  box-shadow: 0 0 0 3px rgba(43, 113, 66, 0.11);
+}
+
+.commit-controls input::placeholder {
+  color: #9aa39d;
+}
+
+.commit-button {
+  min-width: 128px;
+  min-height: 43px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-size: 0.76rem;
+}
+
+.commit-hint {
+  margin: 7px 0 0;
+  color: #7a857d;
+  font-size: 0.64rem;
+}
+
 @keyframes spin {
   to {
     transform: rotate(360deg);
@@ -874,6 +1016,20 @@ button:disabled {
   .change-kind {
     display: none;
   }
+
+  .workspace-error,
+  .commit-controls {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .workspace-error > .secondary-button {
+    align-self: flex-start;
+  }
+
+  .commit-button {
+    width: 100%;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -888,7 +1044,8 @@ button:disabled {
   }
 
   .primary-button,
-  .secondary-button {
+  .secondary-button,
+  .commit-controls input {
     transition: none;
   }
 }
@@ -1025,7 +1182,8 @@ button:disabled {
   }
 
   .workspace-facts span,
-  .change-section {
+  .change-section,
+  .commit-panel {
     border-color: rgba(211, 230, 217, 0.09);
     background: rgba(27, 38, 30, 0.78);
   }
@@ -1073,5 +1231,46 @@ button:disabled {
 
   .change-path > code {
     color: #c5d4c9;
+  }
+
+  .change-action {
+    border-color: rgba(145, 194, 158, 0.16);
+    color: #abd5b7;
+    background: #233128;
+  }
+
+  .change-action:hover:not(:disabled) {
+    border-color: rgba(145, 194, 158, 0.27);
+    background: #2a3c30;
+  }
+
+  .stage-icon {
+    color: #17261c;
+    background: #81c493;
+  }
+
+  .commit-panel__heading h3 {
+    color: #edf5ef;
+  }
+
+  .commit-panel__heading > span {
+    color: #9acba7;
+    background: rgba(105, 183, 128, 0.1);
+  }
+
+  .commit-panel label,
+  .commit-hint {
+    color: #8b988f;
+  }
+
+  .commit-controls input {
+    border-color: rgba(211, 230, 217, 0.12);
+    color: #dbe8de;
+    background: #18221b;
+  }
+
+  .commit-controls input:focus {
+    border-color: rgba(120, 192, 141, 0.5);
+    box-shadow: 0 0 0 3px rgba(120, 192, 141, 0.1);
   }
 }

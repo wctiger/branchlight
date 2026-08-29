@@ -14,6 +14,7 @@ pub(crate) enum GitError {
     RepositoryUnavailable { message: String, output: GitOutput },
     InvalidRepositoryResponse { message: String, output: GitOutput },
     InvalidStatusResponse { message: String, output: GitOutput },
+    InvalidOperationInput { message: String },
 }
 
 impl fmt::Display for GitError {
@@ -25,7 +26,8 @@ impl fmt::Display for GitError {
             | Self::InvalidRepositoryPath { message }
             | Self::RepositoryUnavailable { message, .. }
             | Self::InvalidRepositoryResponse { message, .. }
-            | Self::InvalidStatusResponse { message, .. } => message,
+            | Self::InvalidStatusResponse { message, .. }
+            | Self::InvalidOperationInput { message } => message,
         };
 
         formatter.write_str(message)
