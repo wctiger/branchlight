@@ -1,11 +1,16 @@
 import { invoke } from "@tauri-apps/api/core";
+import { open } from "@tauri-apps/plugin-dialog";
 
 import type { GitError, GitErrorCode, GitOutput } from "../types/git";
+import type { Repository } from "../types/repository";
 
 const gitErrorCodes: GitErrorCode[] = [
   "workingDirectoryUnavailable",
   "processStartFailed",
   "commandFailed",
+  "invalidRepositoryPath",
+  "repositoryUnavailable",
+  "invalidRepositoryResponse",
 ];
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -30,6 +35,21 @@ function isGitOutput(value: unknown): value is GitOutput {
 
 export function getGitVersion(): Promise<GitOutput> {
   return invoke<GitOutput>("get_git_version");
+}
+
+export async function chooseRepositoryFolder(): Promise<string | null> {
+  const selectedPath = await open({
+    title: "Open a Git Repository",
+    directory: true,
+    multiple: false,
+    canCreateDirectories: false,
+  });
+
+  return typeof selectedPath === "string" ? selectedPath : null;
+}
+
+export function openRepository(path: string): Promise<Repository> {
+  return invoke<Repository>("open_repository", { path });
 }
 
 export function normalizeGitError(error: unknown): GitError {

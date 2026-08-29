@@ -1,18 +1,65 @@
 import { useCallback, useEffect, useState } from "react";
 
 import "./App.css";
-import { getGitVersion, normalizeGitError } from "./lib/tauri";
+import {
+  chooseRepositoryFolder,
+  getGitVersion,
+  normalizeGitError,
+  openRepository,
+} from "./lib/tauri";
 import type { GitError, GitOutput } from "./types/git";
+import type { Repository } from "./types/repository";
 
 type GitStatus =
   | { state: "checking" }
   | { state: "ready"; output: GitOutput }
   | { state: "error"; error: GitError };
 
+type OpenState = "idle" | "choosing" | "validating";
+
+function BranchlightMark() {
+  return (
+    <span className="brand-mark" aria-hidden="true">
+      <span />
+      <span />
+      <span />
+    </span>
+  );
+}
+
+function FolderIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M3.5 6.75A2.25 2.25 0 0 1 5.75 4.5h3.17c.6 0 1.17.24 1.6.66l1.18 1.18c.14.14.33.22.53.22h6.02a2.25 2.25 0 0 1 2.25 2.25v7.94A2.25 2.25 0 0 1 18.25 19H5.75a2.25 2.25 0 0 1-2.25-2.25v-10Z" />
+    </svg>
+  );
+}
+
+function ErrorNotice({ error }: { error: GitError }) {
+  const details =
+    error.output?.stderr.trim() || error.output?.stdout.trim() || undefined;
+
+  return (
+    <div className="error-notice" role="alert">
+      <span className="error-notice__icon" aria-hidden="true">
+        !
+      </span>
+      <div>
+        <strong>That folder couldn’t be opened</strong>
+        <p>{error.message}</p>
+        {details && <pre>{details}</pre>}
+      </div>
+    </div>
+  );
+}
+
 function App() {
   const [gitStatus, setGitStatus] = useState<GitStatus>({
     state: "checking",
   });
+  const [repository, setRepository] = useState<Repository | null>(null);
+  const [repositoryError, setRepositoryError] = useState<GitError | null>(null);
+  const [openState, setOpenState] = useState<OpenState>("idle");
 
   const checkGitVersion = useCallback(async () => {
     setGitStatus({ state: "checking" });
@@ -29,87 +76,168 @@ function App() {
     void checkGitVersion();
   }, [checkGitVersion]);
 
-  const errorDetails =
+  const handleOpenRepository = useCallback(async () => {
+    if (openState !== "idle" || gitStatus.state !== "ready") {
+      return;
+    }
+
+    setRepositoryError(null);
+    setOpenState("choosing");
+
+    try {
+      const selectedPath = await chooseRepositoryFolder();
+      if (!selectedPath) {
+        return;
+      }
+
+      setOpenState("validating");
+      const openedRepository = await openRepository(selectedPath);
+      setRepository(openedRepository);
+    } catch (error) {
+      setRepositoryError(normalizeGitError(error));
+    } finally {
+      setOpenState("idle");
+    }
+  }, [gitStatus.state, openState]);
+
+  if (repository) {
+    return (
+      <main className="repository-screen">
+        <header className="repository-bar">
+          <div className="repository-brand">
+            <BranchlightMark />
+            <div className="repository-identity">
+              <p>Open repository</p>
+              <h1>{repository.name}</h1>
+              <span title={repository.path}>{repository.path}</span>
+            </div>
+          </div>
+
+          <button
+            className="secondary-button"
+            type="button"
+            disabled={openState !== "idle"}
+            aria-busy={openState !== "idle"}
+            onClick={() => void handleOpenRepository()}
+          >
+            <FolderIcon />
+            {openState === "idle" ? "Open another" : "Opening…"}
+          </button>
+        </header>
+
+        {repositoryError && (
+          <div className="repository-alert">
+            <ErrorNotice error={repositoryError} />
+          </div>
+        )}
+
+        <section className="repository-content" aria-labelledby="repository-title">
+          <div className="repository-folder" aria-hidden="true">
+            <FolderIcon />
+            <span className="repository-check">✓</span>
+          </div>
+          <p className="eyebrow">Repository ready</p>
+          <h2 id="repository-title">{repository.name} is open.</h2>
+          <p className="repository-copy">
+            Branchlight found the repository root through system Git and is
+            ready to load its branches, changes, and history.
+          </p>
+
+          <div className="path-card">
+            <span>Canonical repository path</span>
+            <code>{repository.path}</code>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
+  const gitErrorDetails =
     gitStatus.state === "error"
       ? gitStatus.error.output?.stderr.trim() ||
         gitStatus.error.output?.stdout.trim()
       : undefined;
+  const isOpening = openState !== "idle";
+  const buttonLabel =
+    openState === "choosing"
+      ? "Choose a folder…"
+      : openState === "validating"
+        ? "Checking repository…"
+        : "Open repository";
 
   return (
-    <main className="app-shell">
-      <section className="foundation-card" aria-labelledby="page-title">
-        <header className="hero">
-          <div className="brand-mark" aria-hidden="true">
-            <span />
-            <span />
-            <span />
-          </div>
-          <p className="eyebrow">Branchlight foundation</p>
-          <h1 id="page-title">Your Git, connected.</h1>
-          <p className="hero-copy">
-            Branchlight talks to the Git already configured on this Mac through
-            a small, typed Rust boundary.
+    <main className="landing-screen">
+      <section className="landing-card" aria-labelledby="landing-title">
+        <div className="landing-brand">
+          <BranchlightMark />
+          <span>Branchlight</span>
+        </div>
+
+        <div className="landing-copy">
+          <p className="eyebrow">A lighter way to work with Git</p>
+          <h1 id="landing-title">Open a repository.</h1>
+          <p>
+            Choose any folder inside a local Git repository. Branchlight will
+            find and open its root.
           </p>
-        </header>
+        </div>
 
-        <section className="git-card" aria-labelledby="git-status-title">
-          <div className="git-card-heading">
-            <div>
-              <p className="section-label">Environment check</p>
-              <h2 id="git-status-title">System Git</h2>
-            </div>
-            <span
-              className={`status-pill status-pill--${gitStatus.state}`}
-              aria-live="polite"
-            >
-              {gitStatus.state === "checking" && "Checking"}
-              {gitStatus.state === "ready" && "Available"}
-              {gitStatus.state === "error" && "Unavailable"}
-            </span>
-          </div>
+        <button
+          className="primary-button"
+          type="button"
+          disabled={gitStatus.state !== "ready" || isOpening}
+          aria-busy={isOpening}
+          onClick={() => void handleOpenRepository()}
+        >
+          {isOpening ? <span className="button-spinner" /> : <FolderIcon />}
+          {buttonLabel}
+        </button>
 
+        {repositoryError && <ErrorNotice error={repositoryError} />}
+
+        <div
+          className={`git-status git-status--${gitStatus.state}`}
+          aria-live="polite"
+        >
           {gitStatus.state === "checking" && (
-            <div className="status-message" aria-live="polite">
-              <span className="spinner" aria-hidden="true" />
-              <div>
-                <strong>Finding Git on this Mac…</strong>
-                <p>The request is running through Tauri and Rust.</p>
-              </div>
-            </div>
+            <>
+              <span className="status-dot status-dot--checking" />
+              <p>Checking system Git…</p>
+            </>
           )}
 
           {gitStatus.state === "ready" && (
-            <div className="status-message status-message--success">
-              <span className="success-mark" aria-hidden="true">
-                ✓
-              </span>
-              <div>
-                <strong>
-                  {gitStatus.output.stdout.trim() || "System Git responded"}
-                </strong>
-                <p>Branchlight is ready to use the existing Git installation.</p>
-              </div>
-            </div>
+            <>
+              <span className="status-dot" />
+              <p>
+                System Git ready
+                <span>{gitStatus.output.stdout.trim()}</span>
+              </p>
+            </>
           )}
 
           {gitStatus.state === "error" && (
-            <div className="error-panel" role="alert">
-              <strong>{gitStatus.error.message}</strong>
-              {errorDetails && <pre>{errorDetails}</pre>}
+            <div className="git-unavailable" role="alert">
+              <div>
+                <strong>System Git isn’t available.</strong>
+                <p>
+                  Install Git or make sure it can be run from your shell, then
+                  check again.
+                </p>
+                {gitErrorDetails && <pre>{gitErrorDetails}</pre>}
+              </div>
               <button type="button" onClick={() => void checkGitVersion()}>
                 Check again
               </button>
             </div>
           )}
-        </section>
-
-        <ol className="request-path" aria-label="Git version request path">
-          <li>React</li>
-          <li>Tauri</li>
-          <li>Rust</li>
-          <li>System Git</li>
-        </ol>
+        </div>
       </section>
+
+      <p className="landing-footnote">
+        Your repositories stay on this Mac. Branchlight uses your existing Git
+        configuration.
+      </p>
     </main>
   );
 }
