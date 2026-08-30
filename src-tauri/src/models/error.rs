@@ -16,6 +16,7 @@ pub(crate) enum GitError {
     InvalidStatusResponse { message: String, output: GitOutput },
     InvalidBranchesResponse { message: String, output: GitOutput },
     InvalidStashesResponse { message: String, output: GitOutput },
+    InvalidHistoryResponse { message: String, output: GitOutput },
     InvalidOperationInput { message: String },
 }
 
@@ -31,6 +32,7 @@ impl fmt::Display for GitError {
             | Self::InvalidStatusResponse { message, .. }
             | Self::InvalidBranchesResponse { message, .. }
             | Self::InvalidStashesResponse { message, .. }
+            | Self::InvalidHistoryResponse { message, .. }
             | Self::InvalidOperationInput { message } => message,
         };
 

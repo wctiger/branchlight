@@ -15,6 +15,7 @@ import {
   fetchRemote,
   getBranches,
   getGitVersion,
+  getHistory,
   getRepositoryStatus,
   getStashes,
   mergeBranch,
@@ -37,6 +38,10 @@ import {
   StashPanel,
   type StashesState,
 } from "./features/stashes/StashPanel";
+import {
+  HistoryPanel,
+  type HistoryState,
+} from "./features/history/HistoryPanel";
 import type { GitError, GitOutput } from "./types/git";
 import type { Repository } from "./types/repository";
 import type { Stash } from "./types/stash";
@@ -665,6 +670,7 @@ function RepositoryScreen({
   statusState,
   branchesState,
   stashesState,
+  historyState,
   operation,
   changeOperationError,
   branchOperationError,
@@ -698,6 +704,7 @@ function RepositoryScreen({
   statusState: RepositoryStatusState;
   branchesState: BranchesState;
   stashesState: StashesState;
+  historyState: HistoryState;
   operation: AppOperation;
   changeOperationError: GitError | null;
   branchOperationError: GitError | null;
@@ -732,7 +739,9 @@ function RepositoryScreen({
     branchesState.state === "loading" ||
     (branchesState.state === "ready" && branchesState.isRefreshing) ||
     stashesState.state === "loading" ||
-    (stashesState.state === "ready" && stashesState.isRefreshing);
+    (stashesState.state === "ready" && stashesState.isRefreshing) ||
+    historyState.state === "loading" ||
+    (historyState.state === "ready" && historyState.isRefreshing);
   const isMutating = operation.state !== "idle";
   const hasActiveRepositoryOperation =
     status !== null && status.operation !== "none";
@@ -898,6 +907,7 @@ function RepositoryScreen({
           onPopStash={onPopStash}
           onDropStash={onDropStash}
         />
+        <HistoryPanel state={historyState} onRefresh={onRefresh} />
       </div>
     </main>
   );
@@ -917,6 +927,9 @@ function App() {
     state: "idle",
   });
   const [stashesState, setStashesState] = useState<StashesState>({
+    state: "idle",
+  });
+  const [historyState, setHistoryState] = useState<HistoryState>({
     state: "idle",
   });
   const [operation, setOperation] = useState<AppOperation>({
@@ -939,6 +952,7 @@ function App() {
   const statusRequestId = useRef(0);
   const branchesRequestId = useRef(0);
   const stashesRequestId = useRef(0);
+  const historyRequestId = useRef(0);
 
   const checkGitVersion = useCallback(async () => {
     setGitStatus({ state: "checking" });
@@ -1066,6 +1080,43 @@ function App() {
     }
   }, []);
 
+  /** Refreshes bounded history while retaining the last successful snapshot on failure. */
+  const refreshHistory = useCallback(async (repositoryPath: string) => {
+    const requestId = ++historyRequestId.current;
+    setHistoryState((current) =>
+      current.state === "ready"
+        ? { ...current, isRefreshing: true, refreshError: null }
+        : { state: "loading" },
+    );
+
+    try {
+      const commits = await getHistory(repositoryPath);
+      if (requestId === historyRequestId.current) {
+        setHistoryState({
+          state: "ready",
+          commits,
+          isRefreshing: false,
+          refreshError: null,
+        });
+      }
+    } catch (error) {
+      const normalizedError = normalizeGitError(error);
+      setHistoryState((current) => {
+        if (requestId !== historyRequestId.current) {
+          return current;
+        }
+
+        return current.state === "ready"
+          ? {
+              ...current,
+              isRefreshing: false,
+              refreshError: normalizedError,
+            }
+          : { state: "error", error: normalizedError };
+      });
+    }
+  }, []);
+
   /** Refreshes every repository view after external or in-app Git changes. */
   const refreshRepositoryState = useCallback(
     async (repositoryPath: string) => {
@@ -1073,9 +1124,10 @@ function App() {
         refreshRepositoryStatus(repositoryPath),
         refreshBranches(repositoryPath),
         refreshStashes(repositoryPath),
+        refreshHistory(repositoryPath),
       ]);
     },
-    [refreshBranches, refreshRepositoryStatus, refreshStashes],
+    [refreshBranches, refreshHistory, refreshRepositoryStatus, refreshStashes],
   );
 
   useEffect(() => {
@@ -1103,9 +1155,11 @@ function App() {
       statusRequestId.current += 1;
       branchesRequestId.current += 1;
       stashesRequestId.current += 1;
+      historyRequestId.current += 1;
       setRepositoryStatus({ state: "idle" });
       setBranchesState({ state: "idle" });
       setStashesState({ state: "idle" });
+      setHistoryState({ state: "idle" });
       setOperation({ state: "idle" });
       setChangeOperationError(null);
       setBranchOperationError(null);
@@ -1420,6 +1474,7 @@ function App() {
         statusState={repositoryStatus}
         branchesState={branchesState}
         stashesState={stashesState}
+        historyState={historyState}
         operation={operation}
         changeOperationError={changeOperationError}
         branchOperationError={branchOperationError}
