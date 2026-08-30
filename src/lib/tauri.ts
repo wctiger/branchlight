@@ -100,6 +100,21 @@ export function deleteBranch(
   return invoke<GitOutput>("delete_branch", { path, branchName });
 }
 
+/** Fetches remote refs using the repository's configured Git remotes. */
+export function fetchRemote(path: string): Promise<GitOutput> {
+  return invoke<GitOutput>("fetch_remote", { path });
+}
+
+/** Pulls the current branch using the user's configured pull strategy. */
+export function pullRemote(path: string): Promise<GitOutput> {
+  return invoke<GitOutput>("pull_remote", { path });
+}
+
+/** Pushes the current branch to its configured upstream. */
+export function pushRemote(path: string): Promise<GitOutput> {
+  return invoke<GitOutput>("push_remote", { path });
+}
+
 /** Stages all changes for one repository-relative path. */
 export function stageFile(path: string, filePath: string): Promise<GitOutput> {
   return invoke<GitOutput>("stage_file", { path, filePath });

@@ -7,11 +7,14 @@ import {
   commitChanges,
   createBranch,
   deleteBranch,
+  fetchRemote,
   getBranches,
   getGitVersion,
   getRepositoryStatus,
   normalizeGitError,
   openRepository,
+  pullRemote,
+  pushRemote,
   renameBranch,
   stageFile,
   switchBranch,
@@ -56,7 +59,12 @@ type RepositoryOperation =
   | { state: "switching"; branchName: string }
   | { state: "creating"; branchName: string }
   | { state: "renaming"; branchName: string }
-  | { state: "deleting"; branchName: string };
+  | { state: "deleting"; branchName: string }
+  | { state: "fetching" }
+  | { state: "pulling" }
+  | { state: "pushing" };
+
+type RemoteOperation = "fetch" | "pull" | "push";
 
 type BranchMutation =
   | { kind: "switch"; branchName: string }
@@ -468,6 +476,7 @@ function RepositoryScreen({
   operation,
   changeOperationError,
   branchOperationError,
+  remoteOperationError,
   commitMessage,
   onOpenRepository,
   onRefresh,
@@ -479,6 +488,7 @@ function RepositoryScreen({
   onCreateBranch,
   onRenameBranch,
   onDeleteBranch,
+  onRemoteOperation,
 }: {
   repository: Repository;
   repositoryError: GitError | null;
@@ -488,6 +498,7 @@ function RepositoryScreen({
   operation: RepositoryOperation;
   changeOperationError: GitError | null;
   branchOperationError: GitError | null;
+  remoteOperationError: GitError | null;
   commitMessage: string;
   onOpenRepository: () => void;
   onRefresh: () => void;
@@ -499,6 +510,7 @@ function RepositoryScreen({
   onCreateBranch: (branchName: string) => Promise<boolean>;
   onRenameBranch: (oldName: string, newName: string) => Promise<boolean>;
   onDeleteBranch: (branchName: string) => Promise<boolean>;
+  onRemoteOperation: (kind: RemoteOperation) => void;
 }) {
   const status = statusState.state === "ready" ? statusState.status : null;
   const isRefreshing =
@@ -545,6 +557,28 @@ function RepositoryScreen({
         </div>
 
         <div className="repository-actions">
+          {(["fetch", "pull", "push"] as const).map((kind) => {
+            const operationState = `${kind}ing` as
+              | "fetching"
+              | "pulling"
+              | "pushing";
+            const isRunning = operation.state === operationState;
+            const label = `${kind[0].toUpperCase()}${kind.slice(1)}`;
+
+            return (
+              <button
+                className="secondary-button remote-button"
+                type="button"
+                key={kind}
+                disabled={isRefreshing || isMutating || openState !== "idle"}
+                aria-busy={isRunning}
+                onClick={() => onRemoteOperation(kind)}
+              >
+                {isRunning && <span className="small-spinner" aria-hidden="true" />}
+                {isRunning ? `${label}ing…` : label}
+              </button>
+            );
+          })}
           <button
             className="secondary-button"
             type="button"
@@ -571,6 +605,15 @@ function RepositoryScreen({
       {repositoryError && (
         <div className="repository-alert">
           <ErrorNotice error={repositoryError} />
+        </div>
+      )}
+
+      {remoteOperationError && (
+        <div className="repository-alert">
+          <ErrorNotice
+            title="Git couldn’t synchronize this repository"
+            error={remoteOperationError}
+          />
         </div>
       )}
 
@@ -621,6 +664,8 @@ function App() {
   const [changeOperationError, setChangeOperationError] =
     useState<GitError | null>(null);
   const [branchOperationError, setBranchOperationError] =
+    useState<GitError | null>(null);
+  const [remoteOperationError, setRemoteOperationError] =
     useState<GitError | null>(null);
   const [commitMessage, setCommitMessage] = useState("");
   const statusRequestId = useRef(0);
@@ -755,6 +800,7 @@ function App() {
       setOperation({ state: "idle" });
       setChangeOperationError(null);
       setBranchOperationError(null);
+      setRemoteOperationError(null);
       setCommitMessage("");
       setRepository(openedRepository);
     } catch (error) {
@@ -881,6 +927,35 @@ function App() {
     [branchesState, operation.state, refreshRepositoryState, repository],
   );
 
+  /** Runs one configured remote operation and refreshes all Git-backed state. */
+  const handleRemoteOperation = useCallback(
+    async (kind: RemoteOperation) => {
+      if (!repository || operation.state !== "idle") {
+        return;
+      }
+
+      setRemoteOperationError(null);
+      setOperation({ state: `${kind}ing` });
+
+      try {
+        if (kind === "fetch") {
+          await fetchRemote(repository.path);
+        } else if (kind === "pull") {
+          await pullRemote(repository.path);
+        } else {
+          await pushRemote(repository.path);
+        }
+
+        await refreshRepositoryState(repository.path);
+      } catch (error) {
+        setRemoteOperationError(normalizeGitError(error));
+      } finally {
+        setOperation({ state: "idle" });
+      }
+    },
+    [operation.state, refreshRepositoryState, repository],
+  );
+
   if (repository) {
     return (
       <RepositoryScreen
@@ -892,11 +967,13 @@ function App() {
         operation={operation}
         changeOperationError={changeOperationError}
         branchOperationError={branchOperationError}
+        remoteOperationError={remoteOperationError}
         commitMessage={commitMessage}
         onOpenRepository={() => void handleOpenRepository()}
         onRefresh={() => {
           setChangeOperationError(null);
           setBranchOperationError(null);
+          setRemoteOperationError(null);
           void refreshRepositoryState(repository.path);
         }}
         onCommitMessageChange={setCommitMessage}
@@ -915,6 +992,7 @@ function App() {
         onDeleteBranch={(branchName) =>
           handleBranchMutation({ kind: "delete", branchName })
         }
+        onRemoteOperation={(kind) => void handleRemoteOperation(kind)}
       />
     );
   }
