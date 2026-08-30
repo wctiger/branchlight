@@ -232,7 +232,9 @@ function ConflictBanner({
   onAbort: (kind: "merge" | "rebase") => void;
 }) {
   const activeOperation = status.operation;
-  if (activeOperation === "none" && status.conflicts.length === 0) {
+  const hasRepositoryConflict =
+    activeOperation !== "none" || status.conflicts.length > 0;
+  if (!hasRepositoryConflict && !operationError) {
     return null;
   }
 
@@ -241,7 +243,9 @@ function ConflictBanner({
       ? "Merge"
       : activeOperation === "rebase"
         ? "Rebase"
-        : "Unresolved conflicts";
+        : status.conflicts.length > 0
+          ? "Unresolved conflicts"
+          : "Repository operation changed";
   const conflictCount = status.conflicts.length;
   const isAborting =
     (activeOperation === "merge" && operation.state === "abortingMerge") ||
@@ -266,7 +270,9 @@ function ConflictBanner({
               : `${operationLabel} in progress`}
           </h2>
           <p>
-            {conflictCount === 0
+            {!hasRepositoryConflict
+              ? "Git no longer reports an active merge or rebase."
+              : conflictCount === 0
               ? "Git reports no conflicted files right now."
               : `${conflictCount} ${conflictCount === 1 ? "file requires" : "files require"} manual resolution.`}
           </p>
@@ -285,8 +291,9 @@ function ConflictBanner({
 
       <div className="conflict-banner__guidance">
         <p>
-          Resolve these files in your editor, then refresh Branchlight to read
-          Git’s latest state.
+          {hasRepositoryConflict
+            ? "Resolve these files in your editor, then refresh Branchlight to read Git’s latest state."
+            : "Review Git’s message below, then refresh Branchlight before continuing."}
         </p>
         <div>
           <button
@@ -319,7 +326,11 @@ function ConflictBanner({
       {operationError && (
         <ErrorNotice
           error={operationError}
-          title={`Git couldn’t abort the ${activeOperation}`}
+          title={
+            activeOperation === "none"
+              ? "Git couldn’t abort the repository operation"
+              : `Git couldn’t abort the ${activeOperation}`
+          }
         />
       )}
     </section>
