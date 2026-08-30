@@ -16,6 +16,8 @@ pub fn run() {
             commands::branches::create_branch,
             commands::branches::rename_branch,
             commands::branches::delete_branch,
+            commands::branches::merge_branch,
+            commands::branches::rebase_onto_branch,
             commands::operations::stage_file,
             commands::operations::unstage_file,
             commands::operations::commit,

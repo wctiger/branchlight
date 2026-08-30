@@ -687,6 +687,20 @@ button:disabled {
   background: rgba(226, 237, 229, 0.64);
 }
 
+.branch-item[draggable="true"] {
+  cursor: grab;
+}
+
+.branch-item[draggable="true"]:active {
+  cursor: grabbing;
+}
+
+.branch-item--drop-target {
+  border-color: rgba(50, 127, 73, 0.42);
+  background: rgba(205, 232, 213, 0.85);
+  box-shadow: inset 0 0 0 1px rgba(50, 127, 73, 0.1);
+}
+
 .branch-item:disabled {
   cursor: not-allowed;
   opacity: 0.62;
@@ -744,7 +758,7 @@ button:disabled {
 
 .branch-actions {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 5px;
   margin-top: 11px;
   padding-top: 11px;
@@ -871,6 +885,34 @@ button:disabled {
   margin: 0;
   font: 0.56rem/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
   white-space: pre-wrap;
+}
+
+.branch-notice {
+  margin-bottom: 10px;
+  padding: 9px 10px;
+  border: 1px solid rgba(52, 128, 75, 0.14);
+  border-radius: 9px;
+  color: #3e6b4b;
+  background: #edf7f0;
+  font-size: 0.61rem;
+  font-weight: 700;
+}
+
+.branch-editor--integrate p {
+  margin: 0;
+  color: #7f8b83;
+  font-size: 0.59rem;
+  line-height: 1.42;
+}
+
+.branch-editor > .branch-integrate-actions {
+  align-items: stretch;
+  flex-direction: column;
+}
+
+.branch-integrate-actions button {
+  width: 100%;
+  text-align: left;
 }
 
 .branch-text-button {
@@ -1768,6 +1810,11 @@ button:disabled {
     background: rgba(49, 70, 56, 0.65);
   }
 
+  .branch-item--drop-target {
+    border-color: rgba(112, 193, 136, 0.38);
+    background: rgba(48, 82, 58, 0.88);
+  }
+
   .branch-dot {
     border-color: #77877c;
   }
@@ -1822,6 +1869,16 @@ button:disabled {
     border-color: rgba(225, 132, 112, 0.14);
     color: #d9aea3;
     background: #34231f;
+  }
+
+  .branch-notice {
+    border-color: rgba(112, 193, 136, 0.15);
+    color: #9bcaa8;
+    background: #203126;
+  }
+
+  .branch-editor--integrate p {
+    color: #849188;
   }
 
   .stash-panel,

@@ -69,6 +69,40 @@ pub(crate) fn delete_branch(repository: &Path, branch_name: &str) -> Result<GitO
     run_git(repository, &["branch", "-d", "--", branch_name])
 }
 
+/// Merges one local source branch into the currently checked-out branch.
+pub(crate) fn merge_branch(repository: &Path, source_branch: &str) -> Result<GitOutput, GitError> {
+    validate_integration_source(repository, source_branch)?;
+    run_git(repository, &["merge", "--", source_branch])
+}
+
+/// Rebases the currently checked-out branch onto one local source branch.
+pub(crate) fn rebase_onto_branch(
+    repository: &Path,
+    source_branch: &str,
+) -> Result<GitOutput, GitError> {
+    validate_integration_source(repository, source_branch)?;
+    run_git(repository, &["rebase", "--", source_branch])
+}
+
+/// Restricts merge/rebase sources to existing non-current local branches.
+fn validate_integration_source(repository: &Path, source_branch: &str) -> Result<(), GitError> {
+    validate_branch_name(source_branch)?;
+    let branches = get_branches(repository)?;
+    let has_current_branch = branches.local.iter().any(|branch| branch.is_current);
+    let valid_source = branches
+        .local
+        .iter()
+        .any(|branch| branch.name == source_branch && !branch.is_current);
+
+    if has_current_branch && valid_source {
+        Ok(())
+    } else {
+        Err(GitError::InvalidOperationInput {
+            message: "Choose a non-current local branch to merge or rebase.".to_owned(),
+        })
+    }
+}
+
 /// Rejects missing or NUL-containing branch names before invoking Git.
 fn validate_branch_name(branch_name: &str) -> Result<(), GitError> {
     if branch_name.trim().is_empty() || branch_name.contains('\0') {
@@ -374,6 +408,62 @@ mod tests {
             delete_branch(&repository, "\0bad"),
             Err(GitError::InvalidOperationInput { .. })
         ));
+        assert!(matches!(
+            merge_branch(&repository, "main"),
+            Err(GitError::InvalidOperationInput { .. })
+        ));
+        assert!(matches!(
+            rebase_onto_branch(&repository, "missing"),
+            Err(GitError::InvalidOperationInput { .. })
+        ));
+
+        fs::remove_dir_all(repository).expect("the test repository should be removed");
+    }
+
+    #[test]
+    fn merges_a_local_source_into_the_current_branch() {
+        let repository = temporary_repository("merge");
+        commit_file(&repository, "base.txt", "base\n", "Create base");
+        create_branch(&repository, "feature/merge").expect("the feature branch should be created");
+        commit_file(&repository, "feature.txt", "feature\n", "Create feature");
+        switch_branch(&repository, "main").expect("main should be checked out");
+
+        merge_branch(&repository, "feature/merge").expect("the feature should merge into main");
+
+        assert_eq!(
+            fs::read_to_string(repository.join("feature.txt"))
+                .expect("the merged file should exist"),
+            "feature\n"
+        );
+        assert!(get_branches(&repository)
+            .expect("branches should refresh")
+            .local
+            .iter()
+            .any(|branch| branch.name == "main" && branch.is_current));
+
+        fs::remove_dir_all(repository).expect("the test repository should be removed");
+    }
+
+    #[test]
+    fn rebases_the_current_branch_onto_a_local_source() {
+        let repository = temporary_repository("rebase");
+        commit_file(&repository, "base.txt", "base\n", "Create base");
+        create_branch(&repository, "feature/rebase").expect("the feature branch should be created");
+        commit_file(&repository, "feature.txt", "feature\n", "Create feature");
+        switch_branch(&repository, "main").expect("main should be checked out");
+        commit_file(&repository, "main.txt", "main\n", "Update main");
+
+        rebase_onto_branch(&repository, "feature/rebase")
+            .expect("main should rebase onto the feature branch");
+
+        let ancestry = Command::new("git")
+            .args(["merge-base", "--is-ancestor", "feature/rebase", "HEAD"])
+            .current_dir(&repository)
+            .output()
+            .expect("system Git should be available while building Branchlight");
+        assert!(ancestry.status.success());
+        assert!(repository.join("feature.txt").exists());
+        assert!(repository.join("main.txt").exists());
 
         fs::remove_dir_all(repository).expect("the test repository should be removed");
     }

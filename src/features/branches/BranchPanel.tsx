@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import type { FormEvent } from "react";
+import type { DragEvent, FormEvent } from "react";
 
 import type { Branch, Branches } from "../../types/branch";
 import type { GitError } from "../../types/git";
@@ -19,11 +19,13 @@ type BranchEditor =
   | { mode: "closed" }
   | { mode: "create" }
   | { mode: "rename"; branch: Branch }
-  | { mode: "delete"; branch: Branch };
+  | { mode: "delete"; branch: Branch }
+  | { mode: "integrate"; source: Branch; destination: Branch };
 
 interface BranchPanelProps {
   state: BranchesState;
   operationError: GitError | null;
+  operationNotice: string | null;
   actionsDisabled: boolean;
   busyBranchName: string | null;
   onRefresh: () => void;
@@ -31,6 +33,8 @@ interface BranchPanelProps {
   onCreate: (branchName: string) => Promise<boolean>;
   onRename: (oldName: string, newName: string) => Promise<boolean>;
   onDelete: (branchName: string) => Promise<boolean>;
+  onMerge: (sourceBranch: string) => Promise<boolean>;
+  onRebase: (sourceBranch: string) => Promise<boolean>;
 }
 
 /** Renders one selectable branch ref with checkout affordances for local refs. */
@@ -40,16 +44,26 @@ function BranchItem({
   isRemote,
   isBusy,
   disabled,
+  isDropTarget,
   onSelect,
   onSwitch,
+  onDragStart,
+  onDragEnd,
+  onDragOver,
+  onDrop,
 }: {
   branch: Branch;
   isSelected: boolean;
   isRemote: boolean;
   isBusy: boolean;
   disabled: boolean;
+  isDropTarget: boolean;
   onSelect: () => void;
   onSwitch: () => void;
+  onDragStart: (event: DragEvent<HTMLButtonElement>) => void;
+  onDragEnd: () => void;
+  onDragOver: (event: DragEvent<HTMLButtonElement>) => void;
+  onDrop: (event: DragEvent<HTMLButtonElement>) => void;
 }) {
   const commitLabel = branch.commit?.slice(0, 8) ?? "No commits";
   const trackingLabel = isRemote
@@ -59,7 +73,7 @@ function BranchItem({
   return (
     <li>
       <button
-        className={`branch-item${isSelected ? " branch-item--selected" : ""}`}
+        className={`branch-item${isSelected ? " branch-item--selected" : ""}${isDropTarget ? " branch-item--drop-target" : ""}`}
         type="button"
         title={
           isRemote
@@ -69,12 +83,17 @@ function BranchItem({
         aria-pressed={isSelected}
         aria-current={branch.isCurrent ? "true" : undefined}
         disabled={disabled && !isSelected}
+        draggable={!isRemote && !branch.isCurrent && !disabled}
         onClick={onSelect}
         onDoubleClick={() => {
           if (!isRemote && !branch.isCurrent && !disabled) {
             onSwitch();
           }
         }}
+        onDragStart={onDragStart}
+        onDragEnd={onDragEnd}
+        onDragOver={onDragOver}
+        onDrop={onDrop}
       >
         <span
           className={`branch-dot${branch.isCurrent ? " branch-dot--current" : ""}`}
@@ -113,6 +132,7 @@ function BranchError({ title, error }: { title: string; error: GitError }) {
 export function BranchPanel({
   state,
   operationError,
+  operationNotice,
   actionsDisabled,
   busyBranchName,
   onRefresh,
@@ -120,11 +140,15 @@ export function BranchPanel({
   onCreate,
   onRename,
   onDelete,
+  onMerge,
+  onRebase,
 }: BranchPanelProps) {
   const [selectedRef, setSelectedRef] = useState<string | null>(null);
   const [editor, setEditor] = useState<BranchEditor>({ mode: "closed" });
   const [draftName, setDraftName] = useState("");
+  const [draggedRef, setDraggedRef] = useState<string | null>(null);
   const branches = state.state === "ready" ? state.branches : null;
+  const isRefreshing = state.state === "ready" && state.isRefreshing;
   const allBranches = useMemo(
     () => (branches ? [...branches.local, ...branches.remote] : []),
     [branches],
@@ -135,12 +159,24 @@ export function BranchPanel({
   const selectedLocalBranch = branches?.local.find(
     (branch) => branch.fullRef === selectedRef,
   );
+  const currentBranch = branches?.local.find((branch) => branch.isCurrent);
 
   useEffect(() => {
     if (!branches) {
       setSelectedRef(null);
       setEditor({ mode: "closed" });
+      setDraggedRef(null);
       return;
+    }
+
+    if (
+      editor.mode === "integrate" &&
+      (!branches.local.some(
+        (branch) => branch.fullRef === editor.source.fullRef,
+      ) ||
+        currentBranch?.fullRef !== editor.destination.fullRef)
+    ) {
+      setEditor({ mode: "closed" });
     }
 
     const selectionStillExists = allBranches.some(
@@ -156,7 +192,7 @@ export function BranchPanel({
         setEditor({ mode: "closed" });
       }
     }
-  }, [allBranches, branches, editor.mode, selectedRef]);
+  }, [allBranches, branches, currentBranch?.fullRef, editor, selectedRef]);
 
   const openCreate = () => {
     setDraftName("");
@@ -169,6 +205,72 @@ export function BranchPanel({
     }
     setDraftName(selectedLocalBranch.name);
     setEditor({ mode: "rename", branch: selectedLocalBranch });
+  };
+
+  /** Opens the same explicit merge/rebase chooser for drag and keyboard input. */
+  const openIntegration = (source: Branch) => {
+    if (
+      !currentBranch ||
+      source.isCurrent ||
+      actionsDisabled ||
+      isRefreshing
+    ) {
+      return;
+    }
+
+    setSelectedRef(source.fullRef);
+    setEditor({ mode: "integrate", source, destination: currentBranch });
+  };
+
+  /** Tracks only local non-current branches as valid drag sources. */
+  const startBranchDrag = (
+    event: DragEvent<HTMLButtonElement>,
+    branch: Branch,
+  ) => {
+    if (branch.isCurrent || actionsDisabled || isRefreshing) {
+      event.preventDefault();
+      return;
+    }
+
+    setDraggedRef(branch.fullRef);
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", branch.fullRef);
+  };
+
+  /** Allows a drop only when the target is the current local branch. */
+  const allowCurrentBranchDrop = (
+    event: DragEvent<HTMLButtonElement>,
+    destination: Branch,
+  ) => {
+    if (!branches) {
+      return;
+    }
+    const source = branches.local.find(
+      (branch) => branch.fullRef === draggedRef,
+    );
+    if (destination.isCurrent && source && !source.isCurrent) {
+      event.preventDefault();
+      event.dataTransfer.dropEffect = "move";
+    }
+  };
+
+  /** Converts a valid local-branch drop into the explicit action chooser. */
+  const dropOnCurrentBranch = (
+    event: DragEvent<HTMLButtonElement>,
+    destination: Branch,
+  ) => {
+    event.preventDefault();
+    if (!branches) {
+      setDraggedRef(null);
+      return;
+    }
+    const source = branches.local.find(
+      (branch) => branch.fullRef === draggedRef,
+    );
+    setDraggedRef(null);
+    if (destination.isCurrent && source && !source.isCurrent) {
+      openIntegration(source);
+    }
   };
 
   const submitName = async (event: FormEvent<HTMLFormElement>) => {
@@ -201,6 +303,20 @@ export function BranchPanel({
     }
   };
 
+  /** Runs the chosen integration semantics and closes the chooser afterward. */
+  const integrateBranch = async (kind: "merge" | "rebase") => {
+    if (editor.mode !== "integrate" || actionsDisabled) {
+      return;
+    }
+
+    if (kind === "merge") {
+      await onMerge(editor.source.name);
+    } else {
+      await onRebase(editor.source.name);
+    }
+    setEditor({ mode: "closed" });
+  };
+
   if (state.state === "idle" || state.state === "loading") {
     return (
       <aside className="branch-panel branch-panel--loading" aria-live="polite">
@@ -229,8 +345,6 @@ export function BranchPanel({
   if (!branches) {
     return null;
   }
-
-  const isRefreshing = state.isRefreshing;
 
   return (
     <aside className="branch-panel" aria-labelledby="branches-title">
@@ -265,6 +379,12 @@ export function BranchPanel({
         )
       )}
 
+      {!operationError && operationNotice && (
+        <div className="branch-notice" role="status">
+          {operationNotice}
+        </div>
+      )}
+
       <div className="branch-groups">
         <section className="branch-group" aria-labelledby="local-branches-title">
           <div className="branch-group__heading">
@@ -283,8 +403,13 @@ export function BranchPanel({
                   isRemote={false}
                   isBusy={branch.name === busyBranchName}
                   disabled={actionsDisabled || isRefreshing}
+                  isDropTarget={branch.isCurrent && draggedRef !== null}
                   onSelect={() => setSelectedRef(branch.fullRef)}
                   onSwitch={() => void onSwitch(branch.name)}
+                  onDragStart={(event) => startBranchDrag(event, branch)}
+                  onDragEnd={() => setDraggedRef(null)}
+                  onDragOver={(event) => allowCurrentBranchDrop(event, branch)}
+                  onDrop={(event) => dropOnCurrentBranch(event, branch)}
                 />
               ))}
             </ul>
@@ -308,8 +433,13 @@ export function BranchPanel({
                   isRemote
                   isBusy={false}
                   disabled={actionsDisabled || isRefreshing}
+                  isDropTarget={false}
                   onSelect={() => setSelectedRef(branch.fullRef)}
                   onSwitch={() => undefined}
+                  onDragStart={(event) => event.preventDefault()}
+                  onDragEnd={() => undefined}
+                  onDragOver={() => undefined}
+                  onDrop={() => undefined}
                 />
               ))}
             </ul>
@@ -335,6 +465,15 @@ export function BranchPanel({
             onClick={openRename}
           >
             Rename
+          </button>
+          <button
+            type="button"
+            disabled={
+              actionsDisabled || isRefreshing || selectedLocalBranch.isCurrent
+            }
+            onClick={() => openIntegration(selectedLocalBranch)}
+          >
+            Merge / rebase…
           </button>
           <button
             className="branch-action--danger"
@@ -411,6 +550,46 @@ export function BranchPanel({
               onClick={() => void confirmDelete()}
             >
               Delete safely
+            </button>
+            <button
+              type="button"
+              disabled={actionsDisabled}
+              onClick={() => setEditor({ mode: "closed" })}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {editor.mode === "integrate" && (
+        <div
+          className="branch-editor branch-editor--integrate"
+          role="dialog"
+          aria-labelledby="branch-integrate-title"
+          aria-describedby="branch-integrate-description"
+        >
+          <strong id="branch-integrate-title">
+            {editor.source.name} → {editor.destination.name}
+          </strong>
+          <p id="branch-integrate-description">
+            Choose how the source branch should integrate with the current branch.
+          </p>
+          <div className="branch-integrate-actions">
+            <button
+              className="branch-editor__primary"
+              type="button"
+              disabled={actionsDisabled}
+              onClick={() => void integrateBranch("merge")}
+            >
+              Merge {editor.source.name} into {editor.destination.name}
+            </button>
+            <button
+              type="button"
+              disabled={actionsDisabled}
+              onClick={() => void integrateBranch("rebase")}
+            >
+              Rebase {editor.destination.name} onto {editor.source.name}
             </button>
             <button
               type="button"
