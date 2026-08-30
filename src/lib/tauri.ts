@@ -5,6 +5,7 @@ import type { GitError, GitErrorCode, GitOutput } from "../types/git";
 import type { Branches } from "../types/branch";
 import type { Repository } from "../types/repository";
 import type { RepositoryStatus } from "../types/status";
+import type { Stash } from "../types/stash";
 
 const gitErrorCodes: GitErrorCode[] = [
   "workingDirectoryUnavailable",
@@ -15,6 +16,7 @@ const gitErrorCodes: GitErrorCode[] = [
   "invalidRepositoryResponse",
   "invalidStatusResponse",
   "invalidBranchesResponse",
+  "invalidStashesResponse",
   "invalidOperationInput",
 ];
 
@@ -113,6 +115,31 @@ export function pullRemote(path: string): Promise<GitOutput> {
 /** Pushes the current branch to its configured upstream. */
 export function pushRemote(path: string): Promise<GitOutput> {
   return invoke<GitOutput>("push_remote", { path });
+}
+
+/** Lists current stash entries using typed machine-readable fields. */
+export function getStashes(path: string): Promise<Stash[]> {
+  return invoke<Stash[]>("get_stashes", { path });
+}
+
+/** Creates a stash with an optional message. */
+export function createStash(path: string, message: string): Promise<GitOutput> {
+  return invoke<GitOutput>("create_stash", { path, message });
+}
+
+/** Applies one stash without removing it. */
+export function applyStash(path: string, stash: Stash): Promise<GitOutput> {
+  return invoke<GitOutput>("apply_stash", { path, stash });
+}
+
+/** Applies and removes one stash when Git succeeds. */
+export function popStash(path: string, stash: Stash): Promise<GitOutput> {
+  return invoke<GitOutput>("pop_stash", { path, stash });
+}
+
+/** Permanently removes one selected stash entry. */
+export function dropStash(path: string, stash: Stash): Promise<GitOutput> {
+  return invoke<GitOutput>("drop_stash", { path, stash });
 }
 
 /** Stages all changes for one repository-relative path. */

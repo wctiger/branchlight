@@ -19,6 +19,11 @@ pub fn run() {
             commands::operations::stage_file,
             commands::operations::unstage_file,
             commands::operations::commit,
+            commands::stashes::get_stashes,
+            commands::stashes::create_stash,
+            commands::stashes::apply_stash,
+            commands::stashes::pop_stash,
+            commands::stashes::drop_stash,
             commands::remotes::fetch_remote,
             commands::remotes::pull_remote,
             commands::remotes::push_remote

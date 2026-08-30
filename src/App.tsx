@@ -3,16 +3,21 @@ import type { FormEvent } from "react";
 
 import "./App.css";
 import {
+  applyStash,
   chooseRepositoryFolder,
   commitChanges,
   createBranch,
+  createStash,
   deleteBranch,
+  dropStash,
   fetchRemote,
   getBranches,
   getGitVersion,
   getRepositoryStatus,
+  getStashes,
   normalizeGitError,
   openRepository,
+  popStash,
   pullRemote,
   pushRemote,
   renameBranch,
@@ -24,8 +29,13 @@ import {
   BranchPanel,
   type BranchesState,
 } from "./features/branches/BranchPanel";
+import {
+  StashPanel,
+  type StashesState,
+} from "./features/stashes/StashPanel";
 import type { GitError, GitOutput } from "./types/git";
 import type { Repository } from "./types/repository";
+import type { Stash } from "./types/stash";
 import type {
   BranchStatus,
   FileChange,
@@ -62,9 +72,19 @@ type RepositoryOperation =
   | { state: "deleting"; branchName: string }
   | { state: "fetching" }
   | { state: "pulling" }
-  | { state: "pushing" };
+  | { state: "pushing" }
+  | { state: "stashing" }
+  | { state: "applyingStash"; stashRef: string }
+  | { state: "poppingStash"; stashRef: string }
+  | { state: "droppingStash"; stashRef: string };
 
 type RemoteOperation = "fetch" | "pull" | "push";
+
+type StashMutation =
+  | { kind: "create"; message: string }
+  | { kind: "apply"; stash: Stash }
+  | { kind: "pop"; stash: Stash }
+  | { kind: "drop"; stash: Stash };
 
 type BranchMutation =
   | { kind: "switch"; branchName: string }
@@ -276,24 +296,36 @@ function ChangeSection({
 /** Renders repository changes and coordinates the daily commit workflow. */
 function RepositoryWorkspace({
   state,
+  stashesState,
   onRefresh,
   operation,
   operationError,
+  stashOperationError,
   commitMessage,
   onCommitMessageChange,
   onStage,
   onUnstage,
   onCommit,
+  onCreateStash,
+  onApplyStash,
+  onPopStash,
+  onDropStash,
 }: {
   state: RepositoryStatusState;
+  stashesState: StashesState;
   onRefresh: () => void;
   operation: RepositoryOperation;
   operationError: GitError | null;
+  stashOperationError: GitError | null;
   commitMessage: string;
   onCommitMessageChange: (message: string) => void;
   onStage: (path: string) => void;
   onUnstage: (path: string) => void;
   onCommit: (event: FormEvent<HTMLFormElement>) => void;
+  onCreateStash: (message: string) => Promise<boolean>;
+  onApplyStash: (stash: Stash) => Promise<boolean>;
+  onPopStash: (stash: Stash) => Promise<boolean>;
+  onDropStash: (stash: Stash) => Promise<boolean>;
 }) {
   if (state.state === "idle" || state.state === "loading") {
     return (
@@ -338,6 +370,20 @@ function RepositoryWorkspace({
         : commitMessage.trim().length === 0
           ? "Enter a message that describes this commit."
           : `${status.staged.length} ${status.staged.length === 1 ? "file" : "files"} will be committed.`;
+  const busyStashReference =
+    operation.state === "applyingStash" ||
+    operation.state === "poppingStash" ||
+    operation.state === "droppingStash"
+      ? operation.stashRef
+      : null;
+  const busyStashOperation =
+    operation.state === "applyingStash"
+      ? "apply"
+      : operation.state === "poppingStash"
+        ? "pop"
+        : operation.state === "droppingStash"
+          ? "drop"
+          : null;
 
   return (
     <section className="repository-workspace" aria-labelledby="changes-title">
@@ -380,6 +426,20 @@ function RepositoryWorkspace({
           )}
         </div>
       )}
+
+      <StashPanel
+        state={stashesState}
+        operationError={stashOperationError}
+        actionsDisabled={actionsDisabled}
+        isCreating={operation.state === "stashing"}
+        busyReference={busyStashReference}
+        busyOperation={busyStashOperation}
+        onRefresh={onRefresh}
+        onCreate={onCreateStash}
+        onApply={onApplyStash}
+        onPop={onPopStash}
+        onDrop={onDropStash}
+      />
 
       <div className="changes-grid">
         <ChangeSection
@@ -473,10 +533,12 @@ function RepositoryScreen({
   openState,
   statusState,
   branchesState,
+  stashesState,
   operation,
   changeOperationError,
   branchOperationError,
   remoteOperationError,
+  stashOperationError,
   commitMessage,
   onOpenRepository,
   onRefresh,
@@ -489,16 +551,22 @@ function RepositoryScreen({
   onRenameBranch,
   onDeleteBranch,
   onRemoteOperation,
+  onCreateStash,
+  onApplyStash,
+  onPopStash,
+  onDropStash,
 }: {
   repository: Repository;
   repositoryError: GitError | null;
   openState: OpenState;
   statusState: RepositoryStatusState;
   branchesState: BranchesState;
+  stashesState: StashesState;
   operation: RepositoryOperation;
   changeOperationError: GitError | null;
   branchOperationError: GitError | null;
   remoteOperationError: GitError | null;
+  stashOperationError: GitError | null;
   commitMessage: string;
   onOpenRepository: () => void;
   onRefresh: () => void;
@@ -511,13 +579,19 @@ function RepositoryScreen({
   onRenameBranch: (oldName: string, newName: string) => Promise<boolean>;
   onDeleteBranch: (branchName: string) => Promise<boolean>;
   onRemoteOperation: (kind: RemoteOperation) => void;
+  onCreateStash: (message: string) => Promise<boolean>;
+  onApplyStash: (stash: Stash) => Promise<boolean>;
+  onPopStash: (stash: Stash) => Promise<boolean>;
+  onDropStash: (stash: Stash) => Promise<boolean>;
 }) {
   const status = statusState.state === "ready" ? statusState.status : null;
   const isRefreshing =
     statusState.state === "loading" ||
     (statusState.state === "ready" && statusState.isRefreshing) ||
     branchesState.state === "loading" ||
-    (branchesState.state === "ready" && branchesState.isRefreshing);
+    (branchesState.state === "ready" && branchesState.isRefreshing) ||
+    stashesState.state === "loading" ||
+    (stashesState.state === "ready" && stashesState.isRefreshing);
   const isMutating = operation.state !== "idle";
   const busyBranchName =
     operation.state === "switching" ||
@@ -582,6 +656,14 @@ function RepositoryScreen({
           <button
             className="secondary-button"
             type="button"
+            disabled={!status || isRefreshing || isMutating || openState !== "idle"}
+            onClick={() => document.getElementById("stash-message")?.focus()}
+          >
+            Stash
+          </button>
+          <button
+            className="secondary-button"
+            type="button"
             disabled={isRefreshing || isMutating || openState !== "idle"}
             aria-busy={isRefreshing}
             onClick={onRefresh}
@@ -631,14 +713,20 @@ function RepositoryScreen({
         />
         <RepositoryWorkspace
           state={statusState}
+          stashesState={stashesState}
           onRefresh={onRefresh}
           operation={operation}
           operationError={changeOperationError}
+          stashOperationError={stashOperationError}
           commitMessage={commitMessage}
           onCommitMessageChange={onCommitMessageChange}
           onStage={onStage}
           onUnstage={onUnstage}
           onCommit={onCommit}
+          onCreateStash={onCreateStash}
+          onApplyStash={onApplyStash}
+          onPopStash={onPopStash}
+          onDropStash={onDropStash}
         />
       </div>
     </main>
@@ -658,6 +746,9 @@ function App() {
   const [branchesState, setBranchesState] = useState<BranchesState>({
     state: "idle",
   });
+  const [stashesState, setStashesState] = useState<StashesState>({
+    state: "idle",
+  });
   const [operation, setOperation] = useState<RepositoryOperation>({
     state: "idle",
   });
@@ -667,9 +758,12 @@ function App() {
     useState<GitError | null>(null);
   const [remoteOperationError, setRemoteOperationError] =
     useState<GitError | null>(null);
+  const [stashOperationError, setStashOperationError] =
+    useState<GitError | null>(null);
   const [commitMessage, setCommitMessage] = useState("");
   const statusRequestId = useRef(0);
   const branchesRequestId = useRef(0);
+  const stashesRequestId = useRef(0);
 
   const checkGitVersion = useCallback(async () => {
     setGitStatus({ state: "checking" });
@@ -760,15 +854,53 @@ function App() {
     }
   }, []);
 
+  /** Refreshes stash entries while retaining the last successful snapshot on failure. */
+  const refreshStashes = useCallback(async (repositoryPath: string) => {
+    const requestId = ++stashesRequestId.current;
+    setStashesState((current) =>
+      current.state === "ready"
+        ? { ...current, isRefreshing: true, refreshError: null }
+        : { state: "loading" },
+    );
+
+    try {
+      const stashes = await getStashes(repositoryPath);
+      if (requestId === stashesRequestId.current) {
+        setStashesState({
+          state: "ready",
+          stashes,
+          isRefreshing: false,
+          refreshError: null,
+        });
+      }
+    } catch (error) {
+      const normalizedError = normalizeGitError(error);
+      setStashesState((current) => {
+        if (requestId !== stashesRequestId.current) {
+          return current;
+        }
+
+        return current.state === "ready"
+          ? {
+              ...current,
+              isRefreshing: false,
+              refreshError: normalizedError,
+            }
+          : { state: "error", error: normalizedError };
+      });
+    }
+  }, []);
+
   /** Refreshes every repository view after external or in-app Git changes. */
   const refreshRepositoryState = useCallback(
     async (repositoryPath: string) => {
       await Promise.all([
         refreshRepositoryStatus(repositoryPath),
         refreshBranches(repositoryPath),
+        refreshStashes(repositoryPath),
       ]);
     },
-    [refreshBranches, refreshRepositoryStatus],
+    [refreshBranches, refreshRepositoryStatus, refreshStashes],
   );
 
   useEffect(() => {
@@ -795,12 +927,15 @@ function App() {
       const openedRepository = await openRepository(selectedPath);
       statusRequestId.current += 1;
       branchesRequestId.current += 1;
+      stashesRequestId.current += 1;
       setRepositoryStatus({ state: "idle" });
       setBranchesState({ state: "idle" });
+      setStashesState({ state: "idle" });
       setOperation({ state: "idle" });
       setChangeOperationError(null);
       setBranchOperationError(null);
       setRemoteOperationError(null);
+      setStashOperationError(null);
       setCommitMessage("");
       setRepository(openedRepository);
     } catch (error) {
@@ -956,6 +1091,47 @@ function App() {
     [operation.state, refreshRepositoryState, repository],
   );
 
+  /** Runs one stash mutation and refreshes Git-backed state even after conflicts. */
+  const handleStashMutation = useCallback(
+    async (mutation: StashMutation): Promise<boolean> => {
+      if (!repository || operation.state !== "idle") {
+        return false;
+      }
+
+      setStashOperationError(null);
+      setOperation(
+        mutation.kind === "create"
+          ? { state: "stashing" }
+          : mutation.kind === "apply"
+            ? { state: "applyingStash", stashRef: mutation.stash.reference }
+            : mutation.kind === "pop"
+              ? { state: "poppingStash", stashRef: mutation.stash.reference }
+              : { state: "droppingStash", stashRef: mutation.stash.reference },
+      );
+
+      let succeeded = false;
+      try {
+        if (mutation.kind === "create") {
+          await createStash(repository.path, mutation.message);
+        } else if (mutation.kind === "apply") {
+          await applyStash(repository.path, mutation.stash);
+        } else if (mutation.kind === "pop") {
+          await popStash(repository.path, mutation.stash);
+        } else {
+          await dropStash(repository.path, mutation.stash);
+        }
+        succeeded = true;
+      } catch (error) {
+        setStashOperationError(normalizeGitError(error));
+      }
+
+      await refreshRepositoryState(repository.path);
+      setOperation({ state: "idle" });
+      return succeeded;
+    },
+    [operation.state, refreshRepositoryState, repository],
+  );
+
   if (repository) {
     return (
       <RepositoryScreen
@@ -964,16 +1140,19 @@ function App() {
         openState={openState}
         statusState={repositoryStatus}
         branchesState={branchesState}
+        stashesState={stashesState}
         operation={operation}
         changeOperationError={changeOperationError}
         branchOperationError={branchOperationError}
         remoteOperationError={remoteOperationError}
+        stashOperationError={stashOperationError}
         commitMessage={commitMessage}
         onOpenRepository={() => void handleOpenRepository()}
         onRefresh={() => {
           setChangeOperationError(null);
           setBranchOperationError(null);
           setRemoteOperationError(null);
+          setStashOperationError(null);
           void refreshRepositoryState(repository.path);
         }}
         onCommitMessageChange={setCommitMessage}
@@ -993,6 +1172,18 @@ function App() {
           handleBranchMutation({ kind: "delete", branchName })
         }
         onRemoteOperation={(kind) => void handleRemoteOperation(kind)}
+        onCreateStash={(message) =>
+          handleStashMutation({ kind: "create", message })
+        }
+        onApplyStash={(stash) =>
+          handleStashMutation({ kind: "apply", stash })
+        }
+        onPopStash={(stash) =>
+          handleStashMutation({ kind: "pop", stash })
+        }
+        onDropStash={(stash) =>
+          handleStashMutation({ kind: "drop", stash })
+        }
       />
     );
   }
