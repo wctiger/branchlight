@@ -96,14 +96,14 @@ function BranchItem({
   );
 }
 
-/** Displays compact branch-operation errors in the constrained sidebar. */
-function BranchError({ error }: { error: GitError }) {
+/** Displays compact, contextual Git errors in the constrained sidebar. */
+function BranchError({ title, error }: { title: string; error: GitError }) {
   const details =
     error.output?.stderr.trim() || error.output?.stdout.trim() || undefined;
 
   return (
     <div className="branch-error" role="alert">
-      <strong>Git couldn’t complete that branch action.</strong>
+      <strong>{title}</strong>
       <p>{details ?? error.message}</p>
     </div>
   );
@@ -213,7 +213,7 @@ export function BranchPanel({
   if (state.state === "error") {
     return (
       <aside className="branch-panel branch-panel--error">
-        <BranchError error={state.error} />
+        <BranchError title="Git couldn’t load branches." error={state.error} />
         <button
           className="branch-text-button"
           type="button"
@@ -230,7 +230,6 @@ export function BranchPanel({
     return null;
   }
 
-  const branchError = operationError ?? state.refreshError;
   const isRefreshing = state.isRefreshing;
 
   return (
@@ -252,7 +251,19 @@ export function BranchPanel({
         </button>
       </header>
 
-      {branchError && <BranchError error={branchError} />}
+      {operationError ? (
+        <BranchError
+          title="Git couldn’t complete that branch action."
+          error={operationError}
+        />
+      ) : (
+        state.refreshError && (
+          <BranchError
+            title="Git couldn’t refresh branches."
+            error={state.refreshError}
+          />
+        )
+      )}
 
       <div className="branch-groups">
         <section className="branch-group" aria-labelledby="local-branches-title">
@@ -382,9 +393,16 @@ export function BranchPanel({
       )}
 
       {editor.mode === "delete" && (
-        <div className="branch-editor branch-editor--delete" role="alertdialog">
-          <strong>Delete {editor.branch.name}?</strong>
-          <p>Git will refuse if the branch is not fully merged.</p>
+        <div
+          className="branch-editor branch-editor--delete"
+          role="alertdialog"
+          aria-labelledby="branch-delete-title"
+          aria-describedby="branch-delete-description"
+        >
+          <strong id="branch-delete-title">Delete {editor.branch.name}?</strong>
+          <p id="branch-delete-description">
+            Git will refuse if the branch is not fully merged.
+          </p>
           <div>
             <button
               className="branch-editor__danger"
