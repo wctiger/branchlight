@@ -67,6 +67,7 @@ const fileStatusSymbols: Record<FileStatus, string> = {
   conflicted: "!",
 };
 
+/** Renders the compact Branchlight brand mark used across app screens. */
 function BranchlightMark() {
   return (
     <span className="brand-mark" aria-hidden="true">
@@ -77,6 +78,7 @@ function BranchlightMark() {
   );
 }
 
+/** Renders the folder glyph used by repository picker actions. */
 function FolderIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -85,6 +87,7 @@ function FolderIcon() {
   );
 }
 
+/** Renders the refresh glyph used by status reload actions. */
 function RefreshIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -93,6 +96,7 @@ function RefreshIcon() {
   );
 }
 
+/** Distinguishes stage and unstage actions without relying on color. */
 function StageIcon({ direction }: { direction: "stage" | "unstage" }) {
   return (
     <span className="stage-icon" aria-hidden="true">
@@ -101,6 +105,7 @@ function StageIcon({ direction }: { direction: "stage" | "unstage" }) {
   );
 }
 
+/** Presents a structured Git error and any captured command output. */
 function ErrorNotice({
   error,
   title = "That folder couldn’t be opened",
@@ -125,6 +130,7 @@ function ErrorNotice({
   );
 }
 
+/** Summarizes the checked-out branch and its upstream divergence. */
 function BranchSummary({ branch }: { branch: BranchStatus }) {
   const branchLabel = branch.isDetached
     ? "Detached HEAD"
@@ -154,6 +160,7 @@ function BranchSummary({ branch }: { branch: BranchStatus }) {
   );
 }
 
+/** Renders one status group and its optional whole-file action. */
 function ChangeSection({
   title,
   description,
@@ -239,6 +246,7 @@ function ChangeSection({
   );
 }
 
+/** Renders repository changes and coordinates the daily commit workflow. */
 function RepositoryWorkspace({
   state,
   onRefresh,
@@ -431,6 +439,7 @@ function RepositoryWorkspace({
   );
 }
 
+/** Frames the active repository status and repository-level actions. */
 function RepositoryScreen({
   repository,
   repositoryError,
@@ -540,6 +549,7 @@ function RepositoryScreen({
   );
 }
 
+/** Owns system Git, repository, status, and mutation state for the app. */
 function App() {
   const [gitStatus, setGitStatus] = useState<GitStatus>({
     state: "checking",
@@ -571,6 +581,7 @@ function App() {
     void checkGitVersion();
   }, [checkGitVersion]);
 
+  /** Refreshes Git state while retaining the last successful snapshot on failure. */
   const refreshRepositoryStatus = useCallback(async (repositoryPath: string) => {
     const requestId = ++statusRequestId.current;
     setRepositoryStatus((current) =>
@@ -642,6 +653,7 @@ function App() {
     }
   }, [gitStatus.state, openState]);
 
+  /** Runs one whole-file mutation and refreshes Git state after success. */
   const handleFileOperation = useCallback(
     async (kind: "stage" | "unstage", filePath: string) => {
       if (!repository || operation.state !== "idle") {
@@ -671,6 +683,7 @@ function App() {
     [operation.state, refreshRepositoryStatus, repository],
   );
 
+  /** Creates a commit only when the message is valid, then refreshes Git state. */
   const handleCommit = useCallback(
     async (event: FormEvent<HTMLFormElement>) => {
       event.preventDefault();

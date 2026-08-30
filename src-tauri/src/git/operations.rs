@@ -13,7 +13,14 @@ pub(crate) fn stage_file(repository: &Path, path: &str) -> Result<GitOutput, Git
 /// Removes every staged change for one path from the index.
 pub(crate) fn unstage_file(repository: &Path, path: &str) -> Result<GitOutput, GitError> {
     validate_file_path(path)?;
-    run_git(repository, &["restore", "--staged", "--", path])
+
+    match run_git(repository, &["rev-parse", "--verify", "--quiet", "HEAD"]) {
+        Ok(_) => run_git(repository, &["restore", "--staged", "--", path]),
+        Err(GitError::CommandFailed { output, .. }) if output.exit_code == Some(1) => {
+            run_git(repository, &["rm", "--cached", "--", path])
+        }
+        Err(error) => Err(error),
+    }
 }
 
 /// Creates a commit with the repository's configured Git identity.
@@ -27,6 +34,7 @@ pub(crate) fn commit(repository: &Path, message: &str) -> Result<GitOutput, GitE
     run_git(repository, &["commit", "-m", message])
 }
 
+/// Rejects paths that cannot identify a file for an index operation.
 fn validate_file_path(path: &str) -> Result<(), GitError> {
     if path.is_empty() {
         Err(GitError::InvalidOperationInput {
@@ -103,6 +111,32 @@ mod tests {
             .expect("system Git should be available while building Branchlight");
         assert!(cached_diff.status.success());
         assert!(cached_diff.stdout.is_empty());
+
+        fs::remove_dir_all(repository).expect("the test repository should be removed");
+    }
+
+    #[test]
+    fn unstages_a_new_file_before_the_first_commit_without_removing_it() {
+        let repository = temporary_repository("unborn-head");
+        let path = "first.txt";
+        fs::write(repository.join(path), "first\n")
+            .expect("the pre-commit test file should be written");
+
+        stage_file(&repository, path).expect("the new file should be staged");
+        unstage_file(&repository, path).expect("the new file should be unstaged");
+
+        let cached_paths = Command::new("git")
+            .args(["ls-files", "--cached", "--", path])
+            .current_dir(&repository)
+            .output()
+            .expect("system Git should be available while building Branchlight");
+        assert!(cached_paths.status.success());
+        assert!(cached_paths.stdout.is_empty());
+        assert_eq!(
+            fs::read_to_string(repository.join(path))
+                .expect("the unstaged file should remain in the worktree"),
+            "first\n"
+        );
 
         fs::remove_dir_all(repository).expect("the test repository should be removed");
     }
