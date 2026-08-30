@@ -14,6 +14,7 @@ export type GitErrorCode =
   | "invalidStatusResponse"
   | "invalidBranchesResponse"
   | "invalidStashesResponse"
+  | "invalidHistoryResponse"
   | "invalidOperationInput"
   | "unknown";
 

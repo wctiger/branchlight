@@ -6,6 +6,7 @@ import type { Branches } from "../types/branch";
 import type { Repository } from "../types/repository";
 import type { RepositoryStatus } from "../types/status";
 import type { Stash } from "../types/stash";
+import type { Commit } from "../types/history";
 
 const gitErrorCodes: GitErrorCode[] = [
   "workingDirectoryUnavailable",
@@ -17,6 +18,7 @@ const gitErrorCodes: GitErrorCode[] = [
   "invalidStatusResponse",
   "invalidBranchesResponse",
   "invalidStashesResponse",
+  "invalidHistoryResponse",
   "invalidOperationInput",
 ];
 
@@ -146,6 +148,11 @@ export function pushRemote(path: string): Promise<GitOutput> {
 /** Lists current stash entries using typed machine-readable fields. */
 export function getStashes(path: string): Promise<Stash[]> {
   return invoke<Stash[]>("get_stashes", { path });
+}
+
+/** Returns the latest topologically ordered commits reachable from all refs. */
+export function getHistory(path: string): Promise<Commit[]> {
+  return invoke<Commit[]>("get_history", { path });
 }
 
 /** Creates a stash with an optional message. */

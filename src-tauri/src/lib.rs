@@ -20,6 +20,7 @@ pub fn run() {
             commands::branches::rebase_onto_branch,
             commands::conflicts::abort_merge,
             commands::conflicts::abort_rebase,
+            commands::history::get_history,
             commands::operations::stage_file,
             commands::operations::unstage_file,
             commands::operations::commit,

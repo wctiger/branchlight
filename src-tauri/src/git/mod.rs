@@ -1,5 +1,6 @@
 mod branches;
 mod conflicts;
+mod history;
 mod operations;
 mod remotes;
 mod repository;
@@ -13,6 +14,7 @@ pub(crate) use branches::{
     switch_branch,
 };
 pub(crate) use conflicts::{abort_merge, abort_rebase};
+pub(crate) use history::get_history;
 pub(crate) use operations::{commit, stage_file, unstage_file};
 pub(crate) use remotes::{fetch, pull, push};
 pub(crate) use repository::open_repository;
