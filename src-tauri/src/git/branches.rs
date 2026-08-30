@@ -72,7 +72,8 @@ pub(crate) fn delete_branch(repository: &Path, branch_name: &str) -> Result<GitO
 /// Merges one local source branch into the currently checked-out branch.
 pub(crate) fn merge_branch(repository: &Path, source_branch: &str) -> Result<GitOutput, GitError> {
     validate_integration_source(repository, source_branch)?;
-    run_git(repository, &["merge", "--", source_branch])
+    let source_ref = format!("refs/heads/{source_branch}");
+    run_git(repository, &["merge", "--", &source_ref])
 }
 
 /// Rebases the currently checked-out branch onto one local source branch.
@@ -81,7 +82,8 @@ pub(crate) fn rebase_onto_branch(
     source_branch: &str,
 ) -> Result<GitOutput, GitError> {
     validate_integration_source(repository, source_branch)?;
-    run_git(repository, &["rebase", "--", source_branch])
+    let source_ref = format!("refs/heads/{source_branch}");
+    run_git(repository, &["rebase", "--", &source_ref])
 }
 
 /// Restricts merge/rebase sources to existing non-current local branches.
@@ -427,6 +429,12 @@ mod tests {
         create_branch(&repository, "feature/merge").expect("the feature branch should be created");
         commit_file(&repository, "feature.txt", "feature\n", "Create feature");
         switch_branch(&repository, "main").expect("main should be checked out");
+        let tag = Command::new("git")
+            .args(["tag", "feature/merge"])
+            .current_dir(&repository)
+            .output()
+            .expect("system Git should be available while building Branchlight");
+        assert!(tag.status.success());
 
         merge_branch(&repository, "feature/merge").expect("the feature should merge into main");
 
@@ -452,12 +460,23 @@ mod tests {
         commit_file(&repository, "feature.txt", "feature\n", "Create feature");
         switch_branch(&repository, "main").expect("main should be checked out");
         commit_file(&repository, "main.txt", "main\n", "Update main");
+        let tag = Command::new("git")
+            .args(["tag", "feature/rebase"])
+            .current_dir(&repository)
+            .output()
+            .expect("system Git should be available while building Branchlight");
+        assert!(tag.status.success());
 
         rebase_onto_branch(&repository, "feature/rebase")
             .expect("main should rebase onto the feature branch");
 
         let ancestry = Command::new("git")
-            .args(["merge-base", "--is-ancestor", "feature/rebase", "HEAD"])
+            .args([
+                "merge-base",
+                "--is-ancestor",
+                "refs/heads/feature/rebase",
+                "HEAD",
+            ])
             .current_dir(&repository)
             .output()
             .expect("system Git should be available while building Branchlight");

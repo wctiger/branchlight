@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { DragEvent, FormEvent } from "react";
 
 import type { Branch, Branches } from "../../types/branch";
@@ -147,6 +147,9 @@ export function BranchPanel({
   const [editor, setEditor] = useState<BranchEditor>({ mode: "closed" });
   const [draftName, setDraftName] = useState("");
   const [draggedRef, setDraggedRef] = useState<string | null>(null);
+  const integrationTriggerRef = useRef<HTMLButtonElement>(null);
+  const integrationPrimaryActionRef = useRef<HTMLButtonElement>(null);
+  const restoreIntegrationFocusRef = useRef(false);
   const branches = state.state === "ready" ? state.branches : null;
   const isRefreshing = state.state === "ready" && state.isRefreshing;
   const allBranches = useMemo(
@@ -160,6 +163,15 @@ export function BranchPanel({
     (branch) => branch.fullRef === selectedRef,
   );
   const currentBranch = branches?.local.find((branch) => branch.isCurrent);
+
+  useEffect(() => {
+    if (editor.mode === "integrate") {
+      integrationPrimaryActionRef.current?.focus();
+    } else if (restoreIntegrationFocusRef.current) {
+      restoreIntegrationFocusRef.current = false;
+      integrationTriggerRef.current?.focus();
+    }
+  }, [editor.mode]);
 
   useEffect(() => {
     if (!branches) {
@@ -218,8 +230,15 @@ export function BranchPanel({
       return;
     }
 
+    restoreIntegrationFocusRef.current = false;
     setSelectedRef(source.fullRef);
     setEditor({ mode: "integrate", source, destination: currentBranch });
+  };
+
+  /** Closes the integration chooser and restores its keyboard entry point. */
+  const closeIntegration = () => {
+    restoreIntegrationFocusRef.current = true;
+    setEditor({ mode: "closed" });
   };
 
   /** Tracks only local non-current branches as valid drag sources. */
@@ -314,7 +333,7 @@ export function BranchPanel({
     } else {
       await onRebase(editor.source.name);
     }
-    setEditor({ mode: "closed" });
+    closeIntegration();
   };
 
   if (state.state === "idle" || state.state === "loading") {
@@ -467,6 +486,7 @@ export function BranchPanel({
             Rename
           </button>
           <button
+            ref={integrationTriggerRef}
             type="button"
             disabled={
               actionsDisabled || isRefreshing || selectedLocalBranch.isCurrent
@@ -577,6 +597,7 @@ export function BranchPanel({
           </p>
           <div className="branch-integrate-actions">
             <button
+              ref={integrationPrimaryActionRef}
               className="branch-editor__primary"
               type="button"
               disabled={actionsDisabled}
@@ -594,7 +615,7 @@ export function BranchPanel({
             <button
               type="button"
               disabled={actionsDisabled}
-              onClick={() => setEditor({ mode: "closed" })}
+              onClick={closeIntegration}
             >
               Cancel
             </button>
