@@ -72,8 +72,10 @@ export function HistoryPanel({ state, onRefresh }: HistoryPanelProps) {
     Math.max(0, graph.laneCount - 1) * GRAPH_LANE_SPACING +
     12;
   const graphHeight = commits.length * HISTORY_ROW_HEIGHT;
+  /** Converts a zero-based graph lane into its SVG center coordinate. */
   const laneX = (lane: number) =>
     GRAPH_PADDING + lane * GRAPH_LANE_SPACING + 6;
+  /** Converts a commit row into the matching SVG and list-row center. */
   const rowY = (row: number) =>
     row * HISTORY_ROW_HEIGHT + HISTORY_ROW_HEIGHT / 2;
 

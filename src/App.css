@@ -867,6 +867,7 @@ button:disabled {
 }
 
 .history-item__refs {
+  min-width: 0;
   display: flex;
   overflow: hidden;
   flex-wrap: nowrap;
@@ -874,6 +875,7 @@ button:disabled {
 }
 
 .history-item__refs > span {
+  min-width: 0;
   max-width: 100%;
   overflow: hidden;
   padding: 3px 6px;
