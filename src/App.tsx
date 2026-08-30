@@ -5,13 +5,22 @@ import "./App.css";
 import {
   chooseRepositoryFolder,
   commitChanges,
+  createBranch,
+  deleteBranch,
+  getBranches,
   getGitVersion,
   getRepositoryStatus,
   normalizeGitError,
   openRepository,
+  renameBranch,
   stageFile,
+  switchBranch,
   unstageFile,
 } from "./lib/tauri";
+import {
+  BranchPanel,
+  type BranchesState,
+} from "./features/branches/BranchPanel";
 import type { GitError, GitOutput } from "./types/git";
 import type { Repository } from "./types/repository";
 import type {
@@ -43,7 +52,17 @@ type RepositoryOperation =
   | { state: "idle" }
   | { state: "staging"; path: string }
   | { state: "unstaging"; path: string }
-  | { state: "committing" };
+  | { state: "committing" }
+  | { state: "switching"; branchName: string }
+  | { state: "creating"; branchName: string }
+  | { state: "renaming"; branchName: string }
+  | { state: "deleting"; branchName: string };
+
+type BranchMutation =
+  | { kind: "switch"; branchName: string }
+  | { kind: "create"; branchName: string }
+  | { kind: "rename"; branchName: string; newName: string }
+  | { kind: "delete"; branchName: string };
 
 const fileStatusLabels: Record<FileStatus, string> = {
   added: "Added",
@@ -445,8 +464,10 @@ function RepositoryScreen({
   repositoryError,
   openState,
   statusState,
+  branchesState,
   operation,
-  operationError,
+  changeOperationError,
+  branchOperationError,
   commitMessage,
   onOpenRepository,
   onRefresh,
@@ -454,13 +475,19 @@ function RepositoryScreen({
   onStage,
   onUnstage,
   onCommit,
+  onSwitchBranch,
+  onCreateBranch,
+  onRenameBranch,
+  onDeleteBranch,
 }: {
   repository: Repository;
   repositoryError: GitError | null;
   openState: OpenState;
   statusState: RepositoryStatusState;
+  branchesState: BranchesState;
   operation: RepositoryOperation;
-  operationError: GitError | null;
+  changeOperationError: GitError | null;
+  branchOperationError: GitError | null;
   commitMessage: string;
   onOpenRepository: () => void;
   onRefresh: () => void;
@@ -468,12 +495,25 @@ function RepositoryScreen({
   onStage: (path: string) => void;
   onUnstage: (path: string) => void;
   onCommit: (event: FormEvent<HTMLFormElement>) => void;
+  onSwitchBranch: (branchName: string) => Promise<boolean>;
+  onCreateBranch: (branchName: string) => Promise<boolean>;
+  onRenameBranch: (oldName: string, newName: string) => Promise<boolean>;
+  onDeleteBranch: (branchName: string) => Promise<boolean>;
 }) {
   const status = statusState.state === "ready" ? statusState.status : null;
   const isRefreshing =
     statusState.state === "loading" ||
-    (statusState.state === "ready" && statusState.isRefreshing);
+    (statusState.state === "ready" && statusState.isRefreshing) ||
+    branchesState.state === "loading" ||
+    (branchesState.state === "ready" && branchesState.isRefreshing);
   const isMutating = operation.state !== "idle";
+  const busyBranchName =
+    operation.state === "switching" ||
+    operation.state === "creating" ||
+    operation.state === "renaming" ||
+    operation.state === "deleting"
+      ? operation.branchName
+      : null;
 
   return (
     <main className="repository-screen">
@@ -534,17 +574,30 @@ function RepositoryScreen({
         </div>
       )}
 
-      <RepositoryWorkspace
-        state={statusState}
-        onRefresh={onRefresh}
-        operation={operation}
-        operationError={operationError}
-        commitMessage={commitMessage}
-        onCommitMessageChange={onCommitMessageChange}
-        onStage={onStage}
-        onUnstage={onUnstage}
-        onCommit={onCommit}
-      />
+      <div className="repository-body">
+        <BranchPanel
+          state={branchesState}
+          operationError={branchOperationError}
+          actionsDisabled={isMutating}
+          busyBranchName={busyBranchName}
+          onRefresh={onRefresh}
+          onSwitch={onSwitchBranch}
+          onCreate={onCreateBranch}
+          onRename={onRenameBranch}
+          onDelete={onDeleteBranch}
+        />
+        <RepositoryWorkspace
+          state={statusState}
+          onRefresh={onRefresh}
+          operation={operation}
+          operationError={changeOperationError}
+          commitMessage={commitMessage}
+          onCommitMessageChange={onCommitMessageChange}
+          onStage={onStage}
+          onUnstage={onUnstage}
+          onCommit={onCommit}
+        />
+      </div>
     </main>
   );
 }
@@ -559,12 +612,19 @@ function App() {
   const [openState, setOpenState] = useState<OpenState>("idle");
   const [repositoryStatus, setRepositoryStatus] =
     useState<RepositoryStatusState>({ state: "idle" });
+  const [branchesState, setBranchesState] = useState<BranchesState>({
+    state: "idle",
+  });
   const [operation, setOperation] = useState<RepositoryOperation>({
     state: "idle",
   });
-  const [operationError, setOperationError] = useState<GitError | null>(null);
+  const [changeOperationError, setChangeOperationError] =
+    useState<GitError | null>(null);
+  const [branchOperationError, setBranchOperationError] =
+    useState<GitError | null>(null);
   const [commitMessage, setCommitMessage] = useState("");
   const statusRequestId = useRef(0);
+  const branchesRequestId = useRef(0);
 
   const checkGitVersion = useCallback(async () => {
     setGitStatus({ state: "checking" });
@@ -618,11 +678,59 @@ function App() {
     }
   }, []);
 
+  /** Refreshes branch refs while retaining the last successful snapshot on failure. */
+  const refreshBranches = useCallback(async (repositoryPath: string) => {
+    const requestId = ++branchesRequestId.current;
+    setBranchesState((current) =>
+      current.state === "ready"
+        ? { ...current, isRefreshing: true, refreshError: null }
+        : { state: "loading" },
+    );
+
+    try {
+      const branches = await getBranches(repositoryPath);
+      if (requestId === branchesRequestId.current) {
+        setBranchesState({
+          state: "ready",
+          branches,
+          isRefreshing: false,
+          refreshError: null,
+        });
+      }
+    } catch (error) {
+      const normalizedError = normalizeGitError(error);
+      setBranchesState((current) => {
+        if (requestId !== branchesRequestId.current) {
+          return current;
+        }
+
+        return current.state === "ready"
+          ? {
+              ...current,
+              isRefreshing: false,
+              refreshError: normalizedError,
+            }
+          : { state: "error", error: normalizedError };
+      });
+    }
+  }, []);
+
+  /** Refreshes every repository view after external or in-app Git changes. */
+  const refreshRepositoryState = useCallback(
+    async (repositoryPath: string) => {
+      await Promise.all([
+        refreshRepositoryStatus(repositoryPath),
+        refreshBranches(repositoryPath),
+      ]);
+    },
+    [refreshBranches, refreshRepositoryStatus],
+  );
+
   useEffect(() => {
     if (repository) {
-      void refreshRepositoryStatus(repository.path);
+      void refreshRepositoryState(repository.path);
     }
-  }, [refreshRepositoryStatus, repository]);
+  }, [refreshRepositoryState, repository]);
 
   const handleOpenRepository = useCallback(async () => {
     if (openState !== "idle" || gitStatus.state !== "ready") {
@@ -641,9 +749,12 @@ function App() {
       setOpenState("validating");
       const openedRepository = await openRepository(selectedPath);
       statusRequestId.current += 1;
+      branchesRequestId.current += 1;
       setRepositoryStatus({ state: "idle" });
+      setBranchesState({ state: "idle" });
       setOperation({ state: "idle" });
-      setOperationError(null);
+      setChangeOperationError(null);
+      setBranchOperationError(null);
       setCommitMessage("");
       setRepository(openedRepository);
     } catch (error) {
@@ -660,7 +771,7 @@ function App() {
         return;
       }
 
-      setOperationError(null);
+      setChangeOperationError(null);
       setOperation({
         state: kind === "stage" ? "staging" : "unstaging",
         path: filePath,
@@ -673,14 +784,14 @@ function App() {
           await unstageFile(repository.path, filePath);
         }
 
-        await refreshRepositoryStatus(repository.path);
+        await refreshRepositoryState(repository.path);
       } catch (error) {
-        setOperationError(normalizeGitError(error));
+        setChangeOperationError(normalizeGitError(error));
       } finally {
         setOperation({ state: "idle" });
       }
     },
-    [operation.state, refreshRepositoryStatus, repository],
+    [operation.state, refreshRepositoryState, repository],
   );
 
   /** Creates a commit only when the message is valid, then refreshes Git state. */
@@ -695,20 +806,79 @@ function App() {
         return;
       }
 
-      setOperationError(null);
+      setChangeOperationError(null);
       setOperation({ state: "committing" });
 
       try {
         await commitChanges(repository.path, commitMessage);
         setCommitMessage("");
-        await refreshRepositoryStatus(repository.path);
+        await refreshRepositoryState(repository.path);
       } catch (error) {
-        setOperationError(normalizeGitError(error));
+        setChangeOperationError(normalizeGitError(error));
       } finally {
         setOperation({ state: "idle" });
       }
     },
-    [commitMessage, operation.state, refreshRepositoryStatus, repository],
+    [commitMessage, operation.state, refreshRepositoryState, repository],
+  );
+
+  /** Runs a local branch mutation and refreshes all repository state after success. */
+  const handleBranchMutation = useCallback(
+    async (mutation: BranchMutation): Promise<boolean> => {
+      if (!repository || operation.state !== "idle") {
+        return false;
+      }
+
+      const selectedBranch =
+        branchesState.state === "ready"
+          ? branchesState.branches.local.find(
+              (branch) => branch.name === mutation.branchName,
+            )
+          : undefined;
+      if (mutation.kind === "delete" && selectedBranch?.isCurrent) {
+        setBranchOperationError({
+          code: "invalidOperationInput",
+          message: "Switch to another branch before deleting the current branch.",
+        });
+        return false;
+      }
+
+      setBranchOperationError(null);
+      setOperation(
+        mutation.kind === "switch"
+          ? { state: "switching", branchName: mutation.branchName }
+          : mutation.kind === "create"
+            ? { state: "creating", branchName: mutation.branchName }
+            : mutation.kind === "rename"
+              ? { state: "renaming", branchName: mutation.branchName }
+              : { state: "deleting", branchName: mutation.branchName },
+      );
+
+      try {
+        if (mutation.kind === "switch") {
+          await switchBranch(repository.path, mutation.branchName);
+        } else if (mutation.kind === "create") {
+          await createBranch(repository.path, mutation.branchName);
+        } else if (mutation.kind === "rename") {
+          await renameBranch(
+            repository.path,
+            mutation.branchName,
+            mutation.newName,
+          );
+        } else {
+          await deleteBranch(repository.path, mutation.branchName);
+        }
+
+        await refreshRepositoryState(repository.path);
+        return true;
+      } catch (error) {
+        setBranchOperationError(normalizeGitError(error));
+        return false;
+      } finally {
+        setOperation({ state: "idle" });
+      }
+    },
+    [branchesState, operation.state, refreshRepositoryState, repository],
   );
 
   if (repository) {
@@ -718,15 +888,33 @@ function App() {
         repositoryError={repositoryError}
         openState={openState}
         statusState={repositoryStatus}
+        branchesState={branchesState}
         operation={operation}
-        operationError={operationError}
+        changeOperationError={changeOperationError}
+        branchOperationError={branchOperationError}
         commitMessage={commitMessage}
         onOpenRepository={() => void handleOpenRepository()}
-        onRefresh={() => void refreshRepositoryStatus(repository.path)}
+        onRefresh={() => {
+          setChangeOperationError(null);
+          setBranchOperationError(null);
+          void refreshRepositoryState(repository.path);
+        }}
         onCommitMessageChange={setCommitMessage}
         onStage={(path) => void handleFileOperation("stage", path)}
         onUnstage={(path) => void handleFileOperation("unstage", path)}
         onCommit={(event) => void handleCommit(event)}
+        onSwitchBranch={(branchName) =>
+          handleBranchMutation({ kind: "switch", branchName })
+        }
+        onCreateBranch={(branchName) =>
+          handleBranchMutation({ kind: "create", branchName })
+        }
+        onRenameBranch={(branchName, newName) =>
+          handleBranchMutation({ kind: "rename", branchName, newName })
+        }
+        onDeleteBranch={(branchName) =>
+          handleBranchMutation({ kind: "delete", branchName })
+        }
       />
     );
   }

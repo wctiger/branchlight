@@ -11,6 +11,11 @@ pub fn run() {
             commands::system::get_git_version,
             commands::repository::open_repository,
             commands::repository::get_repository_status,
+            commands::branches::get_branches,
+            commands::branches::switch_branch,
+            commands::branches::create_branch,
+            commands::branches::rename_branch,
+            commands::branches::delete_branch,
             commands::operations::stage_file,
             commands::operations::unstage_file,
             commands::operations::commit
