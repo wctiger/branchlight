@@ -1,8 +1,13 @@
 use std::path::Path;
 
-use crate::models::{BranchStatus, FileChange, FileStatus, GitError, RepositoryStatus};
+use crate::models::{
+    BranchStatus, FileChange, FileStatus, GitError, RepositoryOperation, RepositoryStatus,
+};
 
-use super::runner::{decode_git_bytes, run_git};
+use super::{
+    conflicts::get_repository_operation,
+    runner::{decode_git_bytes, run_git},
+};
 
 /// Reads and parses the complete working-tree status reported by system Git.
 pub(crate) fn get_repository_status(repository: &Path) -> Result<RepositoryStatus, GitError> {
@@ -20,7 +25,10 @@ pub(crate) fn get_repository_status(repository: &Path) -> Result<RepositoryStatu
     let parsed = parse_porcelain_v2(&output.stdout_bytes);
 
     match parsed {
-        Ok(status) => Ok(status),
+        Ok(mut status) => {
+            status.operation = get_repository_operation(repository)?;
+            Ok(status)
+        }
         Err(message) => Err(GitError::InvalidStatusResponse { message, output }),
     }
 }
@@ -118,6 +126,7 @@ fn parse_porcelain_v2(output: &[u8]) -> Result<RepositoryStatus, String> {
     conflicts.sort_by(|left, right| left.path.cmp(&right.path));
 
     Ok(RepositoryStatus {
+        operation: RepositoryOperation::None,
         branch: BranchStatus {
             name: branch_name,
             oid,
@@ -366,6 +375,7 @@ mod tests {
 
         let initial_status = get_repository_status(&repository)
             .expect("the initial repository status should be read");
+        assert_eq!(initial_status.operation, RepositoryOperation::None);
         assert!(initial_status.unstaged.is_empty());
 
         let hide_untracked = Command::new("git")

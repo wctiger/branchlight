@@ -18,6 +18,8 @@ pub fn run() {
             commands::branches::delete_branch,
             commands::branches::merge_branch,
             commands::branches::rebase_onto_branch,
+            commands::conflicts::abort_merge,
+            commands::conflicts::abort_rebase,
             commands::operations::stage_file,
             commands::operations::unstage_file,
             commands::operations::commit,

@@ -1,4 +1,5 @@
 pub(crate) mod branches;
+pub(crate) mod conflicts;
 pub(crate) mod operations;
 pub(crate) mod remotes;
 pub(crate) mod repository;

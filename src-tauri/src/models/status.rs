@@ -3,11 +3,20 @@ use serde::Serialize;
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct RepositoryStatus {
+    pub(crate) operation: RepositoryOperation,
     pub(crate) branch: BranchStatus,
     pub(crate) staged: Vec<FileChange>,
     pub(crate) unstaged: Vec<FileChange>,
     pub(crate) conflicts: Vec<FileChange>,
     pub(crate) stash_count: u32,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) enum RepositoryOperation {
+    None,
+    Merge,
+    Rebase,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
