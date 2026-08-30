@@ -1,12 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { FormEvent } from "react";
 
 import "./App.css";
 import {
   chooseRepositoryFolder,
+  commitChanges,
   getGitVersion,
   getRepositoryStatus,
   normalizeGitError,
   openRepository,
+  stageFile,
+  unstageFile,
 } from "./lib/tauri";
 import type { GitError, GitOutput } from "./types/git";
 import type { Repository } from "./types/repository";
@@ -27,8 +31,19 @@ type OpenState = "idle" | "choosing" | "validating";
 type RepositoryStatusState =
   | { state: "idle" }
   | { state: "loading" }
-  | { state: "ready"; status: RepositoryStatus }
+  | {
+      state: "ready";
+      status: RepositoryStatus;
+      isRefreshing: boolean;
+      refreshError: GitError | null;
+    }
   | { state: "error"; error: GitError };
+
+type RepositoryOperation =
+  | { state: "idle" }
+  | { state: "staging"; path: string }
+  | { state: "unstaging"; path: string }
+  | { state: "committing" };
 
 const fileStatusLabels: Record<FileStatus, string> = {
   added: "Added",
@@ -52,6 +67,7 @@ const fileStatusSymbols: Record<FileStatus, string> = {
   conflicted: "!",
 };
 
+/** Renders the compact Branchlight brand mark used across app screens. */
 function BranchlightMark() {
   return (
     <span className="brand-mark" aria-hidden="true">
@@ -62,6 +78,7 @@ function BranchlightMark() {
   );
 }
 
+/** Renders the folder glyph used by repository picker actions. */
 function FolderIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -70,6 +87,7 @@ function FolderIcon() {
   );
 }
 
+/** Renders the refresh glyph used by status reload actions. */
 function RefreshIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -78,6 +96,16 @@ function RefreshIcon() {
   );
 }
 
+/** Distinguishes stage and unstage actions without relying on color. */
+function StageIcon({ direction }: { direction: "stage" | "unstage" }) {
+  return (
+    <span className="stage-icon" aria-hidden="true">
+      {direction === "stage" ? "+" : "−"}
+    </span>
+  );
+}
+
+/** Presents a structured Git error and any captured command output. */
 function ErrorNotice({
   error,
   title = "That folder couldn’t be opened",
@@ -102,6 +130,7 @@ function ErrorNotice({
   );
 }
 
+/** Summarizes the checked-out branch and its upstream divergence. */
 function BranchSummary({ branch }: { branch: BranchStatus }) {
   const branchLabel = branch.isDetached
     ? "Detached HEAD"
@@ -131,18 +160,30 @@ function BranchSummary({ branch }: { branch: BranchStatus }) {
   );
 }
 
+/** Renders one status group and its optional whole-file action. */
 function ChangeSection({
   title,
   description,
   emptyMessage,
   changes,
   tone,
+  action,
+  busyPath,
+  actionsDisabled,
 }: {
   title: string;
   description: string;
   emptyMessage: string;
   changes: FileChange[];
   tone: "staged" | "unstaged" | "conflict";
+  action?: {
+    label: string;
+    busyLabel: string;
+    direction: "stage" | "unstage";
+    onClick: (path: string) => void;
+  };
+  busyPath?: string;
+  actionsDisabled?: boolean;
 }) {
   return (
     <section className={`change-section change-section--${tone}`}>
@@ -177,7 +218,26 @@ function ChangeSection({
                   </span>
                 )}
               </div>
-              <span className="change-kind">{fileStatusLabels[change.status]}</span>
+              {action ? (
+                <button
+                  className="change-action"
+                  type="button"
+                  disabled={actionsDisabled}
+                  aria-label={`${action.label} ${change.path}`}
+                  onClick={() => action.onClick(change.path)}
+                >
+                  {busyPath === change.path ? (
+                    <span className="small-spinner" aria-hidden="true" />
+                  ) : (
+                    <StageIcon direction={action.direction} />
+                  )}
+                  {busyPath === change.path ? action.busyLabel : action.label}
+                </button>
+              ) : (
+                <span className="change-kind">
+                  {fileStatusLabels[change.status]}
+                </span>
+              )}
             </li>
           ))}
         </ul>
@@ -186,12 +246,27 @@ function ChangeSection({
   );
 }
 
+/** Renders repository changes and coordinates the daily commit workflow. */
 function RepositoryWorkspace({
   state,
   onRefresh,
+  operation,
+  operationError,
+  commitMessage,
+  onCommitMessageChange,
+  onStage,
+  onUnstage,
+  onCommit,
 }: {
   state: RepositoryStatusState;
   onRefresh: () => void;
+  operation: RepositoryOperation;
+  operationError: GitError | null;
+  commitMessage: string;
+  onCommitMessageChange: (message: string) => void;
+  onStage: (path: string) => void;
+  onUnstage: (path: string) => void;
+  onCommit: (event: FormEvent<HTMLFormElement>) => void;
 }) {
   if (state.state === "idle" || state.state === "loading") {
     return (
@@ -221,6 +296,21 @@ function RepositoryWorkspace({
   const { status } = state;
   const changeCount =
     status.staged.length + status.unstaged.length + status.conflicts.length;
+  const isMutating = operation.state !== "idle";
+  const actionsDisabled = isMutating || state.isRefreshing;
+  const canCommit =
+    status.staged.length > 0 &&
+    status.conflicts.length === 0 &&
+    commitMessage.trim().length > 0 &&
+    !actionsDisabled;
+  const commitHint =
+    status.conflicts.length > 0
+      ? "Resolve conflicts before committing."
+      : status.staged.length === 0
+        ? "Stage at least one file to create a commit."
+        : commitMessage.trim().length === 0
+          ? "Enter a message that describes this commit."
+          : `${status.staged.length} ${status.staged.length === 1 ? "file" : "files"} will be committed.`;
 
   return (
     <section className="repository-workspace" aria-labelledby="changes-title">
@@ -240,6 +330,30 @@ function RepositoryWorkspace({
         </div>
       </header>
 
+      {(operationError || state.refreshError) && (
+        <div className="workspace-error">
+          <ErrorNotice
+            error={operationError ?? state.refreshError!}
+            title={
+              operationError
+                ? "Git couldn’t complete that action"
+                : "Repository status couldn’t be refreshed"
+            }
+          />
+          {state.refreshError && !operationError && (
+            <button
+              className="secondary-button"
+              type="button"
+              disabled={state.isRefreshing || isMutating}
+              onClick={onRefresh}
+            >
+              <RefreshIcon />
+              Try again
+            </button>
+          )}
+        </div>
+      )}
+
       <div className="changes-grid">
         <ChangeSection
           title="Conflicts"
@@ -254,6 +368,16 @@ function RepositoryWorkspace({
           emptyMessage="No unstaged changes"
           changes={status.unstaged}
           tone="unstaged"
+          action={{
+            label: "Stage",
+            busyLabel: "Staging…",
+            direction: "stage",
+            onClick: onStage,
+          }}
+          busyPath={
+            operation.state === "staging" ? operation.path : undefined
+          }
+          actionsDisabled={actionsDisabled}
         />
         <ChangeSection
           title="Staged"
@@ -261,29 +385,95 @@ function RepositoryWorkspace({
           emptyMessage="No staged changes"
           changes={status.staged}
           tone="staged"
+          action={{
+            label: "Unstage",
+            busyLabel: "Unstaging…",
+            direction: "unstage",
+            onClick: onUnstage,
+          }}
+          busyPath={
+            operation.state === "unstaging" ? operation.path : undefined
+          }
+          actionsDisabled={actionsDisabled}
         />
       </div>
+
+      <form className="commit-panel" onSubmit={onCommit}>
+        <div className="commit-panel__heading">
+          <div>
+            <p className="eyebrow">Next commit</p>
+            <h3>Commit staged changes</h3>
+          </div>
+          <span>
+            {status.staged.length} staged
+          </span>
+        </div>
+        <label htmlFor="commit-message">Commit message</label>
+        <div className="commit-controls">
+          <input
+            id="commit-message"
+            name="commitMessage"
+            type="text"
+            value={commitMessage}
+            maxLength={500}
+            disabled={isMutating}
+            placeholder="Describe what changed"
+            autoComplete="off"
+            onChange={(event) => onCommitMessageChange(event.target.value)}
+          />
+          <button
+            className="primary-button commit-button"
+            type="submit"
+            disabled={!canCommit}
+            aria-busy={operation.state === "committing"}
+          >
+            {operation.state === "committing" && (
+              <span className="button-spinner" aria-hidden="true" />
+            )}
+            {operation.state === "committing" ? "Committing…" : "Commit"}
+          </button>
+        </div>
+        <p className="commit-hint">{commitHint}</p>
+      </form>
     </section>
   );
 }
 
+/** Frames the active repository status and repository-level actions. */
 function RepositoryScreen({
   repository,
   repositoryError,
   openState,
   statusState,
+  operation,
+  operationError,
+  commitMessage,
   onOpenRepository,
   onRefresh,
+  onCommitMessageChange,
+  onStage,
+  onUnstage,
+  onCommit,
 }: {
   repository: Repository;
   repositoryError: GitError | null;
   openState: OpenState;
   statusState: RepositoryStatusState;
+  operation: RepositoryOperation;
+  operationError: GitError | null;
+  commitMessage: string;
   onOpenRepository: () => void;
   onRefresh: () => void;
+  onCommitMessageChange: (message: string) => void;
+  onStage: (path: string) => void;
+  onUnstage: (path: string) => void;
+  onCommit: (event: FormEvent<HTMLFormElement>) => void;
 }) {
   const status = statusState.state === "ready" ? statusState.status : null;
-  const isRefreshing = statusState.state === "loading";
+  const isRefreshing =
+    statusState.state === "loading" ||
+    (statusState.state === "ready" && statusState.isRefreshing);
+  const isMutating = operation.state !== "idle";
 
   return (
     <main className="repository-screen">
@@ -318,7 +508,7 @@ function RepositoryScreen({
           <button
             className="secondary-button"
             type="button"
-            disabled={isRefreshing || openState !== "idle"}
+            disabled={isRefreshing || isMutating || openState !== "idle"}
             aria-busy={isRefreshing}
             onClick={onRefresh}
           >
@@ -328,7 +518,7 @@ function RepositoryScreen({
           <button
             className="secondary-button"
             type="button"
-            disabled={openState !== "idle"}
+            disabled={isMutating || openState !== "idle"}
             aria-busy={openState !== "idle"}
             onClick={onOpenRepository}
           >
@@ -344,11 +534,22 @@ function RepositoryScreen({
         </div>
       )}
 
-      <RepositoryWorkspace state={statusState} onRefresh={onRefresh} />
+      <RepositoryWorkspace
+        state={statusState}
+        onRefresh={onRefresh}
+        operation={operation}
+        operationError={operationError}
+        commitMessage={commitMessage}
+        onCommitMessageChange={onCommitMessageChange}
+        onStage={onStage}
+        onUnstage={onUnstage}
+        onCommit={onCommit}
+      />
     </main>
   );
 }
 
+/** Owns system Git, repository, status, and mutation state for the app. */
 function App() {
   const [gitStatus, setGitStatus] = useState<GitStatus>({
     state: "checking",
@@ -358,6 +559,11 @@ function App() {
   const [openState, setOpenState] = useState<OpenState>("idle");
   const [repositoryStatus, setRepositoryStatus] =
     useState<RepositoryStatusState>({ state: "idle" });
+  const [operation, setOperation] = useState<RepositoryOperation>({
+    state: "idle",
+  });
+  const [operationError, setOperationError] = useState<GitError | null>(null);
+  const [commitMessage, setCommitMessage] = useState("");
   const statusRequestId = useRef(0);
 
   const checkGitVersion = useCallback(async () => {
@@ -375,22 +581,40 @@ function App() {
     void checkGitVersion();
   }, [checkGitVersion]);
 
+  /** Refreshes Git state while retaining the last successful snapshot on failure. */
   const refreshRepositoryStatus = useCallback(async (repositoryPath: string) => {
     const requestId = ++statusRequestId.current;
-    setRepositoryStatus({ state: "loading" });
+    setRepositoryStatus((current) =>
+      current.state === "ready"
+        ? { ...current, isRefreshing: true, refreshError: null }
+        : { state: "loading" },
+    );
 
     try {
       const status = await getRepositoryStatus(repositoryPath);
       if (requestId === statusRequestId.current) {
-        setRepositoryStatus({ state: "ready", status });
-      }
-    } catch (error) {
-      if (requestId === statusRequestId.current) {
         setRepositoryStatus({
-          state: "error",
-          error: normalizeGitError(error),
+          state: "ready",
+          status,
+          isRefreshing: false,
+          refreshError: null,
         });
       }
+    } catch (error) {
+      const normalizedError = normalizeGitError(error);
+      setRepositoryStatus((current) => {
+        if (requestId !== statusRequestId.current) {
+          return current;
+        }
+
+        return current.state === "ready"
+          ? {
+              ...current,
+              isRefreshing: false,
+              refreshError: normalizedError,
+            }
+          : { state: "error", error: normalizedError };
+      });
     }
   }, []);
 
@@ -418,6 +642,9 @@ function App() {
       const openedRepository = await openRepository(selectedPath);
       statusRequestId.current += 1;
       setRepositoryStatus({ state: "idle" });
+      setOperation({ state: "idle" });
+      setOperationError(null);
+      setCommitMessage("");
       setRepository(openedRepository);
     } catch (error) {
       setRepositoryError(normalizeGitError(error));
@@ -426,6 +653,64 @@ function App() {
     }
   }, [gitStatus.state, openState]);
 
+  /** Runs one whole-file mutation and refreshes Git state after success. */
+  const handleFileOperation = useCallback(
+    async (kind: "stage" | "unstage", filePath: string) => {
+      if (!repository || operation.state !== "idle") {
+        return;
+      }
+
+      setOperationError(null);
+      setOperation({
+        state: kind === "stage" ? "staging" : "unstaging",
+        path: filePath,
+      });
+
+      try {
+        if (kind === "stage") {
+          await stageFile(repository.path, filePath);
+        } else {
+          await unstageFile(repository.path, filePath);
+        }
+
+        await refreshRepositoryStatus(repository.path);
+      } catch (error) {
+        setOperationError(normalizeGitError(error));
+      } finally {
+        setOperation({ state: "idle" });
+      }
+    },
+    [operation.state, refreshRepositoryStatus, repository],
+  );
+
+  /** Creates a commit only when the message is valid, then refreshes Git state. */
+  const handleCommit = useCallback(
+    async (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      if (
+        !repository ||
+        operation.state !== "idle" ||
+        commitMessage.trim().length === 0
+      ) {
+        return;
+      }
+
+      setOperationError(null);
+      setOperation({ state: "committing" });
+
+      try {
+        await commitChanges(repository.path, commitMessage);
+        setCommitMessage("");
+        await refreshRepositoryStatus(repository.path);
+      } catch (error) {
+        setOperationError(normalizeGitError(error));
+      } finally {
+        setOperation({ state: "idle" });
+      }
+    },
+    [commitMessage, operation.state, refreshRepositoryStatus, repository],
+  );
+
   if (repository) {
     return (
       <RepositoryScreen
@@ -433,8 +718,15 @@ function App() {
         repositoryError={repositoryError}
         openState={openState}
         statusState={repositoryStatus}
+        operation={operation}
+        operationError={operationError}
+        commitMessage={commitMessage}
         onOpenRepository={() => void handleOpenRepository()}
         onRefresh={() => void refreshRepositoryStatus(repository.path)}
+        onCommitMessageChange={setCommitMessage}
+        onStage={(path) => void handleFileOperation("stage", path)}
+        onUnstage={(path) => void handleFileOperation("unstage", path)}
+        onCommit={(event) => void handleCommit(event)}
       />
     );
   }
