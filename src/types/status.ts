@@ -23,7 +23,10 @@ export interface BranchStatus {
   behind: number | null;
 }
 
+export type RepositoryOperation = "none" | "merge" | "rebase";
+
 export interface RepositoryStatus {
+  operation: RepositoryOperation;
   branch: BranchStatus;
   staged: FileChange[];
   unstaged: FileChange[];

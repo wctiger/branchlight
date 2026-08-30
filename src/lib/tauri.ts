@@ -118,6 +118,16 @@ export function rebaseOntoBranch(
   return invoke<GitOutput>("rebase_onto_branch", { path, sourceBranch });
 }
 
+/** Aborts the active merge after the backend verifies Git operation state. */
+export function abortMerge(path: string): Promise<GitOutput> {
+  return invoke<GitOutput>("abort_merge", { path });
+}
+
+/** Aborts the active rebase after the backend verifies Git operation state. */
+export function abortRebase(path: string): Promise<GitOutput> {
+  return invoke<GitOutput>("abort_rebase", { path });
+}
+
 /** Fetches remote refs using the repository's configured Git remotes. */
 export function fetchRemote(path: string): Promise<GitOutput> {
   return invoke<GitOutput>("fetch_remote", { path });

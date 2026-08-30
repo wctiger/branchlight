@@ -10,4 +10,6 @@ pub(crate) use error::GitError;
 pub(crate) use git::GitOutput;
 pub(crate) use repository::Repository;
 pub(crate) use stash::Stash;
-pub(crate) use status::{BranchStatus, FileChange, FileStatus, RepositoryStatus};
+pub(crate) use status::{
+    BranchStatus, FileChange, FileStatus, RepositoryOperation, RepositoryStatus,
+};

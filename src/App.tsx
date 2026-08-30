@@ -3,6 +3,8 @@ import type { FormEvent } from "react";
 
 import "./App.css";
 import {
+  abortMerge,
+  abortRebase,
   applyStash,
   chooseRepositoryFolder,
   commitChanges,
@@ -63,7 +65,7 @@ type RepositoryStatusState =
     }
   | { state: "error"; error: GitError };
 
-type RepositoryOperation =
+type AppOperation =
   | { state: "idle" }
   | { state: "staging"; path: string }
   | { state: "unstaging"; path: string }
@@ -80,7 +82,9 @@ type RepositoryOperation =
   | { state: "poppingStash"; stashRef: string }
   | { state: "droppingStash"; stashRef: string }
   | { state: "merging"; branchName: string }
-  | { state: "rebasing"; branchName: string };
+  | { state: "rebasing"; branchName: string }
+  | { state: "abortingMerge" }
+  | { state: "abortingRebase" };
 
 type RemoteOperation = "fetch" | "pull" | "push";
 
@@ -211,6 +215,117 @@ function BranchSummary({ branch }: { branch: BranchStatus }) {
   );
 }
 
+/** Keeps active merge/rebase conflicts visible with only the matching abort action. */
+function ConflictBanner({
+  status,
+  operation,
+  operationError,
+  isRefreshing,
+  onRefresh,
+  onAbort,
+}: {
+  status: RepositoryStatus;
+  operation: AppOperation;
+  operationError: GitError | null;
+  isRefreshing: boolean;
+  onRefresh: () => void;
+  onAbort: (kind: "merge" | "rebase") => void;
+}) {
+  const activeOperation = status.operation;
+  if (activeOperation === "none" && status.conflicts.length === 0) {
+    return null;
+  }
+
+  const operationLabel =
+    activeOperation === "merge"
+      ? "Merge"
+      : activeOperation === "rebase"
+        ? "Rebase"
+        : "Unresolved conflicts";
+  const conflictCount = status.conflicts.length;
+  const isAborting =
+    (activeOperation === "merge" && operation.state === "abortingMerge") ||
+    (activeOperation === "rebase" && operation.state === "abortingRebase");
+  const actionsDisabled = operation.state !== "idle" || isRefreshing;
+
+  return (
+    <section
+      className="conflict-banner"
+      aria-labelledby="conflict-banner-title"
+      aria-live="polite"
+    >
+      <div className="conflict-banner__heading">
+        <span className="conflict-banner__icon" aria-hidden="true">
+          !
+        </span>
+        <div>
+          <p className="eyebrow">Git operation</p>
+          <h2 id="conflict-banner-title">
+            {activeOperation === "none"
+              ? operationLabel
+              : `${operationLabel} in progress`}
+          </h2>
+          <p>
+            {conflictCount === 0
+              ? "Git reports no conflicted files right now."
+              : `${conflictCount} ${conflictCount === 1 ? "file requires" : "files require"} manual resolution.`}
+          </p>
+        </div>
+      </div>
+
+      {conflictCount > 0 && (
+        <ul className="conflict-banner__files" aria-label="Conflicted files">
+          {status.conflicts.map((conflict) => (
+            <li key={conflict.path}>
+              <code title={conflict.path}>{conflict.path}</code>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <div className="conflict-banner__guidance">
+        <p>
+          Resolve these files in your editor, then refresh Branchlight to read
+          Git’s latest state.
+        </p>
+        <div>
+          <button
+            className="secondary-button"
+            type="button"
+            disabled={actionsDisabled}
+            aria-busy={isRefreshing}
+            onClick={onRefresh}
+          >
+            {isRefreshing ? <span className="small-spinner" /> : <RefreshIcon />}
+            {isRefreshing ? "Refreshing…" : "Refresh status"}
+          </button>
+          {activeOperation !== "none" && (
+            <button
+              className="conflict-banner__abort"
+              type="button"
+              disabled={actionsDisabled}
+              aria-busy={isAborting}
+              onClick={() => onAbort(activeOperation)}
+            >
+              {isAborting && <span className="small-spinner" aria-hidden="true" />}
+              {isAborting
+                ? `Aborting ${activeOperation}…`
+                : `Abort ${activeOperation}`}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {operationError && (
+        <ErrorNotice
+          error={operationError}
+          title={`Git couldn’t abort the ${activeOperation}`}
+        />
+      )}
+    </section>
+  );
+}
+
 /** Renders one status group and its optional whole-file action. */
 function ChangeSection({
   title,
@@ -318,7 +433,7 @@ function RepositoryWorkspace({
   state: RepositoryStatusState;
   stashesState: StashesState;
   onRefresh: () => void;
-  operation: RepositoryOperation;
+  operation: AppOperation;
   operationError: GitError | null;
   stashOperationError: GitError | null;
   commitMessage: string;
@@ -359,7 +474,8 @@ function RepositoryWorkspace({
   const { status } = state;
   const changeCount =
     status.staged.length + status.unstaged.length + status.conflicts.length;
-  const isMutating = operation.state !== "idle";
+  const isMutating =
+    operation.state !== "idle" || status.operation !== "none";
   const actionsDisabled = isMutating || state.isRefreshing;
   const canCommit =
     status.staged.length > 0 &&
@@ -544,6 +660,7 @@ function RepositoryScreen({
   branchOperationNotice,
   remoteOperationError,
   stashOperationError,
+  conflictOperationError,
   commitMessage,
   onOpenRepository,
   onRefresh,
@@ -557,6 +674,7 @@ function RepositoryScreen({
   onDeleteBranch,
   onMergeBranch,
   onRebaseBranch,
+  onAbortOperation,
   onRemoteOperation,
   onCreateStash,
   onApplyStash,
@@ -569,12 +687,13 @@ function RepositoryScreen({
   statusState: RepositoryStatusState;
   branchesState: BranchesState;
   stashesState: StashesState;
-  operation: RepositoryOperation;
+  operation: AppOperation;
   changeOperationError: GitError | null;
   branchOperationError: GitError | null;
   branchOperationNotice: string | null;
   remoteOperationError: GitError | null;
   stashOperationError: GitError | null;
+  conflictOperationError: GitError | null;
   commitMessage: string;
   onOpenRepository: () => void;
   onRefresh: () => void;
@@ -588,6 +707,7 @@ function RepositoryScreen({
   onDeleteBranch: (branchName: string) => Promise<boolean>;
   onMergeBranch: (sourceBranch: string) => Promise<boolean>;
   onRebaseBranch: (sourceBranch: string) => Promise<boolean>;
+  onAbortOperation: (kind: "merge" | "rebase") => void;
   onRemoteOperation: (kind: RemoteOperation) => void;
   onCreateStash: (message: string) => Promise<boolean>;
   onApplyStash: (stash: Stash) => Promise<boolean>;
@@ -603,6 +723,8 @@ function RepositoryScreen({
     stashesState.state === "loading" ||
     (stashesState.state === "ready" && stashesState.isRefreshing);
   const isMutating = operation.state !== "idle";
+  const hasActiveRepositoryOperation =
+    status !== null && status.operation !== "none";
   const busyBranchName =
     operation.state === "switching" ||
     operation.state === "creating" ||
@@ -656,7 +778,12 @@ function RepositoryScreen({
                 className="secondary-button remote-button"
                 type="button"
                 key={kind}
-                disabled={isRefreshing || isMutating || openState !== "idle"}
+                disabled={
+                  isRefreshing ||
+                  isMutating ||
+                  hasActiveRepositoryOperation ||
+                  openState !== "idle"
+                }
                 aria-busy={isRunning}
                 onClick={() => onRemoteOperation(kind)}
               >
@@ -668,7 +795,13 @@ function RepositoryScreen({
           <button
             className="secondary-button"
             type="button"
-            disabled={!status || isRefreshing || isMutating || openState !== "idle"}
+            disabled={
+              !status ||
+              isRefreshing ||
+              isMutating ||
+              hasActiveRepositoryOperation ||
+              openState !== "idle"
+            }
             onClick={() => document.getElementById("stash-message")?.focus()}
           >
             Stash
@@ -711,12 +844,23 @@ function RepositoryScreen({
         </div>
       )}
 
+      {status && (
+        <ConflictBanner
+          status={status}
+          operation={operation}
+          operationError={conflictOperationError}
+          isRefreshing={isRefreshing}
+          onRefresh={onRefresh}
+          onAbort={onAbortOperation}
+        />
+      )}
+
       <div className="repository-body">
         <BranchPanel
           state={branchesState}
           operationError={branchOperationError}
           operationNotice={branchOperationNotice}
-          actionsDisabled={isMutating}
+          actionsDisabled={isMutating || hasActiveRepositoryOperation}
           busyBranchName={busyBranchName}
           onRefresh={onRefresh}
           onSwitch={onSwitchBranch}
@@ -764,7 +908,7 @@ function App() {
   const [stashesState, setStashesState] = useState<StashesState>({
     state: "idle",
   });
-  const [operation, setOperation] = useState<RepositoryOperation>({
+  const [operation, setOperation] = useState<AppOperation>({
     state: "idle",
   });
   const [changeOperationError, setChangeOperationError] =
@@ -777,6 +921,8 @@ function App() {
   const [remoteOperationError, setRemoteOperationError] =
     useState<GitError | null>(null);
   const [stashOperationError, setStashOperationError] =
+    useState<GitError | null>(null);
+  const [conflictOperationError, setConflictOperationError] =
     useState<GitError | null>(null);
   const [commitMessage, setCommitMessage] = useState("");
   const statusRequestId = useRef(0);
@@ -955,6 +1101,7 @@ function App() {
       setBranchOperationNotice(null);
       setRemoteOperationError(null);
       setStashOperationError(null);
+      setConflictOperationError(null);
       setCommitMessage("");
       setRepository(openedRepository);
     } catch (error) {
@@ -1143,6 +1290,46 @@ function App() {
     [branchesState, operation.state, refreshRepositoryState, repository],
   );
 
+  /** Aborts only the operation reported by Git and refreshes every view afterward. */
+  const handleAbortOperation = useCallback(
+    async (kind: "merge" | "rebase") => {
+      if (!repository || operation.state !== "idle") {
+        return;
+      }
+
+      const activeOperation =
+        repositoryStatus.state === "ready"
+          ? repositoryStatus.status.operation
+          : "none";
+      if (activeOperation !== kind) {
+        setConflictOperationError({
+          code: "invalidOperationInput",
+          message: `Git does not report an active ${kind} to abort. Refresh status and try again.`,
+        });
+        return;
+      }
+
+      setConflictOperationError(null);
+      setOperation({
+        state: kind === "merge" ? "abortingMerge" : "abortingRebase",
+      });
+
+      try {
+        if (kind === "merge") {
+          await abortMerge(repository.path);
+        } else {
+          await abortRebase(repository.path);
+        }
+      } catch (error) {
+        setConflictOperationError(normalizeGitError(error));
+      }
+
+      await refreshRepositoryState(repository.path);
+      setOperation({ state: "idle" });
+    },
+    [operation.state, refreshRepositoryState, repository, repositoryStatus],
+  );
+
   /** Runs one configured remote operation and refreshes all Git-backed state. */
   const handleRemoteOperation = useCallback(
     async (kind: RemoteOperation) => {
@@ -1228,6 +1415,7 @@ function App() {
         branchOperationNotice={branchOperationNotice}
         remoteOperationError={remoteOperationError}
         stashOperationError={stashOperationError}
+        conflictOperationError={conflictOperationError}
         commitMessage={commitMessage}
         onOpenRepository={() => void handleOpenRepository()}
         onRefresh={() => {
@@ -1236,6 +1424,7 @@ function App() {
           setBranchOperationNotice(null);
           setRemoteOperationError(null);
           setStashOperationError(null);
+          setConflictOperationError(null);
           void refreshRepositoryState(repository.path);
         }}
         onCommitMessageChange={setCommitMessage}
@@ -1260,6 +1449,7 @@ function App() {
         onRebaseBranch={(sourceBranch) =>
           handleBranchIntegration("rebase", sourceBranch)
         }
+        onAbortOperation={(kind) => void handleAbortOperation(kind)}
         onRemoteOperation={(kind) => void handleRemoteOperation(kind)}
         onCreateStash={(message) =>
           handleStashMutation({ kind: "create", message })
