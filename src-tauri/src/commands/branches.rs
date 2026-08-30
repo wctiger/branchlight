@@ -38,3 +38,18 @@ pub(crate) fn rename_branch(
 pub(crate) fn delete_branch(path: String, branch_name: String) -> Result<GitOutput, GitError> {
     git::delete_branch(Path::new(&path), &branch_name)
 }
+
+/// Merges one local source branch into the currently checked-out branch.
+#[tauri::command]
+pub(crate) fn merge_branch(path: String, source_branch: String) -> Result<GitOutput, GitError> {
+    git::merge_branch(Path::new(&path), &source_branch)
+}
+
+/// Rebases the current branch onto one local source branch.
+#[tauri::command]
+pub(crate) fn rebase_onto_branch(
+    path: String,
+    source_branch: String,
+) -> Result<GitOutput, GitError> {
+    git::rebase_onto_branch(Path::new(&path), &source_branch)
+}

@@ -15,11 +15,13 @@ import {
   getGitVersion,
   getRepositoryStatus,
   getStashes,
+  mergeBranch,
   normalizeGitError,
   openRepository,
   popStash,
   pullRemote,
   pushRemote,
+  rebaseOntoBranch,
   renameBranch,
   stageFile,
   switchBranch,
@@ -76,7 +78,9 @@ type RepositoryOperation =
   | { state: "stashing" }
   | { state: "applyingStash"; stashRef: string }
   | { state: "poppingStash"; stashRef: string }
-  | { state: "droppingStash"; stashRef: string };
+  | { state: "droppingStash"; stashRef: string }
+  | { state: "merging"; branchName: string }
+  | { state: "rebasing"; branchName: string };
 
 type RemoteOperation = "fetch" | "pull" | "push";
 
@@ -537,6 +541,7 @@ function RepositoryScreen({
   operation,
   changeOperationError,
   branchOperationError,
+  branchOperationNotice,
   remoteOperationError,
   stashOperationError,
   commitMessage,
@@ -550,6 +555,8 @@ function RepositoryScreen({
   onCreateBranch,
   onRenameBranch,
   onDeleteBranch,
+  onMergeBranch,
+  onRebaseBranch,
   onRemoteOperation,
   onCreateStash,
   onApplyStash,
@@ -565,6 +572,7 @@ function RepositoryScreen({
   operation: RepositoryOperation;
   changeOperationError: GitError | null;
   branchOperationError: GitError | null;
+  branchOperationNotice: string | null;
   remoteOperationError: GitError | null;
   stashOperationError: GitError | null;
   commitMessage: string;
@@ -578,6 +586,8 @@ function RepositoryScreen({
   onCreateBranch: (branchName: string) => Promise<boolean>;
   onRenameBranch: (oldName: string, newName: string) => Promise<boolean>;
   onDeleteBranch: (branchName: string) => Promise<boolean>;
+  onMergeBranch: (sourceBranch: string) => Promise<boolean>;
+  onRebaseBranch: (sourceBranch: string) => Promise<boolean>;
   onRemoteOperation: (kind: RemoteOperation) => void;
   onCreateStash: (message: string) => Promise<boolean>;
   onApplyStash: (stash: Stash) => Promise<boolean>;
@@ -597,7 +607,9 @@ function RepositoryScreen({
     operation.state === "switching" ||
     operation.state === "creating" ||
     operation.state === "renaming" ||
-    operation.state === "deleting"
+    operation.state === "deleting" ||
+    operation.state === "merging" ||
+    operation.state === "rebasing"
       ? operation.branchName
       : null;
 
@@ -703,6 +715,7 @@ function RepositoryScreen({
         <BranchPanel
           state={branchesState}
           operationError={branchOperationError}
+          operationNotice={branchOperationNotice}
           actionsDisabled={isMutating}
           busyBranchName={busyBranchName}
           onRefresh={onRefresh}
@@ -710,6 +723,8 @@ function RepositoryScreen({
           onCreate={onCreateBranch}
           onRename={onRenameBranch}
           onDelete={onDeleteBranch}
+          onMerge={onMergeBranch}
+          onRebase={onRebaseBranch}
         />
         <RepositoryWorkspace
           state={statusState}
@@ -756,6 +771,9 @@ function App() {
     useState<GitError | null>(null);
   const [branchOperationError, setBranchOperationError] =
     useState<GitError | null>(null);
+  const [branchOperationNotice, setBranchOperationNotice] = useState<
+    string | null
+  >(null);
   const [remoteOperationError, setRemoteOperationError] =
     useState<GitError | null>(null);
   const [stashOperationError, setStashOperationError] =
@@ -934,6 +952,7 @@ function App() {
       setOperation({ state: "idle" });
       setChangeOperationError(null);
       setBranchOperationError(null);
+      setBranchOperationNotice(null);
       setRemoteOperationError(null);
       setStashOperationError(null);
       setCommitMessage("");
@@ -1025,6 +1044,7 @@ function App() {
       }
 
       setBranchOperationError(null);
+      setBranchOperationNotice(null);
       setOperation(
         mutation.kind === "switch"
           ? { state: "switching", branchName: mutation.branchName }
@@ -1058,6 +1078,67 @@ function App() {
       } finally {
         setOperation({ state: "idle" });
       }
+    },
+    [branchesState, operation.state, refreshRepositoryState, repository],
+  );
+
+  /** Merges or rebases the current branch using one validated local source branch. */
+  const handleBranchIntegration = useCallback(
+    async (
+      kind: "merge" | "rebase",
+      sourceBranch: string,
+    ): Promise<boolean> => {
+      if (!repository || operation.state !== "idle") {
+        return false;
+      }
+
+      const destinationBranch =
+        branchesState.state === "ready"
+          ? branchesState.branches.local.find((branch) => branch.isCurrent)
+          : undefined;
+      const source =
+        branchesState.state === "ready"
+          ? branchesState.branches.local.find(
+              (branch) => branch.name === sourceBranch && !branch.isCurrent,
+            )
+          : undefined;
+      if (!source || !destinationBranch) {
+        setBranchOperationError({
+          code: "invalidOperationInput",
+          message:
+            "Choose a non-current local branch and a checked-out destination.",
+        });
+        return false;
+      }
+
+      setBranchOperationError(null);
+      setBranchOperationNotice(null);
+      setOperation({
+        state: kind === "merge" ? "merging" : "rebasing",
+        branchName: sourceBranch,
+      });
+
+      let succeeded = false;
+      try {
+        if (kind === "merge") {
+          await mergeBranch(repository.path, sourceBranch);
+          setBranchOperationNotice(
+            `Merged ${sourceBranch} into ${destinationBranch.name}.`,
+          );
+        } else {
+          await rebaseOntoBranch(repository.path, sourceBranch);
+          setBranchOperationNotice(
+            `Rebased ${destinationBranch.name} onto ${sourceBranch}.`,
+          );
+        }
+        succeeded = true;
+      } catch (error) {
+        setBranchOperationError(normalizeGitError(error));
+      }
+
+      await refreshRepositoryState(repository.path);
+      setOperation({ state: "idle" });
+      return succeeded;
     },
     [branchesState, operation.state, refreshRepositoryState, repository],
   );
@@ -1144,6 +1225,7 @@ function App() {
         operation={operation}
         changeOperationError={changeOperationError}
         branchOperationError={branchOperationError}
+        branchOperationNotice={branchOperationNotice}
         remoteOperationError={remoteOperationError}
         stashOperationError={stashOperationError}
         commitMessage={commitMessage}
@@ -1151,6 +1233,7 @@ function App() {
         onRefresh={() => {
           setChangeOperationError(null);
           setBranchOperationError(null);
+          setBranchOperationNotice(null);
           setRemoteOperationError(null);
           setStashOperationError(null);
           void refreshRepositoryState(repository.path);
@@ -1170,6 +1253,12 @@ function App() {
         }
         onDeleteBranch={(branchName) =>
           handleBranchMutation({ kind: "delete", branchName })
+        }
+        onMergeBranch={(sourceBranch) =>
+          handleBranchIntegration("merge", sourceBranch)
+        }
+        onRebaseBranch={(sourceBranch) =>
+          handleBranchIntegration("rebase", sourceBranch)
         }
         onRemoteOperation={(kind) => void handleRemoteOperation(kind)}
         onCreateStash={(message) =>

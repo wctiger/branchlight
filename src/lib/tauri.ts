@@ -102,6 +102,22 @@ export function deleteBranch(
   return invoke<GitOutput>("delete_branch", { path, branchName });
 }
 
+/** Merges one local source branch into the current branch. */
+export function mergeBranch(
+  path: string,
+  sourceBranch: string,
+): Promise<GitOutput> {
+  return invoke<GitOutput>("merge_branch", { path, sourceBranch });
+}
+
+/** Rebases the current branch onto one local source branch. */
+export function rebaseOntoBranch(
+  path: string,
+  sourceBranch: string,
+): Promise<GitOutput> {
+  return invoke<GitOutput>("rebase_onto_branch", { path, sourceBranch });
+}
+
 /** Fetches remote refs using the repository's configured Git remotes. */
 export function fetchRemote(path: string): Promise<GitOutput> {
   return invoke<GitOutput>("fetch_remote", { path });
