@@ -1,11 +1,14 @@
-use std::path::Path;
+use std::{path::Path, sync::Mutex};
 
 use crate::models::{GitError, GitOutput, Stash};
 
 use super::runner::{decode_git_bytes, run_git};
 
+static STASH_OPERATION_LOCK: Mutex<()> = Mutex::new(());
+
 /// Lists stash entries using stable, machine-oriented fields.
 pub(crate) fn get_stashes(repository: &Path) -> Result<Vec<Stash>, GitError> {
+    let _guard = stash_operation_guard();
     let output = run_git(repository, &["stash", "list", "--format=%gd%x00%H%x00%gs"])?;
     parse_stashes(&output.stdout_bytes)
         .map_err(|message| GitError::InvalidStashesResponse { message, output })
@@ -13,6 +16,7 @@ pub(crate) fn get_stashes(repository: &Path) -> Result<Vec<Stash>, GitError> {
 
 /// Creates a stash with an optional user-provided message.
 pub(crate) fn create_stash(repository: &Path, message: &str) -> Result<GitOutput, GitError> {
+    let _guard = stash_operation_guard();
     let message = message.trim();
     if message.is_empty() {
         run_git(repository, &["stash", "push"])
@@ -22,21 +26,62 @@ pub(crate) fn create_stash(repository: &Path, message: &str) -> Result<GitOutput
 }
 
 /// Applies a selected stash while preserving it in the stash list.
-pub(crate) fn apply_stash(repository: &Path, stash_ref: &str) -> Result<GitOutput, GitError> {
-    validate_stash_ref(stash_ref)?;
-    run_git(repository, &["stash", "apply", stash_ref])
+pub(crate) fn apply_stash(repository: &Path, stash: &Stash) -> Result<GitOutput, GitError> {
+    let _guard = stash_operation_guard();
+    let commit = validate_stash_selection(repository, stash)?;
+    run_git(repository, &["stash", "apply", &commit])
 }
 
 /// Applies and removes a selected stash when Git completes successfully.
-pub(crate) fn pop_stash(repository: &Path, stash_ref: &str) -> Result<GitOutput, GitError> {
-    validate_stash_ref(stash_ref)?;
-    run_git(repository, &["stash", "pop", stash_ref])
+pub(crate) fn pop_stash(repository: &Path, stash: &Stash) -> Result<GitOutput, GitError> {
+    let _guard = stash_operation_guard();
+    let commit = validate_stash_selection(repository, stash)?;
+    run_git(repository, &["stash", "apply", &commit])?;
+
+    // Preserve the entry if an external Git process moved the reflog while apply ran.
+    validate_stash_selection(repository, stash)?;
+    run_git(repository, &["stash", "drop", &stash.reference])
 }
 
 /// Permanently removes one selected stash entry.
-pub(crate) fn drop_stash(repository: &Path, stash_ref: &str) -> Result<GitOutput, GitError> {
-    validate_stash_ref(stash_ref)?;
-    run_git(repository, &["stash", "drop", stash_ref])
+pub(crate) fn drop_stash(repository: &Path, stash: &Stash) -> Result<GitOutput, GitError> {
+    let _guard = stash_operation_guard();
+    validate_stash_selection(repository, stash)?;
+    run_git(repository, &["stash", "drop", &stash.reference])
+}
+
+/// Serializes list and mutation commands so an in-app stash selection cannot shift mid-action.
+fn stash_operation_guard() -> std::sync::MutexGuard<'static, ()> {
+    STASH_OPERATION_LOCK
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
+}
+
+/// Confirms that an ordinal stash reference still names the commit selected by the user.
+fn validate_stash_selection(repository: &Path, stash: &Stash) -> Result<String, GitError> {
+    validate_stash_ref(&stash.reference)?;
+    let revision = format!("{}^{{commit}}", stash.reference);
+    let output = run_git(repository, &["rev-parse", "--verify", &revision]).map_err(|error| {
+        if matches!(error, GitError::CommandFailed { .. }) {
+            stale_stash_error()
+        } else {
+            error
+        }
+    })?;
+    let current_commit = output.stdout.trim();
+
+    if current_commit == stash.commit && !current_commit.is_empty() {
+        Ok(current_commit.to_owned())
+    } else {
+        Err(stale_stash_error())
+    }
+}
+
+/// Builds the actionable error returned when a displayed stash entry moved or disappeared.
+fn stale_stash_error() -> GitError {
+    GitError::InvalidOperationInput {
+        message: "The stash list changed. Refresh it and choose the entry again.".to_owned(),
+    }
 }
 
 /// Parses NUL-delimited stash fields separated by one record newline.
@@ -167,7 +212,8 @@ mod tests {
             "base\n"
         );
 
-        apply_stash(&repository, "stash@{0}").expect("the stash should apply");
+        let selected_stash = stashes[0].clone();
+        apply_stash(&repository, &selected_stash).expect("the stash should apply");
         assert_eq!(
             get_stashes(&repository).expect("stashes should load").len(),
             1
@@ -179,7 +225,7 @@ mod tests {
         );
 
         reset_worktree(&repository);
-        pop_stash(&repository, "stash@{0}").expect("the stash should pop");
+        pop_stash(&repository, &selected_stash).expect("the stash should pop");
         assert!(get_stashes(&repository)
             .expect("the stash list should refresh")
             .is_empty());
@@ -194,11 +240,16 @@ mod tests {
             .expect("the tracked fixture file should change");
         create_stash(&repository, "Drop me").expect("the stash should be created");
 
+        let selected_stash = get_stashes(&repository)
+            .expect("the stash list should load")
+            .remove(0);
+        let mut invalid_stash = selected_stash.clone();
+        invalid_stash.reference = "HEAD".to_owned();
         assert!(matches!(
-            apply_stash(&repository, "HEAD"),
+            apply_stash(&repository, &invalid_stash),
             Err(GitError::InvalidOperationInput { .. })
         ));
-        drop_stash(&repository, "stash@{0}").expect("the stash should be dropped");
+        drop_stash(&repository, &selected_stash).expect("the stash should be dropped");
         assert!(get_stashes(&repository)
             .expect("the stash list should refresh")
             .is_empty());
@@ -211,5 +262,31 @@ mod tests {
         let error = parse_stashes(b"stash@{0}\0abc123\n")
             .expect_err("an incomplete stash record should not parse");
         assert!(error.contains("2 of 3 fields"));
+    }
+
+    #[test]
+    fn rejects_a_stale_stash_selection_before_mutating() {
+        let repository = temporary_repository("stale-selection");
+        fs::write(repository.join("tracked.txt"), "first stash\n")
+            .expect("the tracked fixture file should change");
+        create_stash(&repository, "First").expect("the first stash should be created");
+        let selected_stash = get_stashes(&repository)
+            .expect("the first stash should load")
+            .remove(0);
+
+        fs::write(repository.join("tracked.txt"), "newer stash\n")
+            .expect("the tracked fixture file should change again");
+        create_stash(&repository, "Newer").expect("the newer stash should be created");
+
+        assert!(matches!(
+            drop_stash(&repository, &selected_stash),
+            Err(GitError::InvalidOperationInput { .. })
+        ));
+        let stashes = get_stashes(&repository).expect("both stashes should remain");
+        assert_eq!(stashes.len(), 2);
+        assert!(stashes[0].message.contains("Newer"));
+        assert_eq!(stashes[1].commit, selected_stash.commit);
+
+        fs::remove_dir_all(repository).expect("the stash test repository should be removed");
     }
 }

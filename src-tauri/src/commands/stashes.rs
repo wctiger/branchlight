@@ -19,18 +19,18 @@ pub(crate) fn create_stash(path: String, message: String) -> Result<GitOutput, G
 
 /// Applies one selected stash without removing it.
 #[tauri::command]
-pub(crate) fn apply_stash(path: String, stash_ref: String) -> Result<GitOutput, GitError> {
-    git::apply_stash(Path::new(&path), &stash_ref)
+pub(crate) fn apply_stash(path: String, stash: Stash) -> Result<GitOutput, GitError> {
+    git::apply_stash(Path::new(&path), &stash)
 }
 
 /// Applies and removes one selected stash on success.
 #[tauri::command]
-pub(crate) fn pop_stash(path: String, stash_ref: String) -> Result<GitOutput, GitError> {
-    git::pop_stash(Path::new(&path), &stash_ref)
+pub(crate) fn pop_stash(path: String, stash: Stash) -> Result<GitOutput, GitError> {
+    git::pop_stash(Path::new(&path), &stash)
 }
 
 /// Permanently removes one selected stash.
 #[tauri::command]
-pub(crate) fn drop_stash(path: String, stash_ref: String) -> Result<GitOutput, GitError> {
-    git::drop_stash(Path::new(&path), &stash_ref)
+pub(crate) fn drop_stash(path: String, stash: Stash) -> Result<GitOutput, GitError> {
+    git::drop_stash(Path::new(&path), &stash)
 }

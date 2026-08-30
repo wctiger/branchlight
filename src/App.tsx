@@ -35,6 +35,7 @@ import {
 } from "./features/stashes/StashPanel";
 import type { GitError, GitOutput } from "./types/git";
 import type { Repository } from "./types/repository";
+import type { Stash } from "./types/stash";
 import type {
   BranchStatus,
   FileChange,
@@ -81,9 +82,9 @@ type RemoteOperation = "fetch" | "pull" | "push";
 
 type StashMutation =
   | { kind: "create"; message: string }
-  | { kind: "apply"; stashRef: string }
-  | { kind: "pop"; stashRef: string }
-  | { kind: "drop"; stashRef: string };
+  | { kind: "apply"; stash: Stash }
+  | { kind: "pop"; stash: Stash }
+  | { kind: "drop"; stash: Stash };
 
 type BranchMutation =
   | { kind: "switch"; branchName: string }
@@ -322,9 +323,9 @@ function RepositoryWorkspace({
   onUnstage: (path: string) => void;
   onCommit: (event: FormEvent<HTMLFormElement>) => void;
   onCreateStash: (message: string) => Promise<boolean>;
-  onApplyStash: (stashRef: string) => Promise<boolean>;
-  onPopStash: (stashRef: string) => Promise<boolean>;
-  onDropStash: (stashRef: string) => Promise<boolean>;
+  onApplyStash: (stash: Stash) => Promise<boolean>;
+  onPopStash: (stash: Stash) => Promise<boolean>;
+  onDropStash: (stash: Stash) => Promise<boolean>;
 }) {
   if (state.state === "idle" || state.state === "loading") {
     return (
@@ -579,9 +580,9 @@ function RepositoryScreen({
   onDeleteBranch: (branchName: string) => Promise<boolean>;
   onRemoteOperation: (kind: RemoteOperation) => void;
   onCreateStash: (message: string) => Promise<boolean>;
-  onApplyStash: (stashRef: string) => Promise<boolean>;
-  onPopStash: (stashRef: string) => Promise<boolean>;
-  onDropStash: (stashRef: string) => Promise<boolean>;
+  onApplyStash: (stash: Stash) => Promise<boolean>;
+  onPopStash: (stash: Stash) => Promise<boolean>;
+  onDropStash: (stash: Stash) => Promise<boolean>;
 }) {
   const status = statusState.state === "ready" ? statusState.status : null;
   const isRefreshing =
@@ -655,7 +656,7 @@ function RepositoryScreen({
           <button
             className="secondary-button"
             type="button"
-            disabled={isRefreshing || isMutating || openState !== "idle"}
+            disabled={!status || isRefreshing || isMutating || openState !== "idle"}
             onClick={() => document.getElementById("stash-message")?.focus()}
           >
             Stash
@@ -1102,10 +1103,10 @@ function App() {
         mutation.kind === "create"
           ? { state: "stashing" }
           : mutation.kind === "apply"
-            ? { state: "applyingStash", stashRef: mutation.stashRef }
+            ? { state: "applyingStash", stashRef: mutation.stash.reference }
             : mutation.kind === "pop"
-              ? { state: "poppingStash", stashRef: mutation.stashRef }
-              : { state: "droppingStash", stashRef: mutation.stashRef },
+              ? { state: "poppingStash", stashRef: mutation.stash.reference }
+              : { state: "droppingStash", stashRef: mutation.stash.reference },
       );
 
       let succeeded = false;
@@ -1113,11 +1114,11 @@ function App() {
         if (mutation.kind === "create") {
           await createStash(repository.path, mutation.message);
         } else if (mutation.kind === "apply") {
-          await applyStash(repository.path, mutation.stashRef);
+          await applyStash(repository.path, mutation.stash);
         } else if (mutation.kind === "pop") {
-          await popStash(repository.path, mutation.stashRef);
+          await popStash(repository.path, mutation.stash);
         } else {
-          await dropStash(repository.path, mutation.stashRef);
+          await dropStash(repository.path, mutation.stash);
         }
         succeeded = true;
       } catch (error) {
@@ -1174,14 +1175,14 @@ function App() {
         onCreateStash={(message) =>
           handleStashMutation({ kind: "create", message })
         }
-        onApplyStash={(stashRef) =>
-          handleStashMutation({ kind: "apply", stashRef })
+        onApplyStash={(stash) =>
+          handleStashMutation({ kind: "apply", stash })
         }
-        onPopStash={(stashRef) =>
-          handleStashMutation({ kind: "pop", stashRef })
+        onPopStash={(stash) =>
+          handleStashMutation({ kind: "pop", stash })
         }
-        onDropStash={(stashRef) =>
-          handleStashMutation({ kind: "drop", stashRef })
+        onDropStash={(stash) =>
+          handleStashMutation({ kind: "drop", stash })
         }
       />
     );

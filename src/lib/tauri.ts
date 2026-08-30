@@ -128,18 +128,18 @@ export function createStash(path: string, message: string): Promise<GitOutput> {
 }
 
 /** Applies one stash without removing it. */
-export function applyStash(path: string, stashRef: string): Promise<GitOutput> {
-  return invoke<GitOutput>("apply_stash", { path, stashRef });
+export function applyStash(path: string, stash: Stash): Promise<GitOutput> {
+  return invoke<GitOutput>("apply_stash", { path, stash });
 }
 
 /** Applies and removes one stash when Git succeeds. */
-export function popStash(path: string, stashRef: string): Promise<GitOutput> {
-  return invoke<GitOutput>("pop_stash", { path, stashRef });
+export function popStash(path: string, stash: Stash): Promise<GitOutput> {
+  return invoke<GitOutput>("pop_stash", { path, stash });
 }
 
 /** Permanently removes one selected stash entry. */
-export function dropStash(path: string, stashRef: string): Promise<GitOutput> {
-  return invoke<GitOutput>("drop_stash", { path, stashRef });
+export function dropStash(path: string, stash: Stash): Promise<GitOutput> {
+  return invoke<GitOutput>("drop_stash", { path, stash });
 }
 
 /** Stages all changes for one repository-relative path. */

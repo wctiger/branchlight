@@ -26,9 +26,9 @@ interface StashPanelProps {
   busyOperation: StashOperation | null;
   onRefresh: () => void;
   onCreate: (message: string) => Promise<boolean>;
-  onApply: (stashRef: string) => Promise<boolean>;
-  onPop: (stashRef: string) => Promise<boolean>;
-  onDrop: (stashRef: string) => Promise<boolean>;
+  onApply: (stash: Stash) => Promise<boolean>;
+  onPop: (stash: Stash) => Promise<boolean>;
+  onDrop: (stash: Stash) => Promise<boolean>;
 }
 
 /** Shows a contextual stash failure and captured Git output. */
@@ -91,7 +91,8 @@ export function StashPanel({
       return;
     }
 
-    if (await onDrop(pendingDropRef)) {
+    const stash = stashes.find((entry) => entry.reference === pendingDropRef);
+    if (stash && (await onDrop(stash))) {
       setPendingDropRef(null);
     }
   };
@@ -220,7 +221,7 @@ export function StashPanel({
                       type="button"
                       disabled={controlsDisabled}
                       aria-busy={isBusy && busyOperation === "apply"}
-                      onClick={() => void onApply(stash.reference)}
+                      onClick={() => void onApply(stash)}
                     >
                       {isBusy && busyOperation === "apply" ? "Applying…" : "Apply"}
                     </button>
@@ -228,7 +229,7 @@ export function StashPanel({
                       type="button"
                       disabled={controlsDisabled}
                       aria-busy={isBusy && busyOperation === "pop"}
-                      onClick={() => void onPop(stash.reference)}
+                      onClick={() => void onPop(stash)}
                     >
                       {isBusy && busyOperation === "pop" ? "Popping…" : "Pop"}
                     </button>
