@@ -471,8 +471,13 @@ button:disabled {
 
 .repository-actions {
   display: flex;
+  flex-wrap: wrap;
   justify-content: flex-end;
   gap: 8px;
+}
+
+.remote-button {
+  min-width: 61px;
 }
 
 .secondary-button {

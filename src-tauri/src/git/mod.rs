@@ -1,5 +1,6 @@
 mod branches;
 mod operations;
+mod remotes;
 mod repository;
 mod runner;
 mod status;
@@ -9,6 +10,7 @@ pub(crate) use branches::{
     create_branch, delete_branch, get_branches, rename_branch, switch_branch,
 };
 pub(crate) use operations::{commit, stage_file, unstage_file};
+pub(crate) use remotes::{fetch, pull, push};
 pub(crate) use repository::open_repository;
 pub(crate) use status::get_repository_status;
 pub(crate) use version::get_git_version;
