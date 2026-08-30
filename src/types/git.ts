@@ -13,6 +13,7 @@ export type GitErrorCode =
   | "invalidRepositoryResponse"
   | "invalidStatusResponse"
   | "invalidBranchesResponse"
+  | "invalidStashesResponse"
   | "invalidOperationInput"
   | "unknown";
 

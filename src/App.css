@@ -877,6 +877,195 @@ button:disabled {
   flex: 0 0 auto;
 }
 
+.stash-panel {
+  margin: 22px 0;
+  padding: 18px;
+  border: 1px solid rgba(42, 77, 52, 0.1);
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.stash-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 13px;
+}
+
+.stash-panel__header h3 {
+  margin: 3px 0 0;
+  color: #2d4535;
+  font-size: 0.88rem;
+}
+
+.stash-panel__header > span {
+  min-width: 25px;
+  padding: 3px 7px;
+  border-radius: 999px;
+  color: #587060;
+  background: #edf3ef;
+  font-size: 0.62rem;
+  font-weight: 760;
+  text-align: center;
+}
+
+.stash-create label {
+  display: block;
+  margin-bottom: 6px;
+  color: #5f7065;
+  font-size: 0.63rem;
+  font-weight: 700;
+}
+
+.stash-create > div {
+  display: flex;
+  gap: 8px;
+}
+
+.stash-create input {
+  min-width: 0;
+  min-height: 38px;
+  flex: 1;
+  padding: 8px 11px;
+  border: 1px solid rgba(39, 75, 50, 0.14);
+  border-radius: 10px;
+  outline: 0;
+  color: #293d30;
+  background: #fbfcfb;
+  font-size: 0.7rem;
+}
+
+.stash-create input:focus {
+  border-color: rgba(43, 113, 66, 0.5);
+  box-shadow: 0 0 0 3px rgba(43, 113, 66, 0.08);
+}
+
+.stash-error {
+  margin-top: 12px;
+  padding: 10px 11px;
+  border: 1px solid rgba(167, 72, 52, 0.14);
+  border-radius: 9px;
+  color: #79483c;
+  background: #fff3ef;
+}
+
+.stash-error strong {
+  display: block;
+  margin-bottom: 3px;
+  font-size: 0.64rem;
+}
+
+.stash-error p {
+  max-height: 72px;
+  overflow: auto;
+  margin: 0;
+  font: 0.58rem/1.42 ui-monospace, SFMono-Regular, Menlo, monospace;
+  white-space: pre-wrap;
+}
+
+.stash-panel__status,
+.stash-panel__empty {
+  margin: 14px 0 0;
+  color: #7e8b82;
+  font-size: 0.66rem;
+}
+
+.stash-panel__status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stash-panel__status:has(.stash-error) {
+  align-items: flex-start;
+  flex-direction: column;
+}
+
+.stash-list {
+  display: grid;
+  gap: 8px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stash-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 12px;
+  border: 1px solid rgba(42, 77, 52, 0.08);
+  border-radius: 11px;
+  background: rgba(244, 248, 245, 0.72);
+}
+
+.stash-item__identity {
+  min-width: 0;
+}
+
+.stash-item__identity > div {
+  display: flex;
+  gap: 7px;
+  margin-bottom: 5px;
+}
+
+.stash-item__identity code {
+  color: #758279;
+  font: 0.57rem ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.stash-item__identity strong {
+  display: block;
+  overflow: hidden;
+  color: #3e5145;
+  font-size: 0.68rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stash-item__actions,
+.stash-drop-confirmation > div {
+  display: flex;
+  gap: 5px;
+}
+
+.stash-item__actions button,
+.stash-drop-confirmation button {
+  min-height: 29px;
+  padding: 5px 8px;
+  border: 1px solid rgba(42, 77, 52, 0.12);
+  border-radius: 7px;
+  color: #526359;
+  background: rgba(255, 255, 255, 0.78);
+  cursor: pointer;
+  font-size: 0.58rem;
+  font-weight: 720;
+}
+
+.stash-item__actions button:hover:not(:disabled),
+.stash-drop-confirmation button:hover:not(:disabled) {
+  background: #e8f1ea;
+}
+
+.stash-item__actions .stash-button--danger,
+.stash-drop-confirmation .stash-button--danger {
+  color: #9c4e3d;
+}
+
+.stash-drop-confirmation strong {
+  display: block;
+  color: #844b3e;
+  font-size: 0.64rem;
+}
+
+.stash-drop-confirmation p {
+  margin: 3px 0 7px;
+  color: #8c776f;
+  font-size: 0.59rem;
+}
+
 .status-loading,
 .status-error {
   display: flex;
@@ -1371,6 +1560,19 @@ button:disabled {
     flex: 1;
   }
 
+  .stash-create > div {
+    flex-direction: column;
+  }
+
+  .stash-item {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .stash-item__actions button {
+    flex: 1;
+  }
+
   .repository-workspace {
     width: calc(100% - 30px);
     padding-top: 26px;
@@ -1620,6 +1822,51 @@ button:disabled {
     border-color: rgba(225, 132, 112, 0.14);
     color: #d9aea3;
     background: #34231f;
+  }
+
+  .stash-panel,
+  .stash-item {
+    border-color: rgba(211, 230, 217, 0.09);
+    background: rgba(27, 38, 30, 0.78);
+  }
+
+  .stash-panel__header h3,
+  .stash-item__identity strong {
+    color: #d7e4da;
+  }
+
+  .stash-panel__header > span,
+  .stash-item__actions button,
+  .stash-drop-confirmation button {
+    border-color: rgba(145, 194, 158, 0.13);
+    color: #a9b9ae;
+    background: #233028;
+  }
+
+  .stash-create label,
+  .stash-panel__status,
+  .stash-panel__empty,
+  .stash-item__identity code {
+    color: #849188;
+  }
+
+  .stash-create input {
+    border-color: rgba(211, 230, 217, 0.12);
+    color: #dbe8de;
+    background: #18221b;
+  }
+
+  .stash-error,
+  .stash-drop-confirmation {
+    border-color: rgba(225, 132, 112, 0.14);
+    color: #d9aea3;
+    background: #34231f;
+  }
+
+  .stash-item__actions .stash-button--danger,
+  .stash-drop-confirmation .stash-button--danger,
+  .stash-drop-confirmation strong {
+    color: #e0a193;
   }
 
   .branch-summary {
