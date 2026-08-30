@@ -12,6 +12,7 @@ export type GitErrorCode =
   | "repositoryUnavailable"
   | "invalidRepositoryResponse"
   | "invalidStatusResponse"
+  | "invalidBranchesResponse"
   | "invalidOperationInput"
   | "unknown";
 

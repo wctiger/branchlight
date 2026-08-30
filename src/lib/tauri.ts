@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 
 import type { GitError, GitErrorCode, GitOutput } from "../types/git";
+import type { Branches } from "../types/branch";
 import type { Repository } from "../types/repository";
 import type { RepositoryStatus } from "../types/status";
 
@@ -13,6 +14,7 @@ const gitErrorCodes: GitErrorCode[] = [
   "repositoryUnavailable",
   "invalidRepositoryResponse",
   "invalidStatusResponse",
+  "invalidBranchesResponse",
   "invalidOperationInput",
 ];
 
@@ -58,6 +60,44 @@ export function openRepository(path: string): Promise<Repository> {
 /** Requests a fresh, fully parsed status snapshot from system Git. */
 export function getRepositoryStatus(path: string): Promise<RepositoryStatus> {
   return invoke<RepositoryStatus>("get_repository_status", { path });
+}
+
+/** Requests a fresh snapshot of local and remote branch refs. */
+export function getBranches(path: string): Promise<Branches> {
+  return invoke<Branches>("get_branches", { path });
+}
+
+/** Switches the worktree to an existing local branch. */
+export function switchBranch(
+  path: string,
+  branchName: string,
+): Promise<GitOutput> {
+  return invoke<GitOutput>("switch_branch", { path, branchName });
+}
+
+/** Creates a local branch at HEAD and switches to it. */
+export function createBranch(
+  path: string,
+  branchName: string,
+): Promise<GitOutput> {
+  return invoke<GitOutput>("create_branch", { path, branchName });
+}
+
+/** Renames an existing local branch. */
+export function renameBranch(
+  path: string,
+  oldName: string,
+  newName: string,
+): Promise<GitOutput> {
+  return invoke<GitOutput>("rename_branch", { path, oldName, newName });
+}
+
+/** Deletes a fully merged, non-current local branch. */
+export function deleteBranch(
+  path: string,
+  branchName: string,
+): Promise<GitOutput> {
+  return invoke<GitOutput>("delete_branch", { path, branchName });
 }
 
 /** Stages all changes for one repository-relative path. */
