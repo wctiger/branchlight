@@ -22,6 +22,7 @@ export type HistoryState =
 
 interface HistoryPanelProps {
   state: HistoryState;
+  controlsDisabled: boolean;
   onRefresh: () => void;
 }
 
@@ -59,7 +60,11 @@ function HistoryError({ error }: { error: GitError }) {
 }
 
 /** Renders a selectable, read-only list of the repository's bounded history. */
-export function HistoryPanel({ state, onRefresh }: HistoryPanelProps) {
+export function HistoryPanel({
+  state,
+  controlsDisabled,
+  onRefresh,
+}: HistoryPanelProps) {
   const commits = useMemo(
     () => (state.state === "ready" ? state.commits : []),
     [state],
@@ -105,7 +110,12 @@ export function HistoryPanel({ state, onRefresh }: HistoryPanelProps) {
       {state.state === "error" && (
         <div className="history-panel__status">
           <HistoryError error={state.error} />
-          <button className="secondary-button" type="button" onClick={onRefresh}>
+          <button
+            className="secondary-button"
+            type="button"
+            disabled={controlsDisabled}
+            onClick={onRefresh}
+          >
             Try again
           </button>
         </div>
