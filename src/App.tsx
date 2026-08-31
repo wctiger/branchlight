@@ -678,6 +678,7 @@ function RepositoryScreen({
   remoteOperationError,
   stashOperationError,
   conflictOperationError,
+  operationNotice,
   commitMessage,
   onOpenRepository,
   onRefresh,
@@ -712,6 +713,7 @@ function RepositoryScreen({
   remoteOperationError: GitError | null;
   stashOperationError: GitError | null;
   conflictOperationError: GitError | null;
+  operationNotice: string | null;
   commitMessage: string;
   onOpenRepository: () => void;
   onRefresh: () => void;
@@ -864,6 +866,13 @@ function RepositoryScreen({
         </div>
       )}
 
+      {operationNotice && (
+        <div className="repository-notice" role="status">
+          <span aria-hidden="true">✓</span>
+          <p>{operationNotice}</p>
+        </div>
+      )}
+
       {status && (
         <ConflictBanner
           status={status}
@@ -948,11 +957,14 @@ function App() {
     useState<GitError | null>(null);
   const [conflictOperationError, setConflictOperationError] =
     useState<GitError | null>(null);
+  const [operationNotice, setOperationNotice] = useState<string | null>(null);
   const [commitMessage, setCommitMessage] = useState("");
   const statusRequestId = useRef(0);
   const branchesRequestId = useRef(0);
   const stashesRequestId = useRef(0);
   const historyRequestId = useRef(0);
+  const repositoryMutationInFlight = useRef(false);
+  const openRequestInFlight = useRef(false);
 
   const checkGitVersion = useCallback(async () => {
     setGitStatus({ state: "checking" });
@@ -1130,17 +1142,57 @@ function App() {
     [refreshBranches, refreshHistory, refreshRepositoryStatus, refreshStashes],
   );
 
+  /** Atomically prevents a second Git mutation before React can render disabled controls. */
+  const beginRepositoryMutation = useCallback(() => {
+    if (repositoryMutationInFlight.current) {
+      return false;
+    }
+    repositoryMutationInFlight.current = true;
+    return true;
+  }, []);
+
+  /** Refreshes every Git-backed view and always releases the mutation guard. */
+  const finishRepositoryMutation = useCallback(
+    async (repositoryPath: string) => {
+      try {
+        await refreshRepositoryState(repositoryPath);
+      } finally {
+        repositoryMutationInFlight.current = false;
+        setOperation({ state: "idle" });
+      }
+    },
+    [refreshRepositoryState],
+  );
+
+  /** Clears stale action feedback before a new command or explicit refresh. */
+  const clearOperationFeedback = useCallback(() => {
+    setChangeOperationError(null);
+    setBranchOperationError(null);
+    setBranchOperationNotice(null);
+    setRemoteOperationError(null);
+    setStashOperationError(null);
+    setConflictOperationError(null);
+    setOperationNotice(null);
+  }, []);
+
   useEffect(() => {
     if (repository) {
       void refreshRepositoryState(repository.path);
     }
   }, [refreshRepositoryState, repository]);
 
+  /** Opens at most one folder picker and validates its selected repository. */
   const handleOpenRepository = useCallback(async () => {
-    if (openState !== "idle" || gitStatus.state !== "ready") {
+    if (
+      openState !== "idle" ||
+      gitStatus.state !== "ready" ||
+      openRequestInFlight.current ||
+      repositoryMutationInFlight.current
+    ) {
       return;
     }
 
+    openRequestInFlight.current = true;
     setRepositoryError(null);
     setOpenState("choosing");
 
@@ -1161,29 +1213,29 @@ function App() {
       setStashesState({ state: "idle" });
       setHistoryState({ state: "idle" });
       setOperation({ state: "idle" });
-      setChangeOperationError(null);
-      setBranchOperationError(null);
-      setBranchOperationNotice(null);
-      setRemoteOperationError(null);
-      setStashOperationError(null);
-      setConflictOperationError(null);
+      clearOperationFeedback();
       setCommitMessage("");
       setRepository(openedRepository);
     } catch (error) {
       setRepositoryError(normalizeGitError(error));
     } finally {
+      openRequestInFlight.current = false;
       setOpenState("idle");
     }
-  }, [gitStatus.state, openState]);
+  }, [clearOperationFeedback, gitStatus.state, openState]);
 
-  /** Runs one whole-file mutation and refreshes Git state after success. */
+  /** Runs one whole-file mutation and refreshes Git state after every attempt. */
   const handleFileOperation = useCallback(
     async (kind: "stage" | "unstage", filePath: string) => {
-      if (!repository || operation.state !== "idle") {
+      if (
+        !repository ||
+        operation.state !== "idle" ||
+        !beginRepositoryMutation()
+      ) {
         return;
       }
 
-      setChangeOperationError(null);
+      clearOperationFeedback();
       setOperation({
         state: kind === "stage" ? "staging" : "unstaging",
         path: filePath,
@@ -1195,52 +1247,70 @@ function App() {
         } else {
           await unstageFile(repository.path, filePath);
         }
-
-        await refreshRepositoryState(repository.path);
+        setOperationNotice(
+          `${kind === "stage" ? "Staged" : "Unstaged"} ${filePath}.`,
+        );
       } catch (error) {
         setChangeOperationError(normalizeGitError(error));
-      } finally {
-        setOperation({ state: "idle" });
       }
+      await finishRepositoryMutation(repository.path);
     },
-    [operation.state, refreshRepositoryState, repository],
+    [
+      beginRepositoryMutation,
+      clearOperationFeedback,
+      finishRepositoryMutation,
+      operation.state,
+      repository,
+    ],
   );
 
-  /** Creates a commit only when the message is valid, then refreshes Git state. */
+  /** Creates a commit only when valid and refreshes Git state after every attempt. */
   const handleCommit = useCallback(
     async (event: FormEvent<HTMLFormElement>) => {
       event.preventDefault();
       if (
         !repository ||
         operation.state !== "idle" ||
-        commitMessage.trim().length === 0
+        commitMessage.trim().length === 0 ||
+        !beginRepositoryMutation()
       ) {
         return;
       }
 
-      setChangeOperationError(null);
+      clearOperationFeedback();
       setOperation({ state: "committing" });
 
       try {
         await commitChanges(repository.path, commitMessage);
         setCommitMessage("");
-        await refreshRepositoryState(repository.path);
+        setOperationNotice("Commit created successfully.");
       } catch (error) {
         setChangeOperationError(normalizeGitError(error));
-      } finally {
-        setOperation({ state: "idle" });
       }
+      await finishRepositoryMutation(repository.path);
     },
-    [commitMessage, operation.state, refreshRepositoryState, repository],
+    [
+      beginRepositoryMutation,
+      clearOperationFeedback,
+      commitMessage,
+      finishRepositoryMutation,
+      operation.state,
+      repository,
+    ],
   );
 
-  /** Runs a local branch mutation and refreshes all repository state after success. */
+  /** Runs a local branch mutation and refreshes all state after every attempt. */
   const handleBranchMutation = useCallback(
     async (mutation: BranchMutation): Promise<boolean> => {
-      if (!repository || operation.state !== "idle") {
+      if (
+        !repository ||
+        operation.state !== "idle" ||
+        repositoryMutationInFlight.current
+      ) {
         return false;
       }
 
+      clearOperationFeedback();
       const selectedBranch =
         branchesState.state === "ready"
           ? branchesState.branches.local.find(
@@ -1254,9 +1324,10 @@ function App() {
         });
         return false;
       }
+      if (!beginRepositoryMutation()) {
+        return false;
+      }
 
-      setBranchOperationError(null);
-      setBranchOperationNotice(null);
       setOperation(
         mutation.kind === "switch"
           ? { state: "switching", branchName: mutation.branchName }
@@ -1267,6 +1338,7 @@ function App() {
               : { state: "deleting", branchName: mutation.branchName },
       );
 
+      let succeeded = false;
       try {
         if (mutation.kind === "switch") {
           await switchBranch(repository.path, mutation.branchName);
@@ -1282,16 +1354,30 @@ function App() {
           await deleteBranch(repository.path, mutation.branchName);
         }
 
-        await refreshRepositoryState(repository.path);
-        return true;
+        setBranchOperationNotice(
+          mutation.kind === "switch"
+            ? `Switched to ${mutation.branchName}.`
+            : mutation.kind === "create"
+              ? `Created and switched to ${mutation.branchName}.`
+              : mutation.kind === "rename"
+                ? `Renamed ${mutation.branchName} to ${mutation.newName}.`
+                : `Deleted ${mutation.branchName}.`,
+        );
+        succeeded = true;
       } catch (error) {
         setBranchOperationError(normalizeGitError(error));
-        return false;
-      } finally {
-        setOperation({ state: "idle" });
       }
+      await finishRepositoryMutation(repository.path);
+      return succeeded;
     },
-    [branchesState, operation.state, refreshRepositoryState, repository],
+    [
+      beginRepositoryMutation,
+      branchesState,
+      clearOperationFeedback,
+      finishRepositoryMutation,
+      operation.state,
+      repository,
+    ],
   );
 
   /** Merges or rebases the current branch using one validated local source branch. */
@@ -1300,10 +1386,15 @@ function App() {
       kind: "merge" | "rebase",
       sourceBranch: string,
     ): Promise<boolean> => {
-      if (!repository || operation.state !== "idle") {
+      if (
+        !repository ||
+        operation.state !== "idle" ||
+        repositoryMutationInFlight.current
+      ) {
         return false;
       }
 
+      clearOperationFeedback();
       const destinationBranch =
         branchesState.state === "ready"
           ? branchesState.branches.local.find((branch) => branch.isCurrent)
@@ -1322,9 +1413,10 @@ function App() {
         });
         return false;
       }
+      if (!beginRepositoryMutation()) {
+        return false;
+      }
 
-      setBranchOperationError(null);
-      setBranchOperationNotice(null);
       setOperation({
         state: kind === "merge" ? "merging" : "rebasing",
         branchName: sourceBranch,
@@ -1348,20 +1440,31 @@ function App() {
         setBranchOperationError(normalizeGitError(error));
       }
 
-      await refreshRepositoryState(repository.path);
-      setOperation({ state: "idle" });
+      await finishRepositoryMutation(repository.path);
       return succeeded;
     },
-    [branchesState, operation.state, refreshRepositoryState, repository],
+    [
+      beginRepositoryMutation,
+      branchesState,
+      clearOperationFeedback,
+      finishRepositoryMutation,
+      operation.state,
+      repository,
+    ],
   );
 
   /** Aborts only the operation reported by Git and refreshes every view afterward. */
   const handleAbortOperation = useCallback(
     async (kind: "merge" | "rebase") => {
-      if (!repository || operation.state !== "idle") {
+      if (
+        !repository ||
+        operation.state !== "idle" ||
+        repositoryMutationInFlight.current
+      ) {
         return;
       }
 
+      clearOperationFeedback();
       const activeOperation =
         repositoryStatus.state === "ready"
           ? repositoryStatus.status.operation
@@ -1373,8 +1476,10 @@ function App() {
         });
         return;
       }
+      if (!beginRepositoryMutation()) {
+        return;
+      }
 
-      setConflictOperationError(null);
       setOperation({
         state: kind === "merge" ? "abortingMerge" : "abortingRebase",
       });
@@ -1385,24 +1490,37 @@ function App() {
         } else {
           await abortRebase(repository.path);
         }
+        setOperationNotice(
+          `${kind === "merge" ? "Merge" : "Rebase"} aborted successfully.`,
+        );
       } catch (error) {
         setConflictOperationError(normalizeGitError(error));
       }
 
-      await refreshRepositoryState(repository.path);
-      setOperation({ state: "idle" });
+      await finishRepositoryMutation(repository.path);
     },
-    [operation.state, refreshRepositoryState, repository, repositoryStatus],
+    [
+      beginRepositoryMutation,
+      clearOperationFeedback,
+      finishRepositoryMutation,
+      operation.state,
+      repository,
+      repositoryStatus,
+    ],
   );
 
   /** Runs one configured remote operation and refreshes all Git-backed state. */
   const handleRemoteOperation = useCallback(
     async (kind: RemoteOperation) => {
-      if (!repository || operation.state !== "idle") {
+      if (
+        !repository ||
+        operation.state !== "idle" ||
+        !beginRepositoryMutation()
+      ) {
         return;
       }
 
-      setRemoteOperationError(null);
+      clearOperationFeedback();
       setOperation({ state: `${kind}ing` });
 
       try {
@@ -1413,25 +1531,39 @@ function App() {
         } else {
           await pushRemote(repository.path);
         }
-
-        await refreshRepositoryState(repository.path);
+        setOperationNotice(
+          kind === "fetch"
+            ? "Fetched remote refs successfully."
+            : kind === "pull"
+              ? "Pulled the current branch successfully."
+              : "Pushed the current branch successfully.",
+        );
       } catch (error) {
         setRemoteOperationError(normalizeGitError(error));
-      } finally {
-        setOperation({ state: "idle" });
       }
+      await finishRepositoryMutation(repository.path);
     },
-    [operation.state, refreshRepositoryState, repository],
+    [
+      beginRepositoryMutation,
+      clearOperationFeedback,
+      finishRepositoryMutation,
+      operation.state,
+      repository,
+    ],
   );
 
   /** Runs one stash mutation and refreshes Git-backed state even after conflicts. */
   const handleStashMutation = useCallback(
     async (mutation: StashMutation): Promise<boolean> => {
-      if (!repository || operation.state !== "idle") {
+      if (
+        !repository ||
+        operation.state !== "idle" ||
+        !beginRepositoryMutation()
+      ) {
         return false;
       }
 
-      setStashOperationError(null);
+      clearOperationFeedback();
       setOperation(
         mutation.kind === "create"
           ? { state: "stashing" }
@@ -1453,16 +1585,30 @@ function App() {
         } else {
           await dropStash(repository.path, mutation.stash);
         }
+        setOperationNotice(
+          mutation.kind === "create"
+            ? "Stash created successfully."
+            : mutation.kind === "apply"
+              ? `${mutation.stash.reference} applied successfully.`
+              : mutation.kind === "pop"
+                ? `${mutation.stash.reference} popped successfully.`
+                : `${mutation.stash.reference} dropped successfully.`,
+        );
         succeeded = true;
       } catch (error) {
         setStashOperationError(normalizeGitError(error));
       }
 
-      await refreshRepositoryState(repository.path);
-      setOperation({ state: "idle" });
+      await finishRepositoryMutation(repository.path);
       return succeeded;
     },
-    [operation.state, refreshRepositoryState, repository],
+    [
+      beginRepositoryMutation,
+      clearOperationFeedback,
+      finishRepositoryMutation,
+      operation.state,
+      repository,
+    ],
   );
 
   if (repository) {
@@ -1482,15 +1628,11 @@ function App() {
         remoteOperationError={remoteOperationError}
         stashOperationError={stashOperationError}
         conflictOperationError={conflictOperationError}
+        operationNotice={operationNotice}
         commitMessage={commitMessage}
         onOpenRepository={() => void handleOpenRepository()}
         onRefresh={() => {
-          setChangeOperationError(null);
-          setBranchOperationError(null);
-          setBranchOperationNotice(null);
-          setRemoteOperationError(null);
-          setStashOperationError(null);
-          setConflictOperationError(null);
+          clearOperationFeedback();
           void refreshRepositoryState(repository.path);
         }}
         onCommitMessageChange={setCommitMessage}
