@@ -226,6 +226,7 @@ function ConflictBanner({
   operation,
   operationError,
   isRefreshing,
+  controlsDisabled,
   onRefresh,
   onAbort,
 }: {
@@ -233,6 +234,7 @@ function ConflictBanner({
   operation: AppOperation;
   operationError: GitError | null;
   isRefreshing: boolean;
+  controlsDisabled: boolean;
   onRefresh: () => void;
   onAbort: (kind: "merge" | "rebase") => void;
 }) {
@@ -255,7 +257,8 @@ function ConflictBanner({
   const isAborting =
     (activeOperation === "merge" && operation.state === "abortingMerge") ||
     (activeOperation === "rebase" && operation.state === "abortingRebase");
-  const actionsDisabled = operation.state !== "idle" || isRefreshing;
+  const actionsDisabled =
+    controlsDisabled || operation.state !== "idle" || isRefreshing;
 
   return (
     <section
@@ -432,6 +435,7 @@ function ChangeSection({
 function RepositoryWorkspace({
   state,
   stashesState,
+  controlsDisabled,
   onRefresh,
   operation,
   operationError,
@@ -448,6 +452,7 @@ function RepositoryWorkspace({
 }: {
   state: RepositoryStatusState;
   stashesState: StashesState;
+  controlsDisabled: boolean;
   onRefresh: () => void;
   operation: AppOperation;
   operationError: GitError | null;
@@ -479,7 +484,12 @@ function RepositoryWorkspace({
           error={state.error}
           title="Repository status couldn’t be refreshed"
         />
-        <button className="secondary-button" type="button" onClick={onRefresh}>
+        <button
+          className="secondary-button"
+          type="button"
+          disabled={controlsDisabled}
+          onClick={onRefresh}
+        >
           <RefreshIcon />
           Try again
         </button>
@@ -492,7 +502,8 @@ function RepositoryWorkspace({
     status.staged.length + status.unstaged.length + status.conflicts.length;
   const isMutating =
     operation.state !== "idle" || status.operation !== "none";
-  const actionsDisabled = isMutating || state.isRefreshing;
+  const actionsDisabled =
+    controlsDisabled || isMutating || state.isRefreshing;
   const canCommit =
     status.staged.length > 0 &&
     status.conflicts.length === 0 &&
@@ -639,7 +650,7 @@ function RepositoryWorkspace({
             type="text"
             value={commitMessage}
             maxLength={500}
-            disabled={isMutating}
+            disabled={actionsDisabled}
             placeholder="Describe what changed"
             autoComplete="off"
             onChange={(event) => onCommitMessageChange(event.target.value)}
@@ -745,6 +756,7 @@ function RepositoryScreen({
     historyState.state === "loading" ||
     (historyState.state === "ready" && historyState.isRefreshing);
   const isMutating = operation.state !== "idle";
+  const controlsDisabled = isMutating || openState !== "idle";
   const hasActiveRepositoryOperation =
     status !== null && status.operation !== "none";
   const busyBranchName =
@@ -885,6 +897,7 @@ function RepositoryScreen({
           operation={operation}
           operationError={conflictOperationError}
           isRefreshing={isRefreshing}
+          controlsDisabled={controlsDisabled}
           onRefresh={onRefresh}
           onAbort={onAbortOperation}
         />
@@ -895,7 +908,7 @@ function RepositoryScreen({
           state={branchesState}
           operationError={branchOperationError}
           operationNotice={branchOperationNotice}
-          actionsDisabled={isMutating || hasActiveRepositoryOperation}
+          actionsDisabled={controlsDisabled || hasActiveRepositoryOperation}
           busyBranchName={busyBranchName}
           onRefresh={onRefresh}
           onSwitch={onSwitchBranch}
@@ -908,6 +921,7 @@ function RepositoryScreen({
         <RepositoryWorkspace
           state={statusState}
           stashesState={stashesState}
+          controlsDisabled={controlsDisabled}
           onRefresh={onRefresh}
           operation={operation}
           operationError={changeOperationError}
@@ -922,7 +936,11 @@ function RepositoryScreen({
           onPopStash={onPopStash}
           onDropStash={onDropStash}
         />
-        <HistoryPanel state={historyState} onRefresh={onRefresh} />
+        <HistoryPanel
+          state={historyState}
+          controlsDisabled={controlsDisabled}
+          onRefresh={onRefresh}
+        />
       </div>
     </main>
   );
