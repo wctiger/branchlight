@@ -522,6 +522,10 @@ button:disabled {
   margin: 0 auto;
 }
 
+.repository-notice-region {
+  display: flow-root;
+}
+
 .repository-notice {
   width: min(720px, calc(100% - 44px));
   display: flex;

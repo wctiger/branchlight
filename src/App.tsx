@@ -866,12 +866,18 @@ function RepositoryScreen({
         </div>
       )}
 
-      {operationNotice && (
-        <div className="repository-notice" role="status">
-          <span aria-hidden="true">✓</span>
-          <p>{operationNotice}</p>
-        </div>
-      )}
+      <div
+        className="repository-notice-region"
+        role="status"
+        aria-live="polite"
+      >
+        {operationNotice && (
+          <div className="repository-notice">
+            <span aria-hidden="true">✓</span>
+            <p>{operationNotice}</p>
+          </div>
+        )}
+      </div>
 
       {status && (
         <ConflictBanner
@@ -1144,7 +1150,10 @@ function App() {
 
   /** Atomically prevents a second Git mutation before React can render disabled controls. */
   const beginRepositoryMutation = useCallback(() => {
-    if (repositoryMutationInFlight.current) {
+    if (
+      repositoryMutationInFlight.current ||
+      openRequestInFlight.current
+    ) {
       return false;
     }
     repositoryMutationInFlight.current = true;

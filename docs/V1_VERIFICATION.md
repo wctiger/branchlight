@@ -2,8 +2,8 @@
 
 Verified on 2026-08-30 against disposable local Git repositories. Rust tests
 exercise system Git with real repositories and remotes; frontend tests exercise
-deterministic DAG fixtures. The production TypeScript build verifies the typed
-Tauri wiring and UI states.
+deterministic DAG fixtures. The production TypeScript build verifies typed Tauri
+wiring and asset bundling.
 
 | # | Capability | Verification evidence | Result |
 |---:|---|---|:---:|
@@ -33,7 +33,8 @@ Additional hardening checks:
   both success and failure.
 - Refresh failures retain the last successful snapshot and surface contextual
   Git output.
-- Production web HTML and tracked public assets contain no Vite, React, or
-  Tauri scaffold UI.
-- The full `bun test`, production build, Rust test, rustfmt, and clippy gates
-  pass together.
+- The tracked `public/vite.svg`, `public/tauri.svg`, and `src/assets/react.svg`
+  scaffold assets were deleted, and the source tree contains no references to
+  them.
+- The full `bun test`, production web build, Tauri macOS application build,
+  Rust test, rustfmt, and clippy gates pass together.

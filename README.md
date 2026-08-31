@@ -36,6 +36,7 @@ Run the complete project checks with:
 ```bash
 bun test
 bun run build
+bun run tauri build --bundles app
 cargo fmt --check --manifest-path src-tauri/Cargo.toml
 cargo test --manifest-path src-tauri/Cargo.toml
 cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets --all-features -- -D warnings
