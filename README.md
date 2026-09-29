@@ -42,6 +42,13 @@ cargo test --manifest-path src-tauri/Cargo.toml
 cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets --all-features -- -D warnings
 ```
 
+## Distribution
+
+For downloadable macOS builds, CI, signing credentials, and the first release
+checklist, see [the distribution guide](docs/DISTRIBUTION.md). Pull requests run
+macOS CI; manual distribution runs produce test DMGs; version tags produce
+signed, notarized draft GitHub Releases once Apple secrets are configured.
+
 ## Architecture
 
 - `src/features/` owns branch, stash, and history presentation behavior.

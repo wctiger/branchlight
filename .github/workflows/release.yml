@@ -1,0 +1,122 @@
+name: macOS distribution
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: distribution-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  checks:
+    uses: ./.github/workflows/ci.yml
+
+  package:
+    needs: checks
+    runs-on: macos-15
+    timeout-minutes: 60
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+          key: universal
+      - run: bun install --frozen-lockfile
+      - name: Validate release version
+        env:
+          RELEASE_TAG: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+        run: bun run scripts/check-version.ts
+
+      - name: Require signing and notarization credentials for tags
+        if: github.ref_type == 'tag'
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          for name in APPLE_CERTIFICATE APPLE_CERTIFICATE_PASSWORD APPLE_SIGNING_IDENTITY APPLE_ID APPLE_PASSWORD APPLE_TEAM_ID; do
+            if [[ -z "${!name}" ]]; then
+              echo "::error::Missing repository secret: $name (see docs/DISTRIBUTION.md)"
+              exit 1
+            fi
+          done
+          if [[ "$APPLE_SIGNING_IDENTITY" != 'Developer ID Application:'* ]]; then
+            echo '::error::Release signing requires a Developer ID Application identity.'
+            exit 1
+          fi
+
+      - name: Build test DMG (ad-hoc signed)
+        if: github.ref_type != 'tag'
+        env:
+          APPLE_SIGNING_IDENTITY: '-'
+        run: bun run tauri build --ci --target universal-apple-darwin --bundles app,dmg -- --locked
+
+      - name: Build signed and notarized release DMG
+        if: github.ref_type == 'tag'
+        uses: tauri-apps/tauri-action@v1
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        with:
+          tauriScript: bun run tauri
+          args: --ci --target universal-apple-darwin --bundles app,dmg -- --locked
+
+      - name: Verify application signature and architectures
+        run: |
+          app=src-tauri/target/universal-apple-darwin/release/bundle/macos/Branchlight.app
+          codesign --verify --deep --strict --verbose=2 "$app"
+          lipo "$app/Contents/MacOS/branchlight" -verify_arch arm64 x86_64
+      - name: Verify notarization and Gatekeeper acceptance
+        if: github.ref_type == 'tag'
+        run: |
+          app=src-tauri/target/universal-apple-darwin/release/bundle/macos/Branchlight.app
+          xcrun stapler validate "$app"
+          spctl --assess --type execute --verbose=2 "$app"
+      - name: Collect installer and checksum
+        run: |
+          mkdir -p distribution
+          cp src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg distribution/
+          cd distribution
+          shasum -a 256 ./*.dmg > SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Branchlight-macOS-universal-${{ github.sha }}
+          path: distribution/
+          if-no-files-found: error
+          retention-days: 14
+      - name: Create or update draft GitHub release
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          if gh release view "$RELEASE_TAG" --json isDraft > "$RUNNER_TEMP/release.json"; then
+            if [[ "$(bun -p "require(process.env.RUNNER_TEMP + '/release.json').isDraft")" != true ]]; then
+              echo '::error::Refusing to replace assets on a published release.'
+              exit 1
+            fi
+          else
+            gh release create "$RELEASE_TAG" --verify-tag --draft \
+              --title "Branchlight $RELEASE_TAG" --notes-file docs/RELEASE_NOTES_TEMPLATE.md
+          fi
+          gh release upload "$RELEASE_TAG" distribution/* --clobber
