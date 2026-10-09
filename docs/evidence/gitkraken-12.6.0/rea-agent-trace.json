@@ -1,0 +1,75 @@
+{
+  "evidence_id": "ev_281312ba87136148812524df945d0a8d0398d7ec413b5dc3f12062cb2b31e96d",
+  "subject": null,
+  "provider": {
+    "id": "rea-javascript-application-workflows",
+    "name": "REA JavaScript application workflows",
+    "version": "1"
+  },
+  "analysis_profile": null,
+  "predicate_type": "rea.application-feature-trace",
+  "operation": "trace_application_feature",
+  "parameters": {
+    "application_evidence_id": "ev_9fd797cc0f60018cff4fc5f9d9e301958a47451129c72396e463ca9a1b13a8a9",
+    "native_evidence_ids": [],
+    "seed": {
+      "kind": "string",
+      "value": "AgentWorkflow-StartAgentSession",
+      "match": "exact",
+      "case_sensitive": true
+    },
+    "direction": "outgoing"
+  },
+  "raw_result": null,
+  "normalized_result": {
+    "trace_id": "jatr_31d5d7b70f311c80c239b7ef39e902ba98b3bb864f8a48c893e01dd83d7eaf0e",
+    "source_evidence_id": "ev_9fd797cc0f60018cff4fc5f9d9e301958a47451129c72396e463ca9a1b13a8a9",
+    "source_graph_id": "jag_adf91a49c65469eb01a4921a8b29e0d8382d3784c5f612640aa44b741a733334",
+    "seed": {
+      "kind": "string",
+      "value": "AgentWorkflow-StartAgentSession",
+      "match": "exact",
+      "case_sensitive": true
+    },
+    "direction": "outgoing",
+    "seed_matches": [],
+    "graph": null,
+    "paths": [],
+    "native_handoffs": [],
+    "summary": {
+      "matched_seeds": 0,
+      "traced_nodes": 0,
+      "traced_edges": 0,
+      "terminal_paths": 0,
+      "native_handoffs": 0,
+      "observed_facts": 0,
+      "inferred_facts": 0,
+      "unknown_facts": 0,
+      "unavailable_facts": 0
+    },
+    "coverage": {
+      "status": "no-match",
+      "source_graph_status": "partial",
+      "total_seed_matches": 0
+    },
+    "evidence_links": [
+      "ev_9fd797cc0f60018cff4fc5f9d9e301958a47451129c72396e463ca9a1b13a8a9"
+    ],
+    "limitations": [
+      "No graph entity matched the literal seed; this is not evidence that the feature is absent.",
+      "The source application graph is incomplete; unmatched seeds and frontiers remain unknown."
+    ]
+  },
+  "confidence": "inferred",
+  "authority": "analyst-inference",
+  "environment": null,
+  "limitations": [
+    "Artifact identity is unavailable for this observation.",
+    "No graph entity matched the literal seed; this is not evidence that the feature is absent.",
+    "The source application graph is incomplete; unmatched seeds and frontiers remain unknown."
+  ],
+  "locations": [],
+  "evidence_links": [
+    "ev_9fd797cc0f60018cff4fc5f9d9e301958a47451129c72396e463ca9a1b13a8a9"
+  ]
+}

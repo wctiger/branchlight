@@ -1,0 +1,4809 @@
+{
+  "schema_version": 1,
+  "authority": "shipped-artifact plus analyst interpretation",
+  "method": "Exact JSON resource keys and literal byte references; not runtime validation or a complete call graph",
+  "parent_rea_evidence_id": "ev_9fd797cc0f60018cff4fc5f9d9e301958a47451129c72396e463ca9a1b13a8a9",
+  "reference_semantics": "Zero-based UTF-8 byte offsets inside extracted packed ASAR members; at most first eight matches per key/file with full occurrence count",
+  "features": [
+    {
+      "id": "GK-01",
+      "category": "Repositories",
+      "feature": "Open, initialize, and clone repositories",
+      "observed_surface": "Open existing repositories; initialize repositories; clone remotes",
+      "branchlight_gap": "Open exists; initialize and clone absent",
+      "evidence_level": "resource-and-code",
+      "evidence": [
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/menuStrings/OpenRepo",
+          "code_references": [
+            {
+              "path": "src/main/static/919.main.bundle.js",
+              "byte_offsets": [
+                52273,
+                56552,
+                56632
+              ],
+              "total_occurrences": 3
+            },
+            {
+              "path": "src/main/static/977.main.bundle.js",
+              "byte_offsets": [
+                2134,
+                2221,
+                2338,
+                2380,
+                10807,
+                10895,
+                11009,
+                11052
+              ],
+              "total_occurrences": 12
+            },
+            {
+              "path": "src/main/static/main.bundle.js",
+              "byte_offsets": [
+                235774,
+                236877,
+                236917,
+                237186,
+                237216,
+                237236,
+                244211,
+                244887
+              ],
+              "total_occurrences": 25
+            },
+            {
+              "path": "src/render/static/entryPoints/requestHandler/requestHandler.bundle.js",
+              "byte_offsets": [
+                110361,
+                1723280,
+                1724981,
+                1725049
+              ],
+              "total_occurrences": 4
+            },
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                720263,
+                721936,
+                844039,
+                845928,
+                857597,
+                858205,
+                1127801,
+                1127823
+              ],
+              "total_occurrences": 153
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/menuStrings/InitRepo",
+          "code_references": [
+            {
+              "path": "src/main/static/977.main.bundle.js",
+              "byte_offsets": [
+                2059,
+                10731,
+                20213
+              ],
+              "total_occurrences": 3
+            },
+            {
+              "path": "src/main/static/main.bundle.js",
+              "byte_offsets": [
+                1139534,
+                1143897,
+                3320672,
+                3322492,
+                3324121,
+                3325975,
+                3327693,
+                3329318
+              ],
+              "total_occurrences": 11
+            },
+            {
+              "path": "src/render/static/entryPoints/requestHandler/requestHandler.bundle.js",
+              "byte_offsets": [
+                55601,
+                55630,
+                55665,
+                917062,
+                918882,
+                920511,
+                922365,
+                924083
+              ],
+              "total_occurrences": 17
+            },
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                10838,
+                11109,
+                224621,
+                224662,
+                224777,
+                224952,
+                225276,
+                225673
+              ],
+              "total_occurrences": 57
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/menuStrings/CloneRepo",
+          "code_references": [
+            {
+              "path": "src/main/static/919.main.bundle.js",
+              "byte_offsets": [
+                27407,
+                27708
+              ],
+              "total_occurrences": 2
+            },
+            {
+              "path": "src/main/static/57.main.bundle.js",
+              "byte_offsets": [
+                95027,
+                95154,
+                95270,
+                95380
+              ],
+              "total_occurrences": 4
+            },
+            {
+              "path": "src/main/static/977.main.bundle.js",
+              "byte_offsets": [
+                1982
+              ],
+              "total_occurrences": 1
+            },
+            {
+              "path": "src/main/static/main.bundle.js",
+              "byte_offsets": [
+                746290,
+                746395,
+                746524,
+                746636,
+                6074230,
+                6074257,
+                6074291,
+                6074327
+              ],
+              "total_occurrences": 17
+            },
+            {
+              "path": "src/render/static/entryPoints/requestHandler/requestHandler.bundle.js",
+              "byte_offsets": [
+                54689,
+                54727,
+                54771,
+                472205,
+                472506,
+                962123,
+                962163,
+                962208
+              ],
+              "total_occurrences": 27
+            },
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                184619,
+                185043,
+                307860,
+                308872,
+                309880,
+                311322,
+                311357,
+                467315
+              ],
+              "total_occurrences": 148
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GK-02",
+      "category": "Repositories",
+      "feature": "Advanced clone options",
+      "observed_surface": "Depth/date-limited shallow clone; named branch; custom flags; blobless and sparse checkout",
+      "branchlight_gap": "Absent",
+      "evidence_level": "resource-and-code",
+      "evidence": [
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ShallowCloneForm-Depth",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                3494455,
+                3494522,
+                3541414,
+                3541457
+              ],
+              "total_occurrences": 4
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ShallowCloneForm-SinceDate",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                3494962,
+                3495083,
+                3495155,
+                3538641,
+                3538700,
+                3541754,
+                3541801
+              ],
+              "total_occurrences": 7
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/SparseCheckoutForm-BloblessClone",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                8363536,
+                8363956
+              ],
+              "total_occurrences": 2
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/CloneRepo-SparseCheckoutToggle",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                1543520
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GK-03",
+      "category": "Repositories",
+      "feature": "Repository management",
+      "observed_surface": "Favorites and recent repositories; aliases; fetch/pull across repositories",
+      "branchlight_gap": "Single repository only",
+      "evidence_level": "resource-and-code",
+      "evidence": [
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/RepoManagement-addRepoToFavorites",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                10008874
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/RepoManagement-fetchAll",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                2471364
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/RepoManagement-pullAll",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                12787745
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ContextMenu-AliasRepo",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                11971646
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GK-04",
+      "category": "Repositories",
+      "feature": "Repository tabs and groups",
+      "observed_surface": "New/reopened/renamed tabs; close other tabs; automatic grouping of worktrees",
+      "branchlight_gap": "Absent",
+      "evidence_level": "resource-and-code",
+      "evidence": [
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/menuStrings/NewTab",
+          "code_references": [
+            {
+              "path": "src/main/static/919.main.bundle.js",
+              "byte_offsets": [
+                50216
+              ],
+              "total_occurrences": 1
+            },
+            {
+              "path": "src/main/static/977.main.bundle.js",
+              "byte_offsets": [
+                1721
+              ],
+              "total_occurrences": 1
+            },
+            {
+              "path": "src/main/static/main.bundle.js",
+              "byte_offsets": [
+                433709,
+                805013,
+                807129,
+                809086,
+                809222,
+                809271,
+                809282,
+                809645
+              ],
+              "total_occurrences": 14
+            },
+            {
+              "path": "src/render/static/entryPoints/requestHandler/requestHandler.bundle.js",
+              "byte_offsets": [
+                110168,
+                154470,
+                156513,
+                158362,
+                158493,
+                158539,
+                158550,
+                158898
+              ],
+              "total_occurrences": 12
+            },
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                306726,
+                1196686,
+                1200923,
+                1205734,
+                1396390,
+                1396482,
+                1615101,
+                1615857
+              ],
+              "total_occurrences": 135
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/menuStrings/ReopenClosedTab",
+          "code_references": [
+            {
+              "path": "src/main/static/977.main.bundle.js",
+              "byte_offsets": [
+                1867
+              ],
+              "total_occurrences": 1
+            },
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                7616904
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ContextMenu-RenameTab",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                11971670
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/UIPreferences-AutogroupWorktreeTabs",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                1785659
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GK-05",
+      "category": "Graph",
+      "feature": "Interactive history graph",
+      "observed_surface": "Commit graph with configurable columns and count; WIP rows; jump to a commit",
+      "branchlight_gap": "Read-only SVG DAG, 200-commit cap",
+      "evidence_level": "resource-and-code",
+      "evidence": [
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Graph-AdjustCommitCount",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                455883
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Graph-WorkInProgress",
+          "code_references": [
+            {
+              "path": "src/main/static/main.bundle.js",
+              "byte_offsets": [
+                3564768
+              ],
+              "total_occurrences": 1
+            },
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                6098422,
+                6158459,
+                6209704,
+                6528587
+              ],
+              "total_occurrences": 4
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/UIPreferences-ShowCommitShaInGraph",
+          "code_references": [
+            {
+              "path": "src/main/static/main.bundle.js",
+              "byte_offsets": [
+                3031868
+              ],
+              "total_occurrences": 1
+            },
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                5089862
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ContextMenu-GoToParentCommit",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                1336766,
+                4765895
+              ],
+              "total_occurrences": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GK-06",
+      "category": "Graph",
+      "feature": "Graph visibility controls",
+      "observed_surface": "Hide/show/solo branches and tags; smart visibility; pin a branch",
+      "branchlight_gap": "Absent",
+      "evidence_level": "resource-and-code",
+      "evidence": [
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ContextMenu-SoloNLocalBranches",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                7295423
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ContextMenu-HideAllTags",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                9200255
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ContextMenu-PinBranchToLeft",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                343822,
+                6272778
+              ],
+              "total_occurrences": 2
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/UIPreferences-BranchVisibilityInCommitGraphSmart",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                1779092,
+                12773454
+              ],
+              "total_occurrences": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GK-07",
+      "category": "Graph",
+      "feature": "Commit search and author filters",
+      "observed_surface": "Search by message, SHA, author; filter by author or team",
+      "branchlight_gap": "Absent",
+      "evidence_level": "resource-and-code",
+      "evidence": [
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/FuzzyFinder-SearchCommitsPlaceholder",
+          "code_references": [
+            {
+              "path": "src/main/static/main.bundle.js",
+              "byte_offsets": [
+                433948
+              ],
+              "total_occurrences": 1
+            },
+            {
+              "path": "src/render/static/entryPoints/requestHandler/requestHandler.bundle.js",
+              "byte_offsets": [
+                110402
+              ],
+              "total_occurrences": 1
+            },
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                1205973
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/CommitFilter-Authors",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                9887372,
+                9887481,
+                9887512
+              ],
+              "total_occurrences": 3
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/CommitFilter-Teams",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                9887284
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GK-08",
+      "category": "Diffs",
+      "feature": "Text diff viewer",
+      "observed_surface": "Inline, split, and hunk views; change navigation; whitespace and wrapping controls",
+      "branchlight_gap": "Absent",
+      "evidence_level": "resource-and-code",
+      "evidence": [
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/FileViewPanel-InlineView",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                5724846
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/FileViewPanel-SplitView",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                5724951
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/FileViewPanel-HunkView",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                5724738
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/FileViewPanel-IgnoreWhiteSpace",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                5725061
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GK-09",
+      "category": "Diffs",
+      "feature": "File viewer and editing",
+      "observed_surface": "View code/preview, edit working files, save changes, choose encoding",
+      "branchlight_gap": "Absent",
+      "evidence_level": "resource-and-code",
+      "evidence": [
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/FileViewPanel-FileViewCode",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                11228629
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/FileViewPanel-FileViewPreview",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                11228881
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/FileViewPanel-EditInWorkDir",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                11227228
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Encoding-Label",
+          "code_references": [
+            {
+              "path": "src/main/static/919.main.bundle.js",
+              "byte_offsets": [
+                18684
+              ],
+              "total_occurrences": 1
+            },
+            {
+              "path": "src/render/static/entryPoints/requestHandler/requestHandler.bundle.js",
+              "byte_offsets": [
+                126664
+              ],
+              "total_occurrences": 1
+            },
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                1507131,
+                6714301
+              ],
+              "total_occurrences": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GK-10",
+      "category": "Diffs",
+      "feature": "Image and binary handling",
+      "observed_surface": "Old/new image comparison and overlay; binary and unchanged-file indicators",
+      "branchlight_gap": "Absent",
+      "evidence_level": "resource-and-code",
+      "evidence": [
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/DiffImage-ShowDiffOverlay",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                7404915
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/DiffImage-OldImage",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                7404444
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/DiffImage-NewImage",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                7405279
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/FileContentsPanel-Binary",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                2147532,
+                3949058,
+                10616386
+              ],
+              "total_occurrences": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GK-11",
+      "category": "Diffs",
+      "feature": "File history and blame",
+      "observed_surface": "Per-file history, blame details, graph navigation, deeper history lookup",
+      "branchlight_gap": "Absent",
+      "evidence_level": "resource-and-code",
+      "evidence": [
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/FileViewPanel-Blame",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                11226340
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/FileHistory-ShowBlame",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                1621487
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/FileHistory-LinkToGraph",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                3898324
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/FileHistory-ContinueLooking",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                7118368
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GK-12",
+      "category": "Diffs",
+      "feature": "Revision comparisons and restore",
+      "observed_surface": "Compare commit with working directory; restore selected files from commit",
+      "branchlight_gap": "Absent",
+      "evidence_level": "resource-and-code",
+      "evidence": [
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ContextMenu-CompareAgainstWorkingCopy",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                356603
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ContextMenu-RestoreFileFromCommit",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                5122756
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ContextMenu-RestoreFilesFromCommit",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                12699879
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GK-13",
+      "category": "Staging",
+      "feature": "File, hunk, and line staging",
+      "observed_surface": "Stage/unstage files, hunks, individual or selected lines and file-mode changes",
+      "branchlight_gap": "Whole-file staging exists; granular staging absent",
+      "evidence_level": "resource-and-code",
+      "evidence": [
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/StageThisFile",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                2142585,
+                5339133
+              ],
+              "total_occurrences": 2
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/StageThisHunk",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                2142724,
+                11768564
+              ],
+              "total_occurrences": 2
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/StageThisLine",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                2142807,
+                11774139,
+                11776603
+              ],
+              "total_occurrences": 3
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/StageSelectedLines",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                11776843
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/UnstageThisHunk",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                2142379,
+                11768740
+              ],
+              "total_occurrences": 2
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/StageFilemodeChange",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                6847117
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GK-14",
+      "category": "Staging",
+      "feature": "Discard and ignore changes",
+      "observed_surface": "Discard line/hunk/file changes; ignore paths, extensions, or folders",
+      "branchlight_gap": "Absent",
+      "evidence_level": "resource-and-code",
+      "evidence": [
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/DiscardThisHunk",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                2142920,
+                11768409
+              ],
+              "total_occurrences": 2
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/DiscardThisLine",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                11777148
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ResetFileButtonLabel",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                5457044,
+                12310991,
+                12330859
+              ],
+              "total_occurrences": 3
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/IgnoreFile",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                634373,
+                634457,
+                5118017
+              ],
+              "total_occurrences": 3
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/IgnoreAllFilesInFolder",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                11618664
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GK-15",
+      "category": "Commits",
+      "feature": "Commit composition",
+      "observed_surface": "Commit summary/body, templates, push-after-commit and skip-hooks controls",
+      "branchlight_gap": "Basic message and commit exist; extra controls absent",
+      "evidence_level": "resource-and-code",
+      "evidence": [
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/CommitPreferences-CommitTemplate",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                7243258,
+                7243441
+              ],
+              "total_occurrences": 2
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/CommitButtonLabelCheckboxPushAfterCommitting",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                5286928
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/CommitButtonLabelCheckboxSkipHooks",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                5287016
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GK-16",
+      "category": "Commits",
+      "feature": "Amend and reword",
+      "observed_surface": "Amend previous commit; edit existing commit or stash message",
+      "branchlight_gap": "Absent",
+      "evidence_level": "resource-and-code",
+      "evidence": [
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/AmendPreviousCommitButtonLabel",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                383932
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ContextMenu-AmendOrRewordCommitMessage",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                349154,
+                351394
+              ],
+              "total_occurrences": 2
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ContextMenu-AmendStashMessage",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                10823147
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GK-17",
+      "category": "Commits",
+      "feature": "Cherry-pick and revert",
+      "observed_surface": "Cherry-pick one/multiple commits; revert commit; interactive cherry-pick",
+      "branchlight_gap": "Absent",
+      "evidence_level": "resource-and-code",
+      "evidence": [
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ContextMenu-CherrypickCommit",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                347001,
+                347319,
+                1236871
+              ],
+              "total_occurrences": 3
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ContextMenu-CherrypickCommits",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                347319
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ContextMenu-RevertCommit",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                340539
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/PendingInteractiveRebasePanel-InteractiveCherrypick",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                7102846
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GK-18",
+      "category": "Commits",
+      "feature": "Reset modes",
+      "observed_surface": "Move branch to commit with soft, mixed, or hard reset",
+      "branchlight_gap": "Absent",
+      "evidence_level": "resource-and-code",
+      "evidence": [
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ContextMenu-ResetBranchToThisCommit",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                339799
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ContextMenu-ResetSoftWithHint",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                339390
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ContextMenu-ResetMixedWithHint",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                339523
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ContextMenu-ResetHardWithHint",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                339657
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GK-19",
+      "category": "Commits",
+      "feature": "Interactive rebase",
+      "observed_surface": "Pick, drop, reorder, squash and reword commits before starting rebase",
+      "branchlight_gap": "Ordinary rebase exists; interactive editor absent",
+      "evidence_level": "resource-and-code",
+      "evidence": [
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/PendingInteractiveRebasePanel-InteractiveRebase",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                7102934
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ContextMenu-PickCommit",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                6385658
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ContextMenu-DropCommit",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                351760,
+                351918,
+                6386216
+              ],
+              "total_occurrences": 3
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ContextMenu-MoveCommitUp",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                352292,
+                6386400
+              ],
+              "total_occurrences": 2
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ContextMenu-SquashCommit",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                6386030
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ContextMenu-RewordCommit",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                6385842
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GK-20",
+      "category": "Commits",
+      "feature": "Continue, skip, and abort operations",
+      "observed_surface": "Resume/skip rebase steps and abort rebase/merge",
+      "branchlight_gap": "Abort exists; continue and skip absent",
+      "evidence_level": "resource-and-code",
+      "evidence": [
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ContinueRebaseButtonLabel",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                382582
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/SkipCommitButtonLabel",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                382614
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/AbortRebaseButtonLabel",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                382677,
+                3842559
+              ],
+              "total_occurrences": 2
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/AbortMergeButtonLabel",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                382342
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GK-21",
+      "category": "Commits",
+      "feature": "Undo and redo Git actions",
+      "observed_surface": "Undo/redo actions with invalidated-history and missing-information states",
+      "branchlight_gap": "Absent",
+      "evidence_level": "resource-and-code",
+      "evidence": [
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/UndoValidButtonTooltip",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                7390417
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/RedoValidButtonTooltip",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                7390526
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/UndoRedo-InformationMissing",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                419618,
+                420705,
+                420931,
+                422604,
+                423546
+              ],
+              "total_occurrences": 5
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/UndoInvalidButtonTooltip",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                7390350
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GK-22",
+      "category": "Branches",
+      "feature": "Branch and upstream management",
+      "observed_surface": "Create/switch/rename/delete branches; branch at commit; set upstream",
+      "branchlight_gap": "Basic local lifecycle exists; branch-at-commit and upstream editing absent",
+      "evidence_level": "resource-and-code",
+      "evidence": [
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ContextMenu-CreateBranchHere",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                346841,
+                1236720
+              ],
+              "total_occurrences": 2
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ContextMenu-CheckoutBranch",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                345728,
+                4274042
+              ],
+              "total_occurrences": 2
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ContextMenu-RenameBranch",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                349315
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ContextMenu-DeleteBranch",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                341449
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ContextMenu-SetUpstream",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                6268537
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GK-23",
+      "category": "Branches",
+      "feature": "Merge and rebase actions",
+      "observed_surface": "Merge/rebase source and target references; fast-forward; squash merge",
+      "branchlight_gap": "Basic local merge/rebase exists; additional variants absent",
+      "evidence_level": "resource-and-code",
+      "evidence": [
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ContextMenu-MergeBranchIntoBranch",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                334493,
+                334779,
+                335300
+              ],
+              "total_occurrences": 3
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ContextMenu-RebaseBranchOntoBranch",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                337240,
+                337438
+              ],
+              "total_occurrences": 2
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ContextMenu-FastForward",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                334271,
+                335078
+              ],
+              "total_occurrences": 2
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/CommitAndSquashMergeButtonLabel",
+          "code_references": []
+        }
+      ]
+    },
+    {
+      "id": "GK-24",
+      "category": "Branches",
+      "feature": "Tag lifecycle",
+      "observed_surface": "Create lightweight/annotated tags; annotate existing tag; push/delete remotely",
+      "branchlight_gap": "Absent",
+      "evidence_level": "resource-and-code",
+      "evidence": [
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ContextMenu-CreateTagHere",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                352928
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ContextMenu-CreateAnnotatedTag",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                353069
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ContextMenu-AnnotateTag",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                1240727
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ContextMenu-PushTagToRemote",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                1238905
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ContextMenu-DeleteTagFromRemote",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                1237429
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GK-25",
+      "category": "Branches",
+      "feature": "Gitflow workflow",
+      "observed_surface": "Initialize/configure feature, release, hotfix branches and start/finish flows",
+      "branchlight_gap": "Absent",
+      "evidence_level": "resource-and-code",
+      "evidence": [
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/GitFlow-Init",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                621409,
+                621490,
+                621656,
+                7689916
+              ],
+              "total_occurrences": 4
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/GitFlow-Prefixes",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                7687867
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/GitFlow-StartFeature",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                620682,
+                6871397,
+                6872298
+              ],
+              "total_occurrences": 3
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/GitFlow-FinishFeature",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                622662,
+                12724857,
+                12725604
+              ],
+              "total_occurrences": 3
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/GitFlow-StartHotfix",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                25578,
+                25963,
+                621207
+              ],
+              "total_occurrences": 3
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/GitFlow-StartRelease",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                620947,
+                11931871,
+                11932772
+              ],
+              "total_occurrences": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GK-26",
+      "category": "Remotes",
+      "feature": "Remote management",
+      "observed_surface": "Add/edit/remove remotes; select push destination; push all remotes",
+      "branchlight_gap": "Configured remote operations exist; remote editor absent",
+      "evidence_level": "resource-and-code",
+      "evidence": [
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/AddRemote-UnshallowWarning",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                7686283
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ContextMenu-EditRemote",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                1647859,
+                12645022
+              ],
+              "total_occurrences": 2
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ContextMenu-RemoveRemote",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                12645151
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ContextMenu-PushXToY",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                335570,
+                1238707
+              ],
+              "total_occurrences": 2
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ContextMenu-PushXToAllRemotes",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                1239016
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GK-27",
+      "category": "Remotes",
+      "feature": "Fetch/pull/push variants",
+      "observed_surface": "Fetch all, configurable auto-fetch/prune, pull merge/rebase/fast-forward-only, force-with-lease",
+      "branchlight_gap": "Basic fetch/pull/push exist; explicit variants absent",
+      "evidence_level": "resource-and-code",
+      "evidence": [
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/PullOptions-FetchAll",
+          "code_references": [
+            {
+              "path": "src/main/static/main.bundle.js",
+              "byte_offsets": [
+                993653
+              ],
+              "total_occurrences": 1
+            },
+            {
+              "path": "src/render/static/entryPoints/requestHandler/requestHandler.bundle.js",
+              "byte_offsets": [
+                237755
+              ],
+              "total_occurrences": 1
+            },
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                1988547,
+                2102896
+              ],
+              "total_occurrences": 2
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/PullOptions-FastForwardOnly",
+          "code_references": [
+            {
+              "path": "src/main/static/main.bundle.js",
+              "byte_offsets": [
+                993710
+              ],
+              "total_occurrences": 1
+            },
+            {
+              "path": "src/render/static/entryPoints/requestHandler/requestHandler.bundle.js",
+              "byte_offsets": [
+                237812
+              ],
+              "total_occurrences": 1
+            },
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                2102953
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/PullOptions-Rebase",
+          "code_references": [
+            {
+              "path": "src/main/static/main.bundle.js",
+              "byte_offsets": [
+                993747
+              ],
+              "total_occurrences": 1
+            },
+            {
+              "path": "src/render/static/entryPoints/requestHandler/requestHandler.bundle.js",
+              "byte_offsets": [
+                237849
+              ],
+              "total_occurrences": 1
+            },
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                2102990
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/GeneralPreferences-AutoFetchInterval",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                2634747,
+                2634800,
+                2639200,
+                2639253
+              ],
+              "total_occurrences": 4
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/GeneralPreferences-AutoPrune",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                2639406
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ForcePushWithLeaseButtonLabel",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                8906759,
+                8907865
+              ],
+              "total_occurrences": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GK-28",
+      "category": "Stashes",
+      "feature": "Stash lifecycle and selective changes",
+      "observed_surface": "Create/apply/pop/delete stash; stash selected files; restore file from stash",
+      "branchlight_gap": "Basic lifecycle exists; selective file operations absent",
+      "evidence_level": "resource-and-code",
+      "evidence": [
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ContextMenu-StashApply",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                10822763
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ContextMenu-StashPop",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                10822905
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ContextMenu-StashDelete",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                10823021
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/StashThisFile",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                5119388,
+                8947630
+              ],
+              "total_occurrences": 2
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/StashNFiles",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                8947650,
+                12701854
+              ],
+              "total_occurrences": 2
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/CherryPickFileFromStash",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                5121495
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GK-29",
+      "category": "Conflicts",
+      "feature": "Visual merge resolution",
+      "observed_surface": "Choose current/incoming lines or files; inspect ancestor; save output and mark resolved",
+      "branchlight_gap": "Conflict reporting/abort exist; resolution editor absent",
+      "evidence_level": "resource-and-code",
+      "evidence": [
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Merge-TakeLine",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                5809735
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Merge-TakeAll",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                3288652
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Merge-Output",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                3287072
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/SaveAncestor",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                12171735,
+                12171776,
+                12171973,
+                12172039,
+                12197451
+              ],
+              "total_occurrences": 5
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/TakeIncoming",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                5115809,
+                12700441
+              ],
+              "total_occurrences": 2
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/TakeCurrent",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                5115442,
+                12700073
+              ],
+              "total_occurrences": 2
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/MarkAsResolved",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                2141258,
+                5116090,
+                5338230
+              ],
+              "total_occurrences": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GK-30",
+      "category": "Conflicts",
+      "feature": "Proactive conflict detection",
+      "observed_surface": "Target-branch conflict checks; overlapping files/lines; team conflict warnings",
+      "branchlight_gap": "Absent",
+      "evidence_level": "resource-and-code",
+      "evidence": [
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ConflictDetection-Popover-Title",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                7307842
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ConflictDetection-Popover-ShowOverlappedFiles",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                5104138
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ConflictDetection-Popover-OverlappedFileLines",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                5104493
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/GeneralPreferences-AllowTeamVisibility",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                2642350,
+                2642405,
+                6330456,
+                6330512
+              ],
+              "total_occurrences": 4
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GK-31",
+      "category": "Advanced Git",
+      "feature": "Worktree lifecycle",
+      "observed_surface": "Create/open worktree; lock/unlock/prune/remove; optional branch deletion",
+      "branchlight_gap": "Absent",
+      "evidence_level": "resource-and-code",
+      "evidence": [
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Worktree-Create",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                5305542,
+                5305697,
+                5305817,
+                5305924,
+                5306042,
+                5306152,
+                5306374,
+                5307612
+              ],
+              "total_occurrences": 13
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Worktree-FormLock",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                10565152
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Worktree-FormUnlock",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                10565270
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Worktree-FormPrune",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                10564263
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Worktree-FormRemoveAndDeleteBranch",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                340976,
+                10563944
+              ],
+              "total_occurrences": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GK-32",
+      "category": "Advanced Git",
+      "feature": "Submodules",
+      "observed_surface": "Add/edit/open/init/update/reset/remove submodules; expected/current revision display",
+      "branchlight_gap": "Absent",
+      "evidence_level": "resource-and-code",
+      "evidence": [
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Submodule-Create",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                5813361,
+                5814450
+              ],
+              "total_occurrences": 2
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Submodule-Edit",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                11645968
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Submodule-FormOpen",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                1648082,
+                11647491
+              ],
+              "total_occurrences": 2
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Submodule-InitAllPrompt",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                204529,
+                10237613
+              ],
+              "total_occurrences": 2
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Submodule-FormReset",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                1646906,
+                11643927
+              ],
+              "total_occurrences": 2
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Submodule-FormPointerRevision",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                11641300
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GK-33",
+      "category": "Advanced Git",
+      "feature": "Git LFS",
+      "observed_surface": "Initialize LFS; manage tracking patterns; fetch/pull/push/checkout/prune objects",
+      "branchlight_gap": "No dedicated UI; system Git may already use installed LFS hooks",
+      "evidence_level": "resource-and-code",
+      "evidence": [
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Lfs-InitializeLfs",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                8567142,
+                8567312
+              ],
+              "total_occurrences": 2
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Lfs-AddTrackingPattern",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                11844940
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Lfs-Push",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                4767330,
+                4767681
+              ],
+              "total_occurrences": 2
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Lfs-Pull",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                4767296,
+                4767631,
+                5566074
+              ],
+              "total_occurrences": 3
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Lfs-Prune",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                4767365,
+                4767732
+              ],
+              "total_occurrences": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GK-34",
+      "category": "Advanced Git",
+      "feature": "Sparse checkout management",
+      "observed_surface": "Enable/update/reapply/disable checkout path rules",
+      "branchlight_gap": "Absent",
+      "evidence_level": "resource-and-code",
+      "evidence": [
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/SparseCheckout-Enable",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                12707127
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/SparseCheckout-Update",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                12707103
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/SparseCheckout-Reapply",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                6921442,
+                12707502
+              ],
+              "total_occurrences": 2
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/SparseCheckout-Disable",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                6921400,
+                12707314
+              ],
+              "total_occurrences": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GK-35",
+      "category": "Advanced Git",
+      "feature": "Local patch workflows",
+      "observed_surface": "Import/apply patch; export working-file/commit/multi-commit patches",
+      "branchlight_gap": "Absent",
+      "evidence_level": "resource-and-code",
+      "evidence": [
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Patch-OpenPatchFile",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                7152739
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Patch-Apply",
+          "code_references": [
+            {
+              "path": "src/main/static/main.bundle.js",
+              "byte_offsets": [
+                4844890
+              ],
+              "total_occurrences": 1
+            },
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                381775,
+                1992466,
+                6271670,
+                8624796
+              ],
+              "total_occurrences": 4
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Patch-ExportFileToPatch",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                5122320
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Patch-ExportWorkdir",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                1992172
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Patch-CreateFromMultipleCommits",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                355467,
+                355550
+              ],
+              "total_occurrences": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GK-36",
+      "category": "Advanced Git",
+      "feature": "Hooks and signing configuration",
+      "observed_surface": "Configure hooks directory and signing keys; OpenPGP/SSH signing and verification settings",
+      "branchlight_gap": "Uses system Git configuration; no dedicated UI",
+      "evidence_level": "resource-and-code",
+      "evidence": [
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/GitHooks-Path",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                3556606
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/GPGPreferences-GpgFormat-Opengpg",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                10449391
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/GPGPreferences-GpgFormat-Ssh",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                10449430
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/GPGPreferences-GpgSignCommits",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                10451757
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/GPGPreferences-SshAllowedSignersFile",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                3479159,
+                3479566,
+                3479617,
+                3479811,
+                3480162,
+                3480276,
+                3480771
+              ],
+              "total_occurrences": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GK-37",
+      "category": "Integrations",
+      "feature": "Hosting provider connections",
+      "observed_surface": "GitHub/Enterprise, GitLab/self-managed, Bitbucket/Data Center, Azure DevOps configuration",
+      "branchlight_gap": "System Git remote access only; provider API connections absent",
+      "evidence_level": "resource-and-code",
+      "evidence": [
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Services-GitHubEnterpriseServerUpgrade",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                8556238
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Services-GitLabSelfHostedUpgrade",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                8556338
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Services-BitbucketServerUpgrade",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                8556154
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Services-AzureDevopsUpgrade",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                8556078
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GK-38",
+      "category": "Integrations",
+      "feature": "Create and manage pull requests",
+      "observed_surface": "Source/target branches, assignees, reviewers, labels, drafts and templates vary by provider",
+      "branchlight_gap": "Absent",
+      "evidence_level": "resource-and-code",
+      "evidence": [
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/PullRequestPanel-AddAssignee",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                7954446,
+                7954478
+              ],
+              "total_occurrences": 2
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/PullRequestPanel-AddReviewer",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                7954902,
+                7954934
+              ],
+              "total_occurrences": 2
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/PullRequestPanel-AddLabels",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                7956110
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ContextMenu-StartPullRequestToXFromY",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                342486,
+                342757
+              ],
+              "total_occurrences": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GK-39",
+      "category": "Integrations",
+      "feature": "Stacked pull requests",
+      "observed_surface": "Start/add to stack; display stack position and downstack blocking",
+      "branchlight_gap": "Absent",
+      "evidence_level": "resource-and-code",
+      "evidence": [
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/PullRequestPanel-StartPullRequestStack",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                7958394
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/PullRequestPanel-AddToPullRequestStack",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                7958435
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/PullRequestStackPosition-Label",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                10491048
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/PullRequestStatus-BlockedDownstack",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                12203355
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GK-40",
+      "category": "Integrations",
+      "feature": "Pull request review and CI",
+      "observed_surface": "Comments, pending reviews, approve/request changes, checks and mergeability",
+      "branchlight_gap": "Absent",
+      "evidence_level": "resource-and-code",
+      "evidence": [
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/PullRequestView-Approve",
+          "code_references": [
+            {
+              "path": "src/main/static/main.bundle.js",
+              "byte_offsets": [
+                1689342
+              ],
+              "total_occurrences": 1
+            },
+            {
+              "path": "src/render/static/entryPoints/requestHandler/requestHandler.bundle.js",
+              "byte_offsets": [
+                499431
+              ],
+              "total_occurrences": 1
+            },
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                3623354,
+                8583956,
+                8584000
+              ],
+              "total_occurrences": 3
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/PullRequestView-FinishReview",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                5563393
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/PullRequestView-BuildStatus",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                6336163
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/PullRequestView-ReviewChangesRequested",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                8230025
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GK-41",
+      "category": "Integrations",
+      "feature": "Issue tracker workflows",
+      "observed_surface": "Issue search/filter/create, metadata and branch creation from issue; providers vary",
+      "branchlight_gap": "Absent",
+      "evidence_level": "resource-and-code",
+      "evidence": [
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/IssueTrackerCreateForm-CreateNewIssue",
+          "code_references": [
+            {
+              "path": "src/main/static/main.bundle.js",
+              "byte_offsets": [
+                4230249
+              ],
+              "total_occurrences": 1
+            },
+            {
+              "path": "src/render/static/entryPoints/requestHandler/requestHandler.bundle.js",
+              "byte_offsets": [
+                1208536
+              ],
+              "total_occurrences": 1
+            },
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                7633273
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/IssueTrackerCreateForm-AssigneesPlaceholder",
+          "code_references": [
+            {
+              "path": "src/main/static/main.bundle.js",
+              "byte_offsets": [
+                4230094
+              ],
+              "total_occurrences": 1
+            },
+            {
+              "path": "src/render/static/entryPoints/requestHandler/requestHandler.bundle.js",
+              "byte_offsets": [
+                1208382
+              ],
+              "total_occurrences": 1
+            },
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                7633118
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ContextMenu-IssueCheckoutBranchFrom",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                19650
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ContextMenu-IssueViewIssueInJira",
+          "code_references": [
+            {
+              "path": "src/main/static/main.bundle.js",
+              "byte_offsets": [
+                4229240,
+                4229310
+              ],
+              "total_occurrences": 2
+            },
+            {
+              "path": "src/render/static/entryPoints/requestHandler/requestHandler.bundle.js",
+              "byte_offsets": [
+                1207536,
+                1207605
+              ],
+              "total_occurrences": 2
+            },
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                7632264,
+                7632334
+              ],
+              "total_occurrences": 2
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ContextMenu-IssueViewCardInTrello",
+          "code_references": [
+            {
+              "path": "src/main/static/main.bundle.js",
+              "byte_offsets": [
+                4229375
+              ],
+              "total_occurrences": 1
+            },
+            {
+              "path": "src/render/static/entryPoints/requestHandler/requestHandler.bundle.js",
+              "byte_offsets": [
+                1207669
+              ],
+              "total_occurrences": 1
+            },
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                7632399
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GK-42",
+      "category": "Collaboration",
+      "feature": "Cloud Patches",
+      "observed_surface": "Share working/staged/commit changes by link with visibility and collaborators",
+      "branchlight_gap": "Absent",
+      "evidence_level": "resource-and-code",
+      "evidence": [
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/CloudPatch-CreateFromAllFiles",
+          "code_references": []
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/CloudPatch-CreateFromStagedFiles",
+          "code_references": []
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/CloudPatch-CreateVisibilityInviteOnly",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                8384619
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Patch-CopyCloudPatchLinkMenu",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                1670956
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GK-43",
+      "category": "Collaboration",
+      "feature": "Code Suggestions",
+      "observed_surface": "Send uncommitted proposed changes for PR author to review/apply/reject",
+      "branchlight_gap": "Absent",
+      "evidence_level": "resource-and-code",
+      "evidence": [
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/CodeSuggest-InfoTooltip-1",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                1400121
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/CodeSuggest-ApplyTo",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                381645
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/CodeSuggest-Reject",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                381510
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GK-44",
+      "category": "Collaboration",
+      "feature": "Local and cloud workspaces",
+      "observed_surface": "Group repositories; batch clone/fetch/pull and repository summaries",
+      "branchlight_gap": "Absent",
+      "evidence_level": "resource-and-code",
+      "evidence": [
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/LocalWorkspaces",
+          "code_references": [
+            {
+              "path": "src/main/static/605.main.bundle.js",
+              "byte_offsets": [
+                8642,
+                29293
+              ],
+              "total_occurrences": 2
+            },
+            {
+              "path": "src/main/static/main.bundle.js",
+              "byte_offsets": [
+                1621454,
+                1623547,
+                1628432,
+                1628531,
+                1628669,
+                1629547,
+                1629668,
+                1630701
+              ],
+              "total_occurrences": 25
+            },
+            {
+              "path": "src/render/static/entryPoints/requestHandler/requestHandler.bundle.js",
+              "byte_offsets": [
+                1257479,
+                1257564,
+                1258920
+              ],
+              "total_occurrences": 3
+            },
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                5108218,
+                7793519,
+                7793606,
+                7795067
+              ],
+              "total_occurrences": 4
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/CloudWorkspaces",
+          "code_references": [
+            {
+              "path": "src/main/static/main.bundle.js",
+              "byte_offsets": [
+                1623466,
+                1627870,
+                1627972,
+                1628113,
+                1629627,
+                1630045,
+                1630108,
+                1630364
+              ],
+              "total_occurrences": 15
+            },
+            {
+              "path": "src/render/static/entryPoints/requestHandler/requestHandler.bundle.js",
+              "byte_offsets": [
+                1257528,
+                1258525
+              ],
+              "total_occurrences": 2
+            },
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                5108405,
+                7793569,
+                7794635
+              ],
+              "total_occurrences": 3
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Workspace-CloneAllButtonLabel",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                8026017
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Workspace-workDirSummary-checkbox-hint",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                3730160
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GK-45",
+      "category": "Collaboration",
+      "feature": "Launchpad",
+      "observed_surface": "Cross-repository PR/issue/WIP dashboard with involvement filters, review status, pin/snooze",
+      "branchlight_gap": "Absent",
+      "evidence_level": "resource-and-code",
+      "evidence": [
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/FocusView-Title",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                8615390,
+                11254610
+              ],
+              "total_occurrences": 2
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/FocusView-InvolvementFilterNeedsReviewByMe",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                6471900
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/FocusView-TypeFilterWIPs",
+          "code_references": [
+            {
+              "path": "src/main/static/main.bundle.js",
+              "byte_offsets": [
+                5049006
+              ],
+              "total_occurrences": 1
+            },
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                9029188
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/FocusView-Pin",
+          "code_references": [
+            {
+              "path": "src/main/static/main.bundle.js",
+              "byte_offsets": [
+                5878992
+              ],
+              "total_occurrences": 1
+            },
+            {
+              "path": "src/render/static/entryPoints/requestHandler/requestHandler.bundle.js",
+              "byte_offsets": [
+                1243295
+              ],
+              "total_occurrences": 1
+            },
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                7752964,
+                12781206
+              ],
+              "total_occurrences": 2
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/FocusView-Snooze",
+          "code_references": [
+            {
+              "path": "src/main/static/main.bundle.js",
+              "byte_offsets": [
+                5879045
+              ],
+              "total_occurrences": 1
+            },
+            {
+              "path": "src/render/static/entryPoints/requestHandler/requestHandler.bundle.js",
+              "byte_offsets": [
+                1243348
+              ],
+              "total_occurrences": 1
+            },
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                7753017,
+                9333122,
+                9909179,
+                9909216,
+                9909280,
+                9909346
+              ],
+              "total_occurrences": 6
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GK-46",
+      "category": "AI",
+      "feature": "Generate commit and PR messages",
+      "observed_surface": "AI commit/stash text; PR title and description; configurable instructions",
+      "branchlight_gap": "Absent",
+      "evidence_level": "resource-and-code",
+      "evidence": [
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Ai-GeneratePullRequest",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                8215165,
+                8215374,
+                10548180,
+                10548240,
+                10548297,
+                10548356
+              ],
+              "total_occurrences": 6
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/AiCommitMessageGeneration-NoStagedChanges",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                3497421,
+                3497477,
+                3497552,
+                3505192,
+                3505248,
+                3505323
+              ],
+              "total_occurrences": 6
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/AI-Template-ConventionalCommits-Label",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                8630533
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/AI-Template-StashBranchName-Label",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                8632493
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GK-47",
+      "category": "AI",
+      "feature": "Explain changes",
+      "observed_surface": "Explain commits, ranges, stash, branch and working changes; some marked Preview",
+      "branchlight_gap": "Absent",
+      "evidence_level": "resource-and-code",
+      "evidence": [
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Ai-ExplainCommit",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                5535203,
+                5535286,
+                5535311
+              ],
+              "total_occurrences": 3
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Ai-ExplainCommits",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                5535203,
+                5535311
+              ],
+              "total_occurrences": 2
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Ai-ExplainStash",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                5535268
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Ai-ExplainWorkingChanges",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                5668100,
+                9044583
+              ],
+              "total_occurrences": 2
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ContextMenu-ExplainBranchChangesPreview",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                356847
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GK-48",
+      "category": "AI",
+      "feature": "Resolve merge conflicts",
+      "observed_surface": "AI conflict resolution with summary/confidence and review prompts",
+      "branchlight_gap": "Absent",
+      "evidence_level": "resource-and-code",
+      "evidence": [
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Ai-ResolveConflict",
+          "code_references": [
+            {
+              "path": "src/main/static/960.main.bundle.js",
+              "byte_offsets": [
+                60439,
+                60519,
+                60602
+              ],
+              "total_occurrences": 3
+            },
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                2474282,
+                3516452,
+                3516491,
+                12189457,
+                12710865,
+                12710898
+              ],
+              "total_occurrences": 6
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Ai-ResolveConflictConfidence",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                12189457
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Ai-ResolveConflictMergeSummary",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                2474282
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GK-49",
+      "category": "AI",
+      "feature": "Compose and recompose commits",
+      "observed_surface": "Preview workflow groups changes, orders commits and creates/recomposes commits",
+      "branchlight_gap": "Absent",
+      "evidence_level": "resource-and-code",
+      "evidence": [
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Ai-GenerateRebaseFromWIP",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                944275,
+                944319
+              ],
+              "total_occurrences": 2
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Ai-GenerateRebaseFromCommits",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                5535779
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Ai-ComposePhase-Grouping",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                3508557,
+                3508631
+              ],
+              "total_occurrences": 2
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Ai-ComposePhase-Ordering",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                3508667
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Ai-ComposePhase-Verifying",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                3508748
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GK-50",
+      "category": "AI",
+      "feature": "Provider and usage settings",
+      "observed_surface": "Enable AI, own API key/custom endpoint, model/token settings and usage credits",
+      "branchlight_gap": "Absent",
+      "evidence_level": "resource-and-code",
+      "evidence": [
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/GKAIPreferences-UseCustomAiProvider",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                3611356,
+                3611414,
+                3611869
+              ],
+              "total_occurrences": 3
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/GKAIPreferences-CustomAiProviderEndpoint-Label",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                3356060
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Ai-MaxInputTokensLabel",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                6381492
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Ai-UsageDetailsTitle",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                11026417
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GK-51",
+      "category": "Agents",
+      "feature": "Start worktree agent sessions",
+      "observed_surface": "Choose agent/base branch, create session, run setup commands and agent arguments",
+      "branchlight_gap": "Absent",
+      "evidence_level": "resource-and-code",
+      "evidence": [
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/AgentWorkflow-StartAgentSession",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                10564926
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/AgentWorkflow-BaseBranch",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                2056083,
+                2056162,
+                2056254
+              ],
+              "total_occurrences": 3
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/AgentWorkflow-CodingAgent",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                2056412,
+                2056492,
+                2056559
+              ],
+              "total_occurrences": 3
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/AgentsPreferences-SetupCommands-Description",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                1551110
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/AgentsPreferences-CliArguments-Label",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                7260681
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GK-52",
+      "category": "Agents",
+      "feature": "Agent status dashboard",
+      "observed_surface": "Worktree WIP rows and session badges; sort/filter sessions needing attention",
+      "branchlight_gap": "Absent",
+      "evidence_level": "resource-and-code",
+      "evidence": [
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/AgentsPreferences-ShowWorktreeWipNodes-Label",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                9206473
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/AgentWorkflow-AgentStatusThinking",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                2124952
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/AgentWorkflow-AgentStatusAwaitingApproval",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                2124634
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/AgentWorkflow-FilterNeedsAttention",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                11239830
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/AgentWorkflow-SortChangeSize",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                11239761
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GK-53",
+      "category": "Agents",
+      "feature": "Agent plugins and permission response",
+      "observed_surface": "Install/uninstall status plugins; allow/deny permission requests and inspect scopes",
+      "branchlight_gap": "Absent",
+      "evidence_level": "resource-and-code",
+      "evidence": [
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ToolPreferences-ClaudeCodeHooks",
+          "code_references": [
+            {
+              "path": "src/main/static/main.bundle.js",
+              "byte_offsets": [
+                2381442,
+                2381507,
+                2381568,
+                2381645
+              ],
+              "total_occurrences": 4
+            },
+            {
+              "path": "src/render/static/entryPoints/requestHandler/requestHandler.bundle.js",
+              "byte_offsets": [
+                573346,
+                573411,
+                573472,
+                573549
+              ],
+              "total_occurrences": 4
+            },
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                4290911,
+                4290976,
+                4291037,
+                4291114
+              ],
+              "total_occurrences": 4
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ToolPreferences-CodexHooks",
+          "code_references": [
+            {
+              "path": "src/main/static/main.bundle.js",
+              "byte_offsets": [
+                2382019,
+                2382079,
+                2382135,
+                2382207
+              ],
+              "total_occurrences": 4
+            },
+            {
+              "path": "src/render/static/entryPoints/requestHandler/requestHandler.bundle.js",
+              "byte_offsets": [
+                573923,
+                573983,
+                574039,
+                574111
+              ],
+              "total_occurrences": 4
+            },
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                4291488,
+                4291548,
+                4291604,
+                4291676
+              ],
+              "total_occurrences": 4
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ToolPreferences-CopilotHooks",
+          "code_references": [
+            {
+              "path": "src/main/static/main.bundle.js",
+              "byte_offsets": [
+                2382578,
+                2382640,
+                2382698,
+                2382772
+              ],
+              "total_occurrences": 4
+            },
+            {
+              "path": "src/render/static/entryPoints/requestHandler/requestHandler.bundle.js",
+              "byte_offsets": [
+                574482,
+                574544,
+                574602,
+                574676
+              ],
+              "total_occurrences": 4
+            },
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                4292047,
+                4292109,
+                4292167,
+                4292241
+              ],
+              "total_occurrences": 4
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ToolPreferences-OpenCodePlugin",
+          "code_references": [
+            {
+              "path": "src/main/static/main.bundle.js",
+              "byte_offsets": [
+                2383146,
+                2383210,
+                2383270,
+                2383346
+              ],
+              "total_occurrences": 4
+            },
+            {
+              "path": "src/render/static/entryPoints/requestHandler/requestHandler.bundle.js",
+              "byte_offsets": [
+                575050,
+                575114,
+                575174,
+                575250
+              ],
+              "total_occurrences": 4
+            },
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                4292615,
+                4292679,
+                4292739,
+                4292815
+              ],
+              "total_occurrences": 4
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/AgentWorkflow-PermissionAllow",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                12529227
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/AgentWorkflow-PermissionDeny",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                12529741
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GK-54",
+      "category": "Tools",
+      "feature": "Embedded terminal",
+      "observed_surface": "Multiple terminal tabs; start/close terminals; launch agent in terminal",
+      "branchlight_gap": "Absent",
+      "evidence_level": "resource-and-code",
+      "evidence": [
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Terminal-NewTab",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                7691816,
+                7691908
+              ],
+              "total_occurrences": 2
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Terminal-CloseTab",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                7692221
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Terminal-KillAllConfirmMessage",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                6773269
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/AgentWorkflow-LaunchSessionInTerminal",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                9089657
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GK-55",
+      "category": "Tools",
+      "feature": "External tool integration",
+      "observed_surface": "Open repository/files in editor, terminal, file manager, external diff/merge tools",
+      "branchlight_gap": "No UI controls observed; opener plugin registered",
+      "evidence_level": "resource-and-code",
+      "evidence": [
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/menuStrings/OpenRepoInExternalEditor",
+          "code_references": [
+            {
+              "path": "src/main/static/977.main.bundle.js",
+              "byte_offsets": [
+                2338
+              ],
+              "total_occurrences": 1
+            },
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                5270844,
+                5271420,
+                5272004,
+                5272735,
+                5273158,
+                5273219,
+                5274455,
+                5274525
+              ],
+              "total_occurrences": 9
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/menuStrings/OpenTerminal",
+          "code_references": [
+            {
+              "path": "src/main/static/977.main.bundle.js",
+              "byte_offsets": [
+                2547
+              ],
+              "total_occurrences": 1
+            },
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                11788619
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/menuStrings/OpenInFileManager",
+          "code_references": [
+            {
+              "path": "src/main/static/977.main.bundle.js",
+              "byte_offsets": [
+                2652,
+                11325,
+                20807
+              ],
+              "total_occurrences": 3
+            },
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                1993823,
+                1993995,
+                7621059
+              ],
+              "total_occurrences": 3
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ToolPreferences-ExternalDiffTool",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                6700285,
+                6700423
+              ],
+              "total_occurrences": 2
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/ToolPreferences-ExternalMergeTool",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                6700046,
+                6700185
+              ],
+              "total_occurrences": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GK-56",
+      "category": "Tools",
+      "feature": "Command palette and keybindings",
+      "observed_surface": "Fuzzy command/action/file/repository search; keyboard action maps",
+      "branchlight_gap": "Absent",
+      "evidence_level": "resource-and-code",
+      "evidence": [
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/FuzzyFinder-DefaultPlaceHolder",
+          "code_references": [
+            {
+              "path": "src/main/static/main.bundle.js",
+              "byte_offsets": [
+                434110
+              ],
+              "total_occurrences": 1
+            },
+            {
+              "path": "src/render/static/entryPoints/requestHandler/requestHandler.bundle.js",
+              "byte_offsets": [
+                110561
+              ],
+              "total_occurrences": 1
+            },
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                1206135
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/FuzzyFinder-HistoryPlaceholder",
+          "code_references": [
+            {
+              "path": "src/main/static/main.bundle.js",
+              "byte_offsets": [
+                433797
+              ],
+              "total_occurrences": 1
+            },
+            {
+              "path": "src/render/static/entryPoints/requestHandler/requestHandler.bundle.js",
+              "byte_offsets": [
+                110254
+              ],
+              "total_occurrences": 1
+            },
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                1205822
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/menuStrings/KeyboardShortcuts",
+          "code_references": [
+            {
+              "path": "src/main/static/977.main.bundle.js",
+              "byte_offsets": [
+                9194,
+                18472,
+                27547
+              ],
+              "total_occurrences": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GK-57",
+      "category": "Preferences",
+      "feature": "Profiles and identity",
+      "observed_surface": "Local/synced preferences profiles; author identity; optional global gitconfig sync",
+      "branchlight_gap": "System Git identity only; profile UI absent",
+      "evidence_level": "resource-and-code",
+      "evidence": [
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Profile-Local",
+          "code_references": []
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Profile-Synced",
+          "code_references": []
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Profile-AuthorName",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                6740873,
+                6740899
+              ],
+              "total_occurrences": 2
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Profile-AuthorEmail",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                6741251,
+                6741278
+              ],
+              "total_occurrences": 2
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Profile-SyncChanges",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                6744745,
+                6744842
+              ],
+              "total_occurrences": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GK-58",
+      "category": "Preferences",
+      "feature": "Appearance and editor preferences",
+      "observed_surface": "Built-in theme switching, panels/columns, spellcheck, dates, editor encoding",
+      "branchlight_gap": "Absent",
+      "evidence_level": "resource-and-code",
+      "evidence": [
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/UIPreferences-Theme",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                1785145
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/UIPreferences-Spellcheck",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                1786314
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/UIPreferences-DateTimeFormatTitle",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                1783616
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Encoding-Label",
+          "code_references": [
+            {
+              "path": "src/main/static/919.main.bundle.js",
+              "byte_offsets": [
+                18684
+              ],
+              "total_occurrences": 1
+            },
+            {
+              "path": "src/render/static/entryPoints/requestHandler/requestHandler.bundle.js",
+              "byte_offsets": [
+                126664
+              ],
+              "total_occurrences": 1
+            },
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                1507131,
+                6714301
+              ],
+              "total_occurrences": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GK-59",
+      "category": "Product",
+      "feature": "Onboarding, support, updates and account administration",
+      "observed_surface": "Tutorials/help/logs, update checks, accounts/orgs/teams/license and trial screens",
+      "branchlight_gap": "Release distribution exists; corresponding in-app surfaces mostly absent",
+      "evidence_level": "resource-and-code",
+      "evidence": [
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/menuStrings/CheckForUpdateWithLastCheckedTime",
+          "code_references": [
+            {
+              "path": "src/main/static/977.main.bundle.js",
+              "byte_offsets": [
+                678,
+                11789,
+                28544
+              ],
+              "total_occurrences": 3
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/menuStrings/ViewSupportDocs",
+          "code_references": [
+            {
+              "path": "src/main/static/977.main.bundle.js",
+              "byte_offsets": [
+                9310,
+                18792,
+                27867
+              ],
+              "total_occurrences": 3
+            },
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                3078380
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/menuStrings/ViewActivityLogs",
+          "code_references": [
+            {
+              "path": "src/main/static/977.main.bundle.js",
+              "byte_offsets": [
+                9635,
+                19117,
+                28192
+              ],
+              "total_occurrences": 3
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Registration-CreateAccount",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                10305411
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Organization-Settings",
+          "code_references": [
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                1184864,
+                1184947
+              ],
+              "total_occurrences": 2
+            }
+          ]
+        },
+        {
+          "resource_path": "src/strings/en-us.json",
+          "json_pointer": "/strings/Organization-Teams",
+          "code_references": [
+            {
+              "path": "src/main/static/919.main.bundle.js",
+              "byte_offsets": [
+                19980
+              ],
+              "total_occurrences": 1
+            },
+            {
+              "path": "src/render/static/entryPoints/requestHandler/requestHandler.bundle.js",
+              "byte_offsets": [
+                127983
+              ],
+              "total_occurrences": 1
+            },
+            {
+              "path": "src/render/static/entryPoints/main/render.bundle.js",
+              "byte_offsets": [
+                1508452
+              ],
+              "total_occurrences": 1
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
