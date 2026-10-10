@@ -227,6 +227,9 @@ These are manual syntax observations with byte anchors in [workflow-anchors.json
 
 ## Recommended implementation sequence
 
+The owner's subsequent [feature selection](FEATURE_SELECTION.md) takes precedence
+over this analyst proposal for product scope and priorities.
+
 This is an analyst proposal for Branchlight based on the observed gaps and the existing architecture. It is not a commitment to reproduce every GitKraken feature, and it does not change [PLAN.md](../PLAN.md) or V1 scope.
 
 | Phase | Scope / feature IDs | Why this order | Completion criteria for a future implementation |
