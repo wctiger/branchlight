@@ -97,8 +97,8 @@ UI, and file restoration from commits. Hunk/line staging and branch/tag visibili
 controls have no committed delivery priority.
 
 The [feature selection](docs/FEATURE_SELECTION.md) is the detailed scope reference.
-[PLAN.md](PLAN.md) records the original proof-of-concept/V1 scope; its macOS-only,
-single-repository limits describe that initial stage, not the full product goal.
+The [V1 verification matrix](docs/V1_VERIFICATION.md) records evidence for the
+initial implementation; current product scope follows the feature selection.
 
 ## Development
 

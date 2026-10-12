@@ -5,8 +5,9 @@ GitKraken 12.6.0 as the inventory. This document records product scope, relative
 priorities, and delivery order for future work. The `GK-xx` identifiers retain
 the original inventory references; each selected feature is described here.
 The generated analysis report and evidence files are transient and are not
-retained in the repository. This document does not expand the original
-[V1 plan](../PLAN.md) or claim that selected features are already implemented.
+retained in the repository. Selected features describe planned product scope;
+they are not claims of implementation. The [V1 verification matrix](V1_VERIFICATION.md)
+records the initial capability evidence.
 
 ## Product direction
 
