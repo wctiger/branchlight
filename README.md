@@ -81,9 +81,6 @@ memory is not implemented in V1.
 See [the V1 verification matrix](docs/V1_VERIFICATION.md) for capability-level
 evidence and [PLAN.md](PLAN.md) for the complete scope and non-goals.
 
-For future feature planning, see the [GitKraken feature analysis](docs/GITKRAKEN_FEATURE_ANALYSIS.md),
-which maps observed packaged features to Branchlight's current capabilities
-and proposes an implementation sequence.
-
-The [feature selection](docs/FEATURE_SELECTION.md) records the owner's chosen
-scope, priorities, and exclusions from that inventory.
+For future feature planning, see the [feature selection](docs/FEATURE_SELECTION.md),
+which records the owner's chosen scope, priorities, exclusions, and delivery
+order based on the GitKraken analysis.

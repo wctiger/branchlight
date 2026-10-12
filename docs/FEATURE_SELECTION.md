@@ -1,11 +1,12 @@
 # Branchlight feature selection
 
-Selected by the project owner on **2026-10-10**, using the
-[GitKraken feature analysis](GITKRAKEN_FEATURE_ANALYSIS.md) as the inventory.
-This document records product scope and relative priorities for future work.
-It takes precedence over the analysis report's proposed implementation sequence
-when deciding what to build. It does not expand the original [V1 plan](../PLAN.md)
-or claim that selected features are already implemented.
+Selected by the project owner on **2026-10-10**, using the REA analysis of
+GitKraken 12.6.0 as the inventory. This document records product scope, relative
+priorities, and delivery order for future work. The `GK-xx` identifiers retain
+the original inventory references; each selected feature is described here.
+The generated analysis report and evidence files are transient and are not
+retained in the repository. This document does not expand the original
+[V1 plan](../PLAN.md) or claim that selected features are already implemented.
 
 ## Product direction
 
