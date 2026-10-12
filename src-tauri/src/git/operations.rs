@@ -6,18 +6,20 @@ use super::runner::run_git;
 
 /// Stages every change for one path without allowing the path to become an option.
 pub(crate) fn stage_file(repository: &Path, path: &str) -> Result<GitOutput, GitError> {
-    validate_file_path(path)?;
-    run_git(repository, &["add", "--", path])
+    super::inspection::validate_path(path)?;
+    let literal = format!(":(literal){path}");
+    run_git(repository, &["add", "--", &literal])
 }
 
 /// Removes every staged change for one path from the index.
 pub(crate) fn unstage_file(repository: &Path, path: &str) -> Result<GitOutput, GitError> {
-    validate_file_path(path)?;
+    super::inspection::validate_path(path)?;
+    let literal = format!(":(literal){path}");
 
     match run_git(repository, &["rev-parse", "--verify", "--quiet", "HEAD"]) {
-        Ok(_) => run_git(repository, &["restore", "--staged", "--", path]),
+        Ok(_) => run_git(repository, &["restore", "--staged", "--", &literal]),
         Err(GitError::CommandFailed { output, .. }) if output.exit_code == Some(1) => {
-            run_git(repository, &["rm", "--cached", "--", path])
+            run_git(repository, &["rm", "--cached", "--", &literal])
         }
         Err(error) => Err(error),
     }
@@ -32,17 +34,6 @@ pub(crate) fn commit(repository: &Path, message: &str) -> Result<GitOutput, GitE
     }
 
     run_git(repository, &["commit", "-m", message])
-}
-
-/// Rejects paths that cannot identify a file for an index operation.
-fn validate_file_path(path: &str) -> Result<(), GitError> {
-    if path.is_empty() {
-        Err(GitError::InvalidOperationInput {
-            message: "Choose a file before changing its staged state.".to_owned(),
-        })
-    } else {
-        Ok(())
-    }
 }
 
 #[cfg(test)]

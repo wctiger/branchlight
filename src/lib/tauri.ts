@@ -211,3 +211,26 @@ export function normalizeGitError(error: unknown): GitError {
 
   return output ? { code, message, output } : { code, message };
 }
+
+export interface ChangedPath { path: string; originalPath: string | null; status: string; }
+export interface Comparison { base: string; target: string; files: ChangedPath[]; }
+export interface TextDiff { context: string; text: string; truncated: boolean; binary: boolean; }
+export interface FileCommit { hash: string; author: string; timestamp: string; subject: string; }
+export function createRepository(destination: string, source: string | null): Promise<Repository> {
+  return invoke("create_repository", { destination, source });
+}
+export function compareRevisions(path: string, base: string, target: string): Promise<Comparison> {
+  return invoke("compare_revisions", { path, base, target });
+}
+export function getTextDiff(path: string, kind: string, filePath: string, base = "", target = ""): Promise<TextDiff> {
+  return invoke("get_text_diff", { path, kind, filePath, base, target });
+}
+export function getFileHistory(path: string, filePath: string, revision: string): Promise<FileCommit[]> {
+  return invoke("get_file_history", { path, filePath, revision });
+}
+export function getFileBlame(path: string, filePath: string, revision: string): Promise<TextDiff> {
+  return invoke("get_file_blame", { path, filePath, revision });
+}
+export function discardFile(path: string, filePath: string, expected: "tracked" | "untracked"): Promise<GitOutput> {
+  return invoke("discard_file", { path, filePath, expected });
+}

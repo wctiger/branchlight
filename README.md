@@ -29,16 +29,22 @@ support, what is deferred, and what is intentionally excluded.
   or worktree and coordinate metadata shared by linked worktrees, while allowing
   unrelated repositories to progress independently.
 
-These are product goals. Repository workers, tabs, and worktrees are planned;
-current implementation status is below. Worker/thread scheduling must keep
-resource use bounded and the UI responsive as repositories are added.
+Worktrees and advanced workflows remain product goals. Delivery 1 adds scoped
+repository scheduling and tabs; runtime acceptance is tracked separately from
+build checks in [Delivery 1 verification](docs/DELIVERY_1_VERIFICATION.md).
 
 ## Current implementation
 
-The initial macOS implementation provides the basic Git workflow in a single
-repository view:
+The application implements the following workflows (new Delivery 1 runtime
+acceptance is pending):
 
-- Open and validate a local Git repository.
+- Open and validate multiple local repositories in independent tabs and groups.
+- Initialize or clone into a new directory using system Git; retain partial
+  destinations on failure for explicit inspection.
+- Inspect staged, unstaged, and commit text diffs; compare two revisions.
+- Browse exact-path file history and committed line attribution.
+- Confirm whole-file discard of tracked modifications/deletions or individual
+  untracked files; additions, renames, conflicts, and directories are unavailable.
 - Inspect branch, upstream, staged, unstaged, conflict, and stash state.
 - Stage or unstage whole files and create commits.
 - Create, switch, rename, safely delete, merge, and rebase local branches.
@@ -48,16 +54,18 @@ repository view:
   resolution, and safely abort the matching operation.
 - Browse a bounded 200-commit history with a read-only SVG DAG.
 
-The app currently serializes mutations in its single repository UI and refreshes
-state after success or failure. Multiple repository workers and scoped scheduling
-will extend this foundation.
+Repository views retain state while switching tabs. Backend commands queue by
+canonical common Git directory, coordinating linked worktrees while allowing
+independent repositories to use up to eight background workers. Busy tabs cannot
+be closed until their operation and refresh finish. Git output capture is capped
+at 8 MiB per stream; text previews at 512 KiB.
 
-Text diffs, history/blame, repository tabs, worktrees, and advanced commit actions
-are not implemented yet. Merge and rebase target the checked-out branch;
-conflict resolution and rebase continuation currently require external tools/Git.
-History is limited to 200 commits, and large-repository performance has not been
-established. See [implementation verification](docs/V1_VERIFICATION.md) for the
-existing capability evidence.
+Worktree lifecycle and advanced commit actions remain planned. Merge and rebase
+target the checked-out branch; conflict resolution and rebase continuation require
+external tools/Git. Repository history is limited to 200 commits; file history to
+100 commits without rename tracing. Large-repository performance and full Delivery
+1 UI acceptance remain unverified. See [V1 evidence](docs/V1_VERIFICATION.md) and
+[Delivery 1 verification](docs/DELIVERY_1_VERIFICATION.md).
 
 ### Platform and distribution status
 

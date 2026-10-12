@@ -2,25 +2,24 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 
 import "./App.css";
+import { InspectionPanel } from "./features/inspection/InspectionPanel";
 import {
   abortMerge,
   abortRebase,
   applyStash,
-  chooseRepositoryFolder,
   commitChanges,
   createBranch,
   createStash,
   deleteBranch,
+  discardFile,
   dropStash,
   fetchRemote,
   getBranches,
-  getGitVersion,
   getHistory,
   getRepositoryStatus,
   getStashes,
   mergeBranch,
   normalizeGitError,
-  openRepository,
   popStash,
   pullRemote,
   pushRemote,
@@ -42,7 +41,7 @@ import {
   HistoryPanel,
   type HistoryState,
 } from "./features/history/HistoryPanel";
-import type { GitError, GitOutput } from "./types/git";
+import type { GitError } from "./types/git";
 import type { Repository } from "./types/repository";
 import type { Stash } from "./types/stash";
 import type {
@@ -51,11 +50,6 @@ import type {
   FileStatus,
   RepositoryStatus,
 } from "./types/status";
-
-type GitStatus =
-  | { state: "checking" }
-  | { state: "ready"; output: GitOutput }
-  | { state: "error"; error: GitError };
 
 type OpenState = "idle" | "choosing" | "validating";
 
@@ -74,6 +68,7 @@ type AppOperation =
   | { state: "idle" }
   | { state: "staging"; path: string }
   | { state: "unstaging"; path: string }
+  | { state: "discarding"; path: string }
   | { state: "committing" }
   | { state: "switching"; branchName: string }
   | { state: "creating"; branchName: string }
@@ -709,7 +704,9 @@ function RepositoryScreen({
   onApplyStash,
   onPopStash,
   onDropStash,
+  onDiscard,
 }: {
+  onDiscard: (change: FileChange) => void;
   repository: Repository;
   repositoryError: GitError | null;
   openState: OpenState;
@@ -745,6 +742,7 @@ function RepositoryScreen({
   onPopStash: (stash: Stash) => Promise<boolean>;
   onDropStash: (stash: Stash) => Promise<boolean>;
 }) {
+  const [inspectionCommit, setInspectionCommit] = useState<string | null>(null);
   const status = statusState.state === "ready" ? statusState.status : null;
   const isRefreshing =
     statusState.state === "loading" ||
@@ -937,23 +935,26 @@ function RepositoryScreen({
           onDropStash={onDropStash}
         />
         <HistoryPanel
+          onSelectCommit={setInspectionCommit}
           state={historyState}
           controlsDisabled={controlsDisabled}
           onRefresh={onRefresh}
         />
       </div>
+      <InspectionPanel path={repository.path} status={status} commit={inspectionCommit} disabled={controlsDisabled} onDiscard={onDiscard} />
     </main>
   );
 }
 
 /** Owns system Git, repository, status, and mutation state for the app. */
-function App() {
-  const [gitStatus, setGitStatus] = useState<GitStatus>({
-    state: "checking",
-  });
-  const [repository, setRepository] = useState<Repository | null>(null);
-  const [repositoryError, setRepositoryError] = useState<GitError | null>(null);
-  const [openState, setOpenState] = useState<OpenState>("idle");
+export function RepositoryApp({ initialRepository, onOpen, onFeedback }: {
+  initialRepository: Repository;
+  onOpen: () => void;
+  onFeedback: (path: string, busy: boolean, error: boolean) => void;
+}) {
+  const repository = initialRepository;
+  const repositoryError: GitError | null = null;
+  const openState: OpenState = "idle";
   const [repositoryStatus, setRepositoryStatus] =
     useState<RepositoryStatusState>({ state: "idle" });
   const [branchesState, setBranchesState] = useState<BranchesState>({
@@ -988,22 +989,6 @@ function App() {
   const stashesRequestId = useRef(0);
   const historyRequestId = useRef(0);
   const repositoryMutationInFlight = useRef(false);
-  const openRequestInFlight = useRef(false);
-
-  const checkGitVersion = useCallback(async () => {
-    setGitStatus({ state: "checking" });
-
-    try {
-      const output = await getGitVersion();
-      setGitStatus({ state: "ready", output });
-    } catch (error) {
-      setGitStatus({ state: "error", error: normalizeGitError(error) });
-    }
-  }, []);
-
-  useEffect(() => {
-    void checkGitVersion();
-  }, [checkGitVersion]);
 
   /** Refreshes Git state while retaining the last successful snapshot on failure. */
   const refreshRepositoryStatus = useCallback(async (repositoryPath: string) => {
@@ -1169,14 +1154,14 @@ function App() {
   /** Atomically prevents a second Git mutation before React can render disabled controls. */
   const beginRepositoryMutation = useCallback(() => {
     if (
-      repositoryMutationInFlight.current ||
-      openRequestInFlight.current
+      repositoryMutationInFlight.current
     ) {
       return false;
     }
     repositoryMutationInFlight.current = true;
+    onFeedback(repository.path, true, false);
     return true;
-  }, []);
+  }, [onFeedback, repository.path]);
 
   /** Refreshes every Git-backed view and always releases the mutation guard. */
   const finishRepositoryMutation = useCallback(
@@ -1208,48 +1193,28 @@ function App() {
     }
   }, [refreshRepositoryState, repository]);
 
-  /** Opens at most one folder picker and validates its selected repository. */
-  const handleOpenRepository = useCallback(async () => {
-    if (
-      openState !== "idle" ||
-      gitStatus.state !== "ready" ||
-      openRequestInFlight.current ||
-      repositoryMutationInFlight.current
-    ) {
-      return;
-    }
+  const handleOpenRepository = onOpen;
 
-    openRequestInFlight.current = true;
-    setRepositoryError(null);
-    setOpenState("choosing");
+  useEffect(() => {
+    onFeedback(repository.path, operation.state !== "idle", Boolean(
+      changeOperationError || branchOperationError || remoteOperationError ||
+      stashOperationError || conflictOperationError ||
+      repositoryStatus.state === "error" || branchesState.state === "error" ||
+      stashesState.state === "error" || historyState.state === "error"
+    ));
+  }, [repository.path, operation.state, changeOperationError, branchOperationError,
+    remoteOperationError, stashOperationError, conflictOperationError, repositoryStatus,
+    branchesState, stashesState, historyState, onFeedback]);
 
-    try {
-      const selectedPath = await chooseRepositoryFolder();
-      if (!selectedPath) {
-        return;
-      }
-
-      setOpenState("validating");
-      const openedRepository = await openRepository(selectedPath);
-      statusRequestId.current += 1;
-      branchesRequestId.current += 1;
-      stashesRequestId.current += 1;
-      historyRequestId.current += 1;
-      setRepositoryStatus({ state: "idle" });
-      setBranchesState({ state: "idle" });
-      setStashesState({ state: "idle" });
-      setHistoryState({ state: "idle" });
-      setOperation({ state: "idle" });
-      clearOperationFeedback();
-      setCommitMessage("");
-      setRepository(openedRepository);
-    } catch (error) {
-      setRepositoryError(normalizeGitError(error));
-    } finally {
-      openRequestInFlight.current = false;
-      setOpenState("idle");
-    }
-  }, [clearOperationFeedback, gitStatus.state, openState]);
+  const handleDiscard = async (change: FileChange) => {
+    const untracked = change.status === "untracked";
+    if (!beginRepositoryMutation()) return;
+    clearOperationFeedback();
+    setOperation({ state: "discarding", path: change.path });
+    try { await discardFile(repository.path, change.path, untracked ? "untracked" : "tracked"); setOperationNotice(`Discarded ${change.path}.`); }
+    catch (error) { setChangeOperationError(normalizeGitError(error)); }
+    await finishRepositoryMutation(repository.path);
+  };
 
   /** Runs one whole-file mutation and refreshes Git state after every attempt. */
   const handleFileOperation = useCallback(
@@ -1641,6 +1606,7 @@ function App() {
   if (repository) {
     return (
       <RepositoryScreen
+        onDiscard={(change) => void handleDiscard(change)}
         repository={repository}
         repositoryError={repositoryError}
         openState={openState}
@@ -1702,94 +1668,5 @@ function App() {
     );
   }
 
-  const gitErrorDetails =
-    gitStatus.state === "error"
-      ? gitStatus.error.output?.stderr.trim() ||
-        gitStatus.error.output?.stdout.trim()
-      : undefined;
-  const isOpening = openState !== "idle";
-  const buttonLabel =
-    openState === "choosing"
-      ? "Choose a folder…"
-      : openState === "validating"
-        ? "Checking repository…"
-        : "Open repository";
-
-  return (
-    <main className="landing-screen">
-      <section className="landing-card" aria-labelledby="landing-title">
-        <div className="landing-brand">
-          <BranchlightMark />
-          <span>Branchlight</span>
-        </div>
-
-        <div className="landing-copy">
-          <p className="eyebrow">A lighter way to work with Git</p>
-          <h1 id="landing-title">Open a repository.</h1>
-          <p>
-            Choose any folder inside a local Git repository. Branchlight will
-            find and open its root.
-          </p>
-        </div>
-
-        <button
-          className="primary-button"
-          type="button"
-          disabled={gitStatus.state !== "ready" || isOpening}
-          aria-busy={isOpening}
-          onClick={() => void handleOpenRepository()}
-        >
-          {isOpening ? <span className="button-spinner" /> : <FolderIcon />}
-          {buttonLabel}
-        </button>
-
-        {repositoryError && <ErrorNotice error={repositoryError} />}
-
-        <div
-          className={`git-status git-status--${gitStatus.state}`}
-          aria-live="polite"
-        >
-          {gitStatus.state === "checking" && (
-            <>
-              <span className="status-dot status-dot--checking" />
-              <p>Checking system Git…</p>
-            </>
-          )}
-
-          {gitStatus.state === "ready" && (
-            <>
-              <span className="status-dot" />
-              <p>
-                System Git ready
-                <span>{gitStatus.output.stdout.trim()}</span>
-              </p>
-            </>
-          )}
-
-          {gitStatus.state === "error" && (
-            <div className="git-unavailable" role="alert">
-              <div>
-                <strong>System Git isn’t available.</strong>
-                <p>
-                  Install Git or make sure it can be run from your shell, then
-                  check again.
-                </p>
-                {gitErrorDetails && <pre>{gitErrorDetails}</pre>}
-              </div>
-              <button type="button" onClick={() => void checkGitVersion()}>
-                Check again
-              </button>
-            </div>
-          )}
-        </div>
-      </section>
-
-      <p className="landing-footnote">
-        Your repositories stay on this Mac. Branchlight uses your existing Git
-        configuration.
-      </p>
-    </main>
-  );
+  return null;
 }
-
-export default App;

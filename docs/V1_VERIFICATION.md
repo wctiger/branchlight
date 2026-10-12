@@ -1,5 +1,9 @@
 # V1 verification
 
+This records the original V1 baseline. Delivery 1 changes are tracked separately
+in [Delivery 1 verification](DELIVERY_1_VERIFICATION.md); these historical results
+do not prove acceptance of the new features.
+
 Verified on 2026-08-30 against disposable local Git repositories. Rust tests
 exercise system Git with real repositories and remotes; frontend tests exercise
 deterministic DAG fixtures. The production TypeScript build verifies typed Tauri
