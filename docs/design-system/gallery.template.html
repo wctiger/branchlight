@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Branchlight · Theme directions</title>
+<style>
+:root {
+  /* FOUNDATION_TOKENS */
+  color-scheme: light;
+  font-family: var(--font-ui);
+  color: #202027;
+  background: #f4f4f5;
+}
+* { box-sizing: border-box; }
+body { margin: 0; padding: 40px; }
+main { max-width: 1440px; margin: auto; }
+h1 { font-size: 34px; font-weight: 650; letter-spacing: -1.1px; margin: 10px 0; }
+h2 { font-size: 24px; font-weight: 620; margin: 0; letter-spacing: -.5px; }
+p { line-height: 1.6; }
+header > p { max-width: 790px; color: #5d5d69; }
+.eyebrow { font-size: 12px; letter-spacing: 1.7px; font-weight: 650; text-transform: uppercase; }
+.intro { display: flex; align-items: start; justify-content: space-between; gap: 24px; }
+.review-note { font-size: 12px; max-width: 200px; color: #5d5d69; text-align: right; }
+nav { display: flex; flex-wrap: wrap; gap: 8px; padding: 18px 0 30px; }
+nav button, nav a { font: inherit; font-size: 13px; padding: 9px 14px; border: 1px solid #7a7a85; border-radius: 6px; color: #202027; background: #fff; text-decoration: none; }
+nav button[aria-pressed="true"] { background: #202027; color: #fff; }
+nav button:hover, nav a:hover { border-color: #202027; }
+nav button:focus-visible, nav a:focus-visible { outline: 3px solid #42424d; outline-offset: 3px; }
+.proposal { margin: 0 0 48px; }
+.proposal-heading { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 18px; }
+.proposal-heading p { margin: 5px 0 0; color: #5d5d69; font-size: 13px; }
+.ordinal { font-size: 12px; color: #5d5d69; font-family: var(--font-mono); }
+.paired { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.theme {
+  color: var(--text-primary); background: var(--surface-canvas);
+  border: 1px solid var(--border-subtle); border-radius: var(--radius-panel); overflow: hidden;
+  font-size: var(--type-body);
+}
+.theme button, .theme input { font: inherit; }
+.theme button { min-height: var(--size-control); padding: 6px 10px; border: 1px solid var(--border-control); border-radius: var(--radius-control); background: var(--surface-panel); color: var(--text-primary); }
+.theme button:hover { background: var(--surface-hover); }
+.theme button:active { background: var(--selection-background); }
+.theme button:focus-visible, .theme input:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 3px; }
+.theme button.primary { background: var(--action-primary); border-color: var(--action-primary); color: var(--action-onPrimary); }
+.theme button.primary:hover { background: var(--action-primary-hover); border-color: var(--action-primary-hover); }
+.theme button.primary:active { background: var(--action-primary-active); border-color: var(--action-primary-active); }
+.theme button:disabled { color: var(--text-disabled); background: var(--action-disabled); border-color: var(--border-subtle); cursor: not-allowed; }
+.theme .mode { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; background: var(--surface-panel); border-bottom: 1px solid var(--border-subtle); }
+.mode span:first-child { font-weight: 650; }
+.mode span:last-child { color: var(--text-secondary); font-size: var(--type-label); }
+.workspace { display: grid; grid-template-columns: 144px minmax(0, 1fr); min-height: 354px; }
+.sidebar { padding: 18px 10px; background: var(--surface-subtle); border-right: 1px solid var(--border-subtle); }
+.brand { font-weight: 680; margin: 0 6px 22px; }
+.brand-mark { color: var(--text-accent); margin-right: 5px; }
+.side-label { text-transform: uppercase; font-size: 10px; font-weight: 650; letter-spacing: .9px; color: var(--text-secondary); margin: 18px 6px 9px; }
+.branch { padding: 7px 6px; font-size: 12px; overflow-wrap: anywhere; border-left: 3px solid transparent; }
+.branch.selected { color: var(--selection-text); background: var(--selection-background); border-left-color: var(--text-accent); border-radius: 0 4px 4px 0; }
+.branch small { display: block; font-size: 10px; margin-top: 2px; }
+.main-panel { min-width: 0; background: var(--surface-panel); }
+.toolbar { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 12px 14px; border-bottom: 1px solid var(--border-subtle); }
+.toolbar strong { display: block; font-size: 13px; }
+.toolbar small { display: block; color: var(--text-secondary); font-size: 11px; margin-top: 3px; }
+.mini-title { font-weight: 650; margin: 0; padding: 14px 14px 8px; }
+.history-row { display: flex; align-items: center; gap: 8px; padding: 9px 14px; border-bottom: 1px solid var(--border-subtle); }
+.history-row.selected { background: var(--selection-background); }
+.history-row .subject { min-width: 0; flex: 1; font-size: 12px; }
+.history-row code { color: var(--text-secondary); font-size: 10px; }
+.lane { flex: 0 0 8px; height: 8px; border-radius: 50%; background: var(--graph-lane-1); position: relative; }
+.lane::after { content: ""; position: absolute; height: 31px; width: 2px; background: inherit; top: 8px; left: 3px; }
+.lane.two { background: var(--graph-lane-2); border-radius: 0; }
+.lane.three { background: var(--graph-lane-3); }
+.lane.three::after { display: none; }
+.diff-title { padding: 13px 14px 8px; font: 11px var(--font-mono); color: var(--text-secondary); }
+.diff-line { padding: 6px 12px; font: 11px/1.5 var(--font-mono); overflow-wrap: anywhere; white-space: pre-wrap; }
+.diff-line.remove { background: var(--git-delete-background); color: var(--git-delete-text); }
+.diff-line.add { background: var(--git-add-background); color: var(--git-add-text); }
+.commit { display: flex; gap: 8px; padding: 14px; }
+.commit label { min-width: 0; flex: 1; }
+.commit label span { display: block; font-size: 11px; color: var(--text-secondary); margin: 0 0 5px; }
+.commit input { width: 100%; height: 32px; border: 1px solid var(--border-control); border-radius: var(--radius-control); padding: 0 8px; color: var(--text-primary); background: var(--surface-panel); font-size: 12px; }
+.commit button { align-self: end; }
+.specimen { padding: 14px 16px 16px; border-top: 1px solid var(--border-subtle); }
+.specimen-label { font-size: 10px; font-weight: 650; letter-spacing: .7px; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 10px; }
+.controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.theme .focus-sample { outline: 2px solid var(--focus-ring); outline-offset: 3px; }
+.theme button.primary.hover-sample { background: var(--action-primary-hover); border-color: var(--action-primary-hover); }
+.theme button.primary.active-sample { background: var(--action-primary-active); border-color: var(--action-primary-active); }
+.status-row { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 14px; }
+.status { padding: 5px 7px; font-size: 11px; border-radius: 4px; }
+.success { color: var(--status-success-text); background: var(--status-success-background); }
+.warning { color: var(--status-warning-text); background: var(--status-warning-background); }
+.error { color: var(--status-error-text); background: var(--status-error-background); }
+.info { color: var(--status-info-text); background: var(--status-info-background); }
+.swatches { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 16px; }
+.swatch-color { height: 22px; border: 1px solid var(--border-subtle); border-radius: 4px; margin-bottom: 6px; }
+.swatch span { display: block; font-size: 10px; color: var(--text-secondary); }
+.swatch code { font-size: 10px; color: var(--text-primary); }
+.tradeoff { font-size: 13px; color: #5d5d69; margin: 12px 0 0; max-width: 1000px; }
+details { margin: 14px 0; }
+summary { font-size: 13px; cursor: pointer; }
+.token-table { width: 100%; border-collapse: collapse; background: #fff; margin-top: 12px; font: 12px var(--font-mono); }
+.token-table th, .token-table td { text-align: left; padding: 8px; border-bottom: 1px solid #d7d7de; overflow-wrap: anywhere; }
+footer { color: #5d5d69; font-size: 12px; padding: 10px 0; }
+@media (max-width: 1100px) { .paired { grid-template-columns: 1fr; } }
+@media (max-width: 600px) { body { padding: 18px; } .review-note { display: none; } h1 { font-size: 28px; } .workspace { grid-template-columns: 1fr; } .sidebar { display: none; } .swatches { grid-template-columns: repeat(2, minmax(0, 1fr)); } .token-table { font-size: 10px; } }
+@media (prefers-reduced-motion: no-preference) { .theme button { transition: background-color var(--motion-feedback); } }
+</style>
+</head>
+<body>
+<main>
+<header class="intro">
+<div><div class="eyebrow">Branchlight / Design study 01</div><h1>Six directions. One token language.</h1><p>Compare light and dark palettes in the same Git workspace. Color changes; layout, content, and Git status meanings stay consistent. All controls are visual samples; only the scheme filters and token disclosures are interactive.</p></div>
+<p class="review-note">Issue #65<br>Research proposals<br>12 October 2026<br>No product default selected</p>
+</header>
+<nav aria-label="Color directions" id="filters"></nav>
+<div id="proposals" aria-live="polite"></div>
+<footer>Original Branchlight palettes · opaque sRGB · token-pair contrast verified separately · browser study, not a native app screenshot</footer>
+</main>
+<script>
+const study = /* THEME_DATA */ null;
+const cssName = (name) => `--${name.replaceAll(".", "-")}`;
+const escapeHtml = (value) => String(value).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
+const tokensAsStyle = (tokens) => Object.entries(tokens).map(([key, value]) => `${cssName(key)}:${value}`).join(";");
+function workspace(scheme, mode) {
+  const tokens = scheme.modes[mode];
+  const swatches = [["surface.canvas", "Canvas"], ["action.primary", "Action"], ["selection.background", "Selection"], ["text.secondary", "Secondary text"]];
+  return `<article class="theme" aria-label="${scheme.name} ${mode}" style="${tokensAsStyle(tokens)};color-scheme:${mode}">
+    <div class="mode"><span>${mode === "light" ? "Light" : "Dark"}</span><span>${scheme.name} / semantic tokens</span></div>
+    <div class="workspace">
+      <aside class="sidebar"><div class="brand"><span class="brand-mark">⑂</span>Branchlight</div><div class="side-label">Local branches</div><div class="branch selected">⑂ main<small>✓ Current branch</small></div><div class="branch">⑂ feat/tokens</div><div class="branch">⑂ fix/refresh</div><div class="side-label">Stashes</div><div class="branch">1 · WIP: theme study</div></aside>
+      <div class="main-panel"><div class="toolbar"><div><strong>branchlight</strong><small>main · 1 ahead · Up to date</small></div><button type="button" class="sample">Fetch</button></div>
+      <p class="mini-title">Recent history</p>
+      <div class="history-row selected"><span class="lane"></span><span class="subject">Define semantic color roles</span><code>a3f72b1</code></div>
+      <div class="history-row"><span class="lane two"></span><span class="subject">Merge fix/refresh into main</span><code>7c28d41</code></div>
+      <div class="history-row"><span class="lane three"></span><span class="subject">Keep repository state in sync</span><code>f2b50e9</code></div>
+      <div class="diff-title">M · src/App.css · working tree</div><div class="diff-line remove">− color: #14241a;</div><div class="diff-line add">+ color: var(--text-primary);</div>
+      <div class="commit"><label><span>Commit summary</span><input aria-label="${scheme.name} ${mode} sample commit summary" value="Introduce shared design tokens" readonly></label><button type="button" class="primary sample">Commit</button></div></div>
+    </div>
+    <div class="specimen"><div class="specimen-label">Control states / static samples</div><div class="controls"><button type="button" class="primary sample">Default</button><button type="button" class="primary hover-sample sample">Hover</button><button type="button" class="primary active-sample sample">Pressed</button><button type="button" class="focus-sample sample">Focus</button><button type="button" disabled>Disabled</button></div><div class="status-row"><span class="status success">✓ Success</span><span class="status warning">! Rebase paused</span><span class="status error">× Conflict</span><span class="status info">i Fetch complete</span></div><div class="swatches">${swatches.map(([key, label]) => `<div class="swatch"><div class="swatch-color" style="background:${tokens[key]}"></div><span>${label}</span><code>${tokens[key]}</code></div>`).join("")}</div></div>
+  </article>`;
+}
+function render(id) {
+  const schemes = study.schemes.filter((scheme) => id === "all" || id === scheme.id);
+  document.getElementById("proposals").innerHTML = schemes.map((scheme) => `<section class="proposal" id="${scheme.id}" aria-labelledby="${scheme.id}-title"><div class="proposal-heading"><div><h2 id="${scheme.id}-title">${scheme.name}</h2><p>${scheme.description}</p></div><span class="ordinal">0${study.schemes.indexOf(scheme) + 1} / 06</span></div><div class="paired">${workspace(scheme, "light")}${workspace(scheme, "dark")}</div><p class="tradeoff">${scheme.tradeoff}</p><details><summary>Inspect ${scheme.name} token values</summary><table class="token-table"><thead><tr><th scope="col">Role</th><th scope="col">Light</th><th scope="col">Dark</th></tr></thead><tbody>${Object.entries(scheme.modes.light).map(([key, value]) => `<tr><th scope="row">${key}</th><td>${value}</td><td>${scheme.modes.dark[key]}</td></tr>`).join("")}</tbody></table></details></section>`).join("");
+  document.querySelectorAll("#filters button").forEach((button) => button.setAttribute("aria-pressed", String(button.dataset.scheme === id)));
+  // Samples intentionally cannot mutate Git or simulate successful operations.
+  document.querySelectorAll("button.sample").forEach((button) => button.addEventListener("click", (event) => event.preventDefault()));
+}
+const params = new URLSearchParams(location.search);
+let selected = params.get("scheme") || "all";
+if (!study.schemes.some((scheme) => scheme.id === selected)) selected = "all";
+document.getElementById("filters").innerHTML = [{id:"all",name:"All directions"}, ...study.schemes].map((scheme) => `<button type="button" data-scheme="${scheme.id}" aria-pressed="false">${escapeHtml(scheme.name)}</button>`).join("");
+document.getElementById("filters").addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-scheme]");
+  if (!button) return;
+  selected = button.dataset.scheme;
+  const next = new URL(location.href);
+  if (selected === "all") next.searchParams.delete("scheme");
+  else next.searchParams.set("scheme", selected);
+  history.replaceState(null, "", next);
+  render(selected);
+});
+render(selected);
+</script>
+</body>
+</html>
