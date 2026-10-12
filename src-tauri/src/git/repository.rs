@@ -107,7 +107,13 @@ mod tests {
     #[test]
     fn preserves_whitespace_in_the_repository_name() {
         let parent_directory = temporary_directory("whitespace-parent");
-        let repository_root = parent_directory.join(" repository ");
+        // Windows directory names cannot end with a space through ordinary APIs.
+        let repository_name = if cfg!(windows) {
+            " repository with spaces"
+        } else {
+            " repository "
+        };
+        let repository_root = parent_directory.join(repository_name);
         fs::create_dir_all(&repository_root).expect("the test repository should be created");
 
         let git_init = Command::new("git")
@@ -120,8 +126,8 @@ mod tests {
         let repository = open_repository(&repository_root)
             .expect("a repository name containing whitespace should be preserved");
 
-        assert_eq!(repository.name, " repository ");
-        assert!(repository.path.ends_with(" repository "));
+        assert_eq!(repository.name, repository_name);
+        assert!(repository.path.ends_with(repository_name));
 
         fs::remove_dir_all(parent_directory).expect("the test directory should be removed");
     }

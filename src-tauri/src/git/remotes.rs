@@ -151,9 +151,11 @@ mod tests {
         );
 
         pull(&fixture.client).expect("the client should pull the remote update");
+        // Git for Windows may materialize the committed LF text as CRLF.
         assert_eq!(
             fs::read_to_string(fixture.client.join("server.txt"))
-                .expect("the pulled file should exist"),
+                .expect("the pulled file should exist")
+                .replace("\r\n", "\n"),
             "from source\n"
         );
 
