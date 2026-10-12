@@ -17,6 +17,10 @@ or claim that selected features are already implemented.
   pulling, or pushing are supported requirements; automatic remote branch
   rename/deletion or synchronization is not required.
 - Support worktrees as a local Git feature, independently of agents or terminals.
+- Support multiple repositories with repository management and tabs/groups.
+  Independent repositories should be able to clone or check out concurrently;
+  selecting another tab should not block work in an unrelated repository.
+  Continue serializing conflicting mutations within the same repository/worktree.
 - Provide an interface for debug information and logs.
 
 ## Priority definitions
@@ -34,6 +38,24 @@ in a GitKraken feature group. Existing capability notes below are inherited from
 the analysis snapshot, not a new implementation audit.
 
 ## P0 — Core requirements, by category
+
+### Repositories
+
+| Feature | Inventory | Selected scope | Existing baseline / additions |
+|---|---|---|---|
+| Open, initialize, and clone | GK-01 | All three are required. | Opening exists; add initialization and cloning. |
+| Multiple repository management | GK-03 | Core support for managing multiple repositories. | Replace the single-repository limitation. Favorites, aliases, and batch operations were not individually selected. |
+| Repository tabs and groups | GK-04 | Support tabs/groups as part of multiple-repository management, including independent background operations. | New capability; work in separate repositories must not be serialized solely by tab selection. |
+
+### Inspecting and selecting changes
+
+| Feature | Inventory | Selected scope | Existing baseline / additions |
+|---|---|---|---|
+| In-app text diffs | GK-08 | An in-app diff viewer is required. | New capability; specific layouts and display controls were not individually selected. |
+| File history and blame | GK-11 | Both are required. | New capability. |
+| Revision comparison | GK-12, partial | Compare revisions. Restore selected files from a commit is excluded. | New capability. |
+| Whole-file staging | GK-13, partial | Start with staging and unstaging whole files. | Already supported; granular hunk/line staging is deferred without a committed priority. |
+| Discard changes | GK-14, partial | Support discarding changes. Ignore-management UI is excluded. | New capability; line/hunk discard granularity was not individually selected. |
 
 ### Commits and history operations
 
@@ -96,6 +118,8 @@ Configurable automatic fetching was not explicitly selected.
 
 | Category | Feature / inventory | Selected scope |
 |---|---|---|
+| Graph | Interactive history graph — GK-05 | Useful but lower priority; the existing read-only graph is sufficient initially. |
+| Search | Commit search — GK-07, partial | Useful; placed at P1 because no stronger priority was specified. Author/team filters were not individually selected. |
 | History editing | Interactive rebase — GK-19 | Required eventually: a UI for pick, drop, reorder, squash, and reword. Ordinary rebase comes first. |
 | Operation recovery | Resume/continue and skip — GK-20 | Add controls to finish or skip stopped rebase steps; derive valid actions from operation state. Abort stays P0. |
 | Branches | Tags — GK-24 | Add tag lifecycle support after core branching. Start with local creation, inspection, and deletion; remote tag administration is not implied by this selection. |
@@ -110,12 +134,17 @@ Configurable automatic fetching was not explicitly selected.
 
 | Category | Feature / inventory | Decision |
 |---|---|---|
+| Files | File viewer — GK-09, partial | Good to have; read-only viewing. Link to an external editor for editing. The transcript's “file revealer” is interpreted as the file-viewing group being discussed. |
 | History recovery | Undo/redo — GK-21 | Nice to have; defer. If implemented, describe which operations can actually be undone. |
 
 ## Excluded scope
 
 | Category | Inventory | Excluded capabilities |
 |---|---|---|
+| Repositories | GK-02 | Advanced clone options. |
+| Files | GK-09, partial; GK-10 | In-app file editing, image comparison, and dedicated binary-handling features. |
+| Revision actions | GK-12, partial | Restore selected files from a commit. |
+| Staging | GK-14, partial | Ignore-management UI. |
 | Commit composition | GK-15, partial | Commit templates. |
 | Branch workflows | GK-25 | Gitflow configuration and start/finish flows. |
 | Remote administration | GK-26, partial | Add/edit/remove remote UI, push-all-remotes, and a separate push-destination workflow beyond selected upstream tracking. |
@@ -131,18 +160,15 @@ Configurable automatic fetching was not explicitly selected.
 
 ## Unconfirmed selections
 
-The available selection transcript starts at **GK-15** and refers to an earlier
-portion that was not captured here. The following groups have **no recorded
-decision** in this document. Existing Branchlight functionality remains the
-baseline; new capabilities in these groups are not approved merely because the
-analysis recommended them.
+The earlier GK-01–GK-14 selection segment was recovered from the saved voice
+transcript, beginning “paid features from GitKraken are not useful for me.”
+The selections above incorporate that segment. The original claim that those
+groups were not captured was incorrect.
 
 | Category | Inventory | Awaiting selection |
 |---|---|---|
-| Repositories | GK-01–GK-04 | Initialize/clone, advanced clone, recent/favorite repositories, tabs/groups. |
-| Graph | GK-05–GK-07 | Graph improvements, visibility controls, commit search, author filters. |
-| Diffs | GK-08–GK-12 | Text/image diffs, file editing, history/blame, revision comparisons and restore. |
-| Staging | GK-13–GK-14 | Hunk/line staging, discard, ignore controls. |
+| Graph | GK-06 | Branch/tag visibility controls were not discussed separately. |
+| Staging | GK-13, partial | Hunk/line staging is deferred in favor of whole-file staging initially; no later commitment or priority was stated. |
 
 Features within selected groups that were not separately discussed—such as
 signing configuration, automatic fetching, remote tag operations, squash merge,
@@ -151,16 +177,19 @@ included.
 
 ## Suggested delivery order within the selected scope
 
-1. Commit summary/body and controls; branch-at-commit and upstream selection;
+1. Multi-repository management and tabs/groups, initialization/cloning, in-app
+   text diffs, file history/blame, revision comparison, and discard changes;
+   retain whole-file staging as the initial scope.
+2. Commit summary/body and controls; branch-at-commit and upstream selection;
    fetch/prune, pull strategies, and force-with-lease push.
-2. Amend/reword, cherry-pick/revert, and reset, with operation-state reporting,
+3. Amend/reword, cherry-pick/revert, and reset, with operation-state reporting,
    reliable abort, and diagnostic logs available alongside these changes.
-3. Selective stash actions and the worktree lifecycle.
-4. P1 capabilities, scheduling recovery controls before a general interactive
+4. Selective stash actions and the worktree lifecycle.
+5. P1 capabilities, scheduling recovery controls before a general interactive
    rebase editor. Visual resolution, tags, submodules, LFS, tools, and themes
-   follow based on need.
-5. Optional undo/redo only after its supported recovery limits are clear.
+   follow based on need, along with graph improvements and commit search.
+6. Optional file viewing and undo/redo; define undo/redo's supported recovery
+   limits before implementing it.
 
 This order is an implementation suggestion within the owner's priorities.
-Read-only commit inspection and diff primitives may be dependencies of selected
-actions; that does not approve all currently unconfirmed graph/diff features.
+Individual subfeatures in the analysis remain unconfirmed unless selected above.
