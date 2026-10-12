@@ -438,9 +438,11 @@ mod tests {
 
         merge_branch(&repository, "feature/merge").expect("the feature should merge into main");
 
+        // Git may check out CRLF text according to the platform configuration.
         assert_eq!(
             fs::read_to_string(repository.join("feature.txt"))
-                .expect("the merged file should exist"),
+                .expect("the merged file should exist")
+                .replace("\r\n", "\n"),
             "feature\n"
         );
         assert!(get_branches(&repository)

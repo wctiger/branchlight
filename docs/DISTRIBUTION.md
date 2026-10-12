@@ -9,8 +9,10 @@ They do need system Git and their existing Git identity, SSH, and credential set
 
 - **CI** (`.github/workflows/ci.yml`) runs on pull requests and pushes to `main`.
   It checks version consistency, frontend tests, Rust formatting/tests/clippy,
-  and a production macOS application build. Dependency installation uses the
-  committed Bun and Cargo lockfiles. The release workflow reuses these checks.
+  and production macOS and Windows x64 application builds. It can also be run
+  manually through **Actions → CI → Run workflow**. Dependency installation
+  uses the committed Bun and Cargo lockfiles. The macOS release workflow reuses
+  both platform checks before packaging.
 - **macOS distribution** (`.github/workflows/release.yml`) can be run manually
   from GitHub Actions to produce an ad-hoc signed universal DMG and SHA-256
   checksum as a workflow artifact, retained for 14 days. No Apple secrets are

@@ -49,6 +49,10 @@ checklist, see [the distribution guide](docs/DISTRIBUTION.md). Pull requests run
 macOS CI; manual distribution runs produce test DMGs; version tags produce
 signed, notarized draft GitHub Releases once Apple secrets are configured.
 
+CI also runs Windows x64 checks and uploads an unsigned executable with a SHA-256
+checksum. See [Windows build artifacts and remaining verification](docs/WINDOWS_DISTRIBUTION.md).
+Downloaded-app Windows compatibility is tracked in [issue #28](https://github.com/wctiger/branchlight/issues/28).
+
 ## Architecture
 
 - `src/features/` owns branch, stash, and history presentation behavior.

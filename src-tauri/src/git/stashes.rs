@@ -206,9 +206,11 @@ mod tests {
         assert_eq!(stashes.len(), 1);
         assert_eq!(stashes[0].reference, "stash@{0}");
         assert!(stashes[0].message.contains("Work in progress"));
+        // Compare content while allowing Git's configured checkout line endings.
         assert_eq!(
             fs::read_to_string(repository.join("tracked.txt"))
-                .expect("the tracked fixture file should exist"),
+                .expect("the tracked fixture file should exist")
+                .replace("\r\n", "\n"),
             "base\n"
         );
 
@@ -220,7 +222,8 @@ mod tests {
         );
         assert_eq!(
             fs::read_to_string(repository.join("tracked.txt"))
-                .expect("the applied fixture file should exist"),
+                .expect("the applied fixture file should exist")
+                .replace("\r\n", "\n"),
             "stashed\n"
         );
 
