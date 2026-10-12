@@ -10,6 +10,7 @@ retained in the repository. This document does not expand the original
 
 ## Product direction
 
+- Build a cross-platform Git desktop client for **macOS and Windows**.
 - Use the user's installed **Git executable**. There is no plan to bundle Git.
 - Reuse local Git configuration, Git identity, SSH configuration, and credential
   helpers. Do not introduce provider accounts, OAuth flows, or credential storage.
@@ -19,6 +20,8 @@ retained in the repository. This document does not expand the original
   rename/deletion or synchronization is not required.
 - Support worktrees as a local Git feature, independently of agents or terminals.
 - Support multiple repositories with repository management and tabs/groups.
+  Give each repository an independent background worker context and operation
+  queue, with bounded resource use and a responsive UI.
   Independent repositories should be able to clone or check out concurrently;
   selecting another tab should not block work in an unrelated repository.
   Continue serializing conflicting mutations within the same repository/worktree.
