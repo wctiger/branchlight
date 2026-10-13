@@ -16,7 +16,15 @@ Local verification on 2026-10-13:
 - `cargo fmt --check --manifest-path src-tauri/Cargo.toml`: passed.
 - The previously failing macOS and Windows CI jobs both reported
   `clippy::needless_late_init` in the diff implementation. The declaration is
-  corrected; new platform CI results must still be reviewed.
+  corrected. [CI run 38398597602](https://github.com/wctiger/branchlight/actions/runs/38398597602)
+  passed the complete macOS job, including application bundling. Windows passed
+  48 tests but failed the clone-content assertion because its configured
+  `core.autocrlf` produced CRLF. The assertion now accepts Git's configured
+  line endings; the corrected test passes locally both normally and with
+  `GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=core.autocrlf GIT_CONFIG_VALUE_0=true`.
+  Updated Windows CI remains required.
+- `bun run tauri build --ci --bundles app -- --locked --offline`: passed
+  locally with the same SDK, producing `Branchlight.app`.
 - Earlier evidence: desktop application compiled and launched through
   `bun run tauri dev` with the macOS 15.4 SDK. Launch is not UI acceptance.
 - Current Computer Use inventory reports the Mac is locked and automatic unlock

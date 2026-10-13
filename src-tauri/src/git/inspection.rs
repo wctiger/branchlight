@@ -564,9 +564,14 @@ mod tests {
         );
         let destination = repo.0.join("clone");
         super::super::create_repository(&destination, Some(repo.0.to_str().unwrap())).unwrap();
+        // Clone honors the destination's Git configuration, including Windows
+        // core.autocrlf. Source repository config is not inherited by a clone.
         assert_eq!(
-            fs::read_to_string(destination.join("keep.txt")).unwrap(),
-            "source\n"
+            fs::read_to_string(destination.join("keep.txt"))
+                .unwrap()
+                .lines()
+                .collect::<Vec<_>>(),
+            ["source"]
         );
         let failed = repo.0.join("failed-clone");
         assert!(super::super::create_repository(
