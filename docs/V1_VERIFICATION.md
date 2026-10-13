@@ -2,7 +2,9 @@
 
 This records the original V1 baseline. Delivery 1 changes are tracked separately
 in [Delivery 1 verification](DELIVERY_1_VERIFICATION.md); these historical results
-do not prove acceptance of the new features.
+do not prove acceptance of the new features. On 2026-10-13 the expanded Rust
+suite (50 tests), frontend tests, production frontend build, version check,
+rustfmt and clippy passed locally; Delivery 1 UI acceptance is still pending.
 
 Verified on 2026-08-30 against disposable local Git repositories. Rust tests
 exercise system Git with real repositories and remotes; frontend tests exercise

@@ -56,7 +56,8 @@ export default function Workspace() {
     setCreation({ destination: chosenDestination, message: clone ? "Cloning with system Git…" : "Initializing with system Git…", busy: true });
     try {
       const repository = await createRepository(chosenDestination, clone ? source : null);
-      setTabs((tabs) => [...tabs, { repository, group: "", busy: false, error: false }]);
+      setTabs((tabs) => tabs.some((tab) => tab.repository.path === repository.path) ? tabs :
+        [...tabs, { repository, group: "", busy: false, error: false }]);
       setActive(repository.path);
       setCreation({ destination: chosenDestination, message: "Repository ready.", busy: false });
     } catch (error) { const failure = normalizeGitError(error); setCreation({ destination: chosenDestination, message: `${failure.message} ${failure.output?.stderr.trim() ?? ""}`, busy: false }); }

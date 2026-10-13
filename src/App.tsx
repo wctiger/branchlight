@@ -1200,7 +1200,11 @@ export function RepositoryApp({ initialRepository, onOpen, onFeedback }: {
       changeOperationError || branchOperationError || remoteOperationError ||
       stashOperationError || conflictOperationError ||
       repositoryStatus.state === "error" || branchesState.state === "error" ||
-      stashesState.state === "error" || historyState.state === "error"
+      stashesState.state === "error" || historyState.state === "error" ||
+      (repositoryStatus.state === "ready" && repositoryStatus.refreshError) ||
+      (branchesState.state === "ready" && branchesState.refreshError) ||
+      (stashesState.state === "ready" && stashesState.refreshError) ||
+      (historyState.state === "ready" && historyState.refreshError)
     ));
   }, [repository.path, operation.state, changeOperationError, branchOperationError,
     remoteOperationError, stashOperationError, conflictOperationError, repositoryStatus,
