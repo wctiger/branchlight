@@ -22,12 +22,16 @@ Local verification on 2026-10-13:
   `core.autocrlf` produced CRLF. The assertion now accepts Git's configured
   line endings; the corrected test passes locally both normally and with
   `GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=core.autocrlf GIT_CONFIG_VALUE_0=true`.
-  Updated Windows CI remains required.
+  [CI run 38399061448](https://github.com/wctiger/branchlight/actions/runs/38399061448)
+  then passed both complete platform jobs for `d75afd3`: macOS application
+  bundling and Windows tests, Clippy, executable build, checksum collection and
+  artifact upload. These results establish build/test compatibility, not
+  downloaded-app runtime compatibility or desktop UI acceptance.
 - `bun run tauri build --ci --bundles app -- --locked --offline`: passed
   locally with the same SDK, producing `Branchlight.app`.
 - Earlier evidence: desktop application compiled and launched through
   `bun run tauri dev` with the macOS 15.4 SDK. Launch is not UI acceptance.
-- Current Computer Use inventory reports the Mac is locked and automatic unlock
+- Computer Use rechecked on 2026-10-17 reports the Mac is locked and automatic unlock
   failed. Visual/runtime acceptance and screenshots remain pending until the Mac
   is unlocked. No desktop acceptance is inferred from backend tests.
 
@@ -80,5 +84,6 @@ valuable uncommitted files, for destructive checks.
   when the authoritative status changes. Linked worktrees share a conservative
   lock for both reads and writes; independent repositories do not share that lock.
 
-Both platform CI jobs and UI/runtime evidence must be reviewed before recording
-Delivery 1 as complete. Windows downloaded-app runtime compatibility remains #28.
+Both platform CI jobs have passed for the implementation. The UI/runtime checks
+above and screenshots remain required before recording Delivery 1 as complete.
+Windows downloaded-app runtime compatibility remains #28.
