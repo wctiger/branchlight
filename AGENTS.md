@@ -2,7 +2,7 @@
 
 ## Project Structure & Module Organization
 
-Branchlight is a local-first Git desktop client targeting macOS and Windows, built with React 19, TypeScript, Vite, and Tauri 2/Rust. The current app has a single-repository workflow; independent repository workers, tabs/groups, and worktrees are planned product capabilities, not implemented features.
+Branchlight is a local-first Git desktop client targeting macOS and Windows, built with React 19, TypeScript, Vite, and Tauri 2/Rust. Delivery 1 introduces independent repository views, tabs/groups, and background scheduling scoped by the canonical common Git directory. Worktree lifecycle remains planned. Consult `docs/DELIVERY_1_VERIFICATION.md` for acceptance status; build success alone does not establish runtime verification.
 
 - `src/features/` contains branch, stash, and history UI; `src/types/` defines frontend models.
 - `src/lib/tauri.ts` provides the typed frontend/backend boundary.

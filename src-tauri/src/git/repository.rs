@@ -55,6 +55,49 @@ pub(crate) fn open_repository(selected_path: &Path) -> Result<Repository, GitErr
     })
 }
 
+/// Atomically reserves a new destination; failures retain partial data for inspection.
+pub(crate) fn create_repository(
+    destination: &Path,
+    source: Option<&str>,
+) -> Result<Repository, GitError> {
+    if !destination.is_absolute() || destination.file_name().is_none() {
+        return Err(super::inspection::invalid(
+            "Choose an absolute, new destination directory.",
+        ));
+    }
+    if let Some(source) = source {
+        if source.trim().is_empty() || source.starts_with('-') || source.contains('\0') {
+            return Err(super::inspection::invalid(
+                "Enter a repository URL or absolute local source path.",
+            ));
+        }
+        if source
+            .split("://")
+            .nth(1)
+            .is_some_and(|rest| rest.split('/').next().unwrap_or("").contains('@'))
+        {
+            return Err(super::inspection::invalid(
+                "Use your Git credential helper rather than credentials embedded in the URL.",
+            ));
+        }
+    }
+    std::fs::create_dir(destination).map_err(|error| super::inspection::invalid(&format!(
+        "Cannot reserve destination '{}': {error}. Choose a new directory inside an existing parent; existing data is never overwritten.", destination.display()
+    )))?;
+    let result = match source {
+        Some(source) => run_git(destination, &["clone", "--", source, "."]),
+        None => run_git(destination, &["init"]),
+    };
+    result.map_err(|error| {
+        let message = format!("Git could not complete creation. Inspect the retained destination '{}' before retrying or deleting it. {error}", destination.display());
+        match error {
+            GitError::CommandFailed { output, .. } => GitError::CommandFailed { message, output },
+            _ => super::inspection::invalid(&message),
+        }
+    })?;
+    open_repository(destination)
+}
+
 #[cfg(test)]
 mod tests {
     use std::{

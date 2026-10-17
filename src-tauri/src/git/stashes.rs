@@ -1,14 +1,11 @@
-use std::{path::Path, sync::Mutex};
+use std::path::Path;
 
 use crate::models::{GitError, GitOutput, Stash};
 
 use super::runner::{decode_git_bytes, run_git};
 
-static STASH_OPERATION_LOCK: Mutex<()> = Mutex::new(());
-
 /// Lists stash entries using stable, machine-oriented fields.
 pub(crate) fn get_stashes(repository: &Path) -> Result<Vec<Stash>, GitError> {
-    let _guard = stash_operation_guard();
     let output = run_git(repository, &["stash", "list", "--format=%gd%x00%H%x00%gs"])?;
     parse_stashes(&output.stdout_bytes)
         .map_err(|message| GitError::InvalidStashesResponse { message, output })
@@ -16,7 +13,6 @@ pub(crate) fn get_stashes(repository: &Path) -> Result<Vec<Stash>, GitError> {
 
 /// Creates a stash with an optional user-provided message.
 pub(crate) fn create_stash(repository: &Path, message: &str) -> Result<GitOutput, GitError> {
-    let _guard = stash_operation_guard();
     let message = message.trim();
     if message.is_empty() {
         run_git(repository, &["stash", "push"])
@@ -27,14 +23,12 @@ pub(crate) fn create_stash(repository: &Path, message: &str) -> Result<GitOutput
 
 /// Applies a selected stash while preserving it in the stash list.
 pub(crate) fn apply_stash(repository: &Path, stash: &Stash) -> Result<GitOutput, GitError> {
-    let _guard = stash_operation_guard();
     let commit = validate_stash_selection(repository, stash)?;
     run_git(repository, &["stash", "apply", &commit])
 }
 
 /// Applies and removes a selected stash when Git completes successfully.
 pub(crate) fn pop_stash(repository: &Path, stash: &Stash) -> Result<GitOutput, GitError> {
-    let _guard = stash_operation_guard();
     let commit = validate_stash_selection(repository, stash)?;
     run_git(repository, &["stash", "apply", &commit])?;
 
@@ -45,16 +39,8 @@ pub(crate) fn pop_stash(repository: &Path, stash: &Stash) -> Result<GitOutput, G
 
 /// Permanently removes one selected stash entry.
 pub(crate) fn drop_stash(repository: &Path, stash: &Stash) -> Result<GitOutput, GitError> {
-    let _guard = stash_operation_guard();
     validate_stash_selection(repository, stash)?;
     run_git(repository, &["stash", "drop", &stash.reference])
-}
-
-/// Serializes list and mutation commands so an in-app stash selection cannot shift mid-action.
-fn stash_operation_guard() -> std::sync::MutexGuard<'static, ()> {
-    STASH_OPERATION_LOCK
-        .lock()
-        .unwrap_or_else(|poisoned| poisoned.into_inner())
 }
 
 /// Confirms that an ordinal stash reference still names the commit selected by the user.

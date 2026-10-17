@@ -176,7 +176,7 @@ export function BranchPanel({
   useEffect(() => {
     if (!branches) {
       setSelectedRef(null);
-      setEditor({ mode: "closed" });
+      if (editor.mode !== "closed") setEditor({ mode: "closed" });
       setDraggedRef(null);
       return;
     }
@@ -200,7 +200,7 @@ export function BranchPanel({
         branches.local[0] ??
         branches.remote[0];
       setSelectedRef(fallback?.fullRef ?? null);
-      if (editor.mode !== "create") {
+      if (editor.mode !== "create" && editor.mode !== "closed") {
         setEditor({ mode: "closed" });
       }
     }

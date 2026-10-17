@@ -9,7 +9,13 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             commands::system::get_git_version,
+            commands::inspection::discard_file,
+            commands::inspection::compare_revisions,
+            commands::inspection::get_text_diff,
+            commands::inspection::get_file_history,
+            commands::inspection::get_file_blame,
             commands::repository::open_repository,
+            commands::repository::create_repository,
             commands::repository::get_repository_status,
             commands::branches::get_branches,
             commands::branches::switch_branch,

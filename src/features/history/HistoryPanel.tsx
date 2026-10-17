@@ -24,6 +24,7 @@ interface HistoryPanelProps {
   state: HistoryState;
   controlsDisabled: boolean;
   onRefresh: () => void;
+  onSelectCommit: (hash: string) => void;
 }
 
 /** Formats Git's Unix author timestamp for the user's current locale. */
@@ -64,6 +65,7 @@ export function HistoryPanel({
   state,
   controlsDisabled,
   onRefresh,
+  onSelectCommit,
 }: HistoryPanelProps) {
   const commits = useMemo(
     () => (state.state === "ready" ? state.commits : []),
@@ -189,7 +191,7 @@ export function HistoryPanel({
                   className={`history-item${commit.hash === selectedHash ? " history-item--selected" : ""}`}
                   type="button"
                   aria-pressed={commit.hash === selectedHash}
-                  onClick={() => setSelectedHash(commit.hash)}
+                  onClick={() => { setSelectedHash(commit.hash); onSelectCommit(commit.hash); }}
                 >
                   {commit.refs.length > 0 && (
                     <span className="history-item__refs" aria-label="Branch refs">
