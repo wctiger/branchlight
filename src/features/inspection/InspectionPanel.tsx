@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { compareRevisions, getTextDiff, getFileBlame, getFileHistory, normalizeGitError } from "../../lib/tauri";
 import type { Comparison, FileCommit, TextDiff } from "../../lib/tauri";
 import type { RepositoryStatus, FileChange } from "../../types/status";
@@ -20,6 +20,7 @@ export function InspectionPanel({ path, status, commit, disabled, onDiscard }: {
   path: string; status: RepositoryStatus | null; commit: string | null; disabled: boolean;
   onDiscard: (change: FileChange) => void;
 }) {
+  const discardTitleId = useId();
   const [discardSelection, setDiscardSelection] = useState<FileChange | null>(null);
   const [base, setBase] = useState("HEAD");
   const [target, setTarget] = useState("HEAD");
@@ -58,12 +59,15 @@ export function InspectionPanel({ path, status, commit, disabled, onDiscard }: {
     }
     void load(() => getTextDiff(path, kind, change.path), setDiff);
   }
-  const unavailable = (change: FileChange) => ["added", "renamed", "copied", "conflicted"].includes(change.status) || change.path.endsWith("/");
+  const unsupportedPaths = new Set([...(status?.staged ?? []), ...(status?.unstaged ?? [])]
+    .filter((change) => ["added", "renamed", "copied", "conflicted"].includes(change.status))
+    .map((change) => change.path));
+  const unavailable = (change: FileChange) => unsupportedPaths.has(change.path) || change.path.endsWith("/");
   return <section className="inspection-panel" aria-label="Change inspection">
     <h2>Inspect changes</h2>
     <p>Read-only text comparisons. Diffs are limited to 512 KiB. Binary content has no text preview.</p>
-    {discardSelection && <section role="alertdialog" aria-modal="false" aria-labelledby="discard-title">
-      <h3 id="discard-title">Discard selected file?</h3>
+    {discardSelection && <section role="alertdialog" aria-modal="false" aria-labelledby={discardTitleId}>
+      <h3 id={discardTitleId}>Discard selected file?</h3>
       <code>{discardSelection.path}</code>
       <p>{discardSelection.status === "untracked"
         ? "Permanently delete this untracked file. It cannot be recovered through Git."

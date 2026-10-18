@@ -66,20 +66,7 @@ pub(crate) fn create_repository(
         ));
     }
     if let Some(source) = source {
-        if source.trim().is_empty() || source.starts_with('-') || source.contains('\0') {
-            return Err(super::inspection::invalid(
-                "Enter a repository URL or absolute local source path.",
-            ));
-        }
-        if source
-            .split("://")
-            .nth(1)
-            .is_some_and(|rest| rest.split('/').next().unwrap_or("").contains('@'))
-        {
-            return Err(super::inspection::invalid(
-                "Use your Git credential helper rather than credentials embedded in the URL.",
-            ));
-        }
+        validate_clone_source(source)?;
     }
     std::fs::create_dir(destination).map_err(|error| super::inspection::invalid(&format!(
         "Cannot reserve destination '{}': {error}. Choose a new directory inside an existing parent; existing data is never overwritten.", destination.display()
@@ -98,6 +85,28 @@ pub(crate) fn create_repository(
     open_repository(destination)
 }
 
+fn validate_clone_source(source: &str) -> Result<(), GitError> {
+    if source.trim().is_empty() || source.starts_with('-') || source.contains('\0') {
+        return Err(super::inspection::invalid(
+            "Enter a repository URL or absolute local source path.",
+        ));
+    }
+    if let Some((scheme, rest)) = source.split_once("://") {
+        let authority = rest.split('/').next().unwrap_or("");
+        if let Some((user, _host)) = authority.rsplit_once('@') {
+            // An SSH login name selects the local SSH identity/configuration;
+            // it is not an embedded password. Leave authentication to system Git.
+            let ssh_login = scheme == "ssh" && !user.is_empty() && !user.contains([':', '@']);
+            if !ssh_login {
+                return Err(super::inspection::invalid(
+                    "Use your Git credential helper or SSH configuration rather than credentials embedded in the URL.",
+                ));
+            }
+        }
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use std::{
@@ -107,6 +116,128 @@ mod tests {
     };
 
     use super::*;
+
+    #[test]
+    fn accepts_ssh_login_names_without_accepting_embedded_passwords() {
+        for source in [
+            "ssh://git@example.invalid/team/repository.git",
+            "ssh://developer@[::1]:2222/repository.git",
+            "git@example.invalid:team/repository.git",
+            "https://example.invalid/team/repository.git",
+        ] {
+            validate_clone_source(source).unwrap();
+        }
+        for source in [
+            "ssh://git:password@example.invalid/repository.git",
+            "https://user:password@example.invalid/repository.git",
+            "https://token@example.invalid/repository.git",
+            "ssh://@example.invalid/repository.git",
+            "--upload-pack=untrusted",
+            " ",
+            "bad\0source",
+        ] {
+            assert!(validate_clone_source(source).is_err());
+        }
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn clones_through_configured_ssh_without_provider_accounts() {
+        use std::os::unix::fs::PermissionsExt;
+
+        const FIXTURE: &str = "BRANCHLIGHT_SSH_CLONE_FIXTURE";
+        if let Some(root) = env::var_os(FIXTURE) {
+            let root = std::path::PathBuf::from(root);
+            let destination = root.join("destination");
+            create_repository(
+                &destination,
+                Some("ssh://git@fixture.invalid/test-repository"),
+            )
+            .unwrap();
+            assert_eq!(
+                fs::read_to_string(destination.join("content.txt")).unwrap(),
+                "configured SSH transport\n"
+            );
+            return;
+        }
+
+        let root = temporary_directory("configured-ssh");
+        fs::create_dir(&root).unwrap();
+        let source = root.join("source");
+        create_repository(&source, None).unwrap();
+        fs::write(source.join("content.txt"), "configured SSH transport\n").unwrap();
+        for args in [
+            vec!["add", "-A"],
+            vec![
+                "-c",
+                "user.name=SSH Fixture",
+                "-c",
+                "user.email=ssh@example.invalid",
+                "-c",
+                "commit.gpgsign=false",
+                "commit",
+                "-m",
+                "Source",
+            ],
+        ] {
+            assert!(Command::new("git")
+                .current_dir(&source)
+                .args(args)
+                .output()
+                .unwrap()
+                .status
+                .success());
+        }
+        let ssh = root.join("ssh-fixture.sh");
+        // The fake SSH transport only serves this disposable local repository.
+        // It exercises Git's configured command without network or credentials.
+        let quote = |path: &Path| format!("'{}'", path.to_string_lossy().replace('\'', "'\\''"));
+        fs::write(
+            &ssh,
+            format!(
+                "#!/bin/sh\n: > {}\nexec git-upload-pack {}\n",
+                quote(&root.join("ssh-invoked")),
+                quote(&source)
+            ),
+        )
+        .unwrap();
+        fs::set_permissions(&ssh, fs::Permissions::from_mode(0o700)).unwrap();
+        let config = root.join("gitconfig");
+        assert!(Command::new("git")
+            .args(["config", "--file"])
+            .arg(&config)
+            .args(["core.sshCommand", &quote(&ssh)])
+            .output()
+            .unwrap()
+            .status
+            .success());
+        // Isolate Git configuration in a child test process instead of changing
+        // environment variables used by concurrently running repository tests.
+        let output = Command::new(env::current_exe().unwrap())
+            .args([
+                "--exact",
+                "git::repository::tests::clones_through_configured_ssh_without_provider_accounts",
+                "--nocapture",
+            ])
+            .env(FIXTURE, &root)
+            .env("GIT_CONFIG_GLOBAL", &config)
+            .env("GIT_CONFIG_NOSYSTEM", "1")
+            .env("GIT_SSH_VARIANT", "ssh")
+            .output()
+            .unwrap();
+        let invoked = root.join("ssh-invoked").exists();
+        fs::remove_dir_all(&root).unwrap();
+        assert!(
+            output.status.success(),
+            "{}\n{}",
+            String::from_utf8_lossy(&output.stdout),
+            String::from_utf8_lossy(&output.stderr)
+        );
+        assert!(
+            invoked,
+            "system Git must invoke the configured SSH transport"
+        );
+    }
 
     fn temporary_directory(label: &str) -> std::path::PathBuf {
         let unique = SystemTime::now()

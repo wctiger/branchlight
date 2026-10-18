@@ -494,8 +494,13 @@ mod tests {
         assert!(!repo.0.join("untracked.txt").exists());
         repo.write("added.txt", "keep me\n");
         super::super::stage_file(&repo.0, "added.txt").unwrap();
+        repo.write("added.txt", "unstaged addition\n");
         assert!(discard(&repo.0, "added.txt", "tracked").is_err());
-        assert!(repo.0.join("added.txt").exists());
+        assert_eq!(
+            fs::read_to_string(repo.0.join("added.txt")).unwrap(),
+            "unstaged addition\n"
+        );
+        assert_eq!(repo.git(&["show", ":added.txt"]), "keep me");
         assert!(discard(&repo.0, "../outside", "untracked").is_err());
         assert!(discard(&repo.0, "other.txt", "untracked").is_err());
     }

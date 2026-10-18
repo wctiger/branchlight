@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import type { FormEvent } from "react";
 
 import "./App.css";
@@ -233,6 +233,7 @@ function ConflictBanner({
   onRefresh: () => void;
   onAbort: (kind: "merge" | "rebase") => void;
 }) {
+  const headingId = useId();
   const activeOperation = status.operation;
   const hasRepositoryConflict =
     activeOperation !== "none" || status.conflicts.length > 0;
@@ -258,7 +259,7 @@ function ConflictBanner({
   return (
     <section
       className="conflict-banner"
-      aria-labelledby="conflict-banner-title"
+      aria-labelledby={headingId}
       aria-live="polite"
     >
       <div className="conflict-banner__heading">
@@ -267,7 +268,7 @@ function ConflictBanner({
         </span>
         <div>
           <p className="eyebrow">Git operation</p>
-          <h2 id="conflict-banner-title">
+          <h2 id={headingId}>
             {activeOperation === "none"
               ? operationLabel
               : `${operationLabel} in progress`}
@@ -294,9 +295,13 @@ function ConflictBanner({
 
       <div className="conflict-banner__guidance">
         <p>
-          {hasRepositoryConflict
-            ? "Resolve these files in your editor, then refresh Branchlight to read Git’s latest state."
-            : "Review Git’s message below, then refresh Branchlight before continuing."}
+          {activeOperation === "rebase"
+            ? "Resolve and stage conflicts with an external Git tool, then continue or skip the rebase there. Branchlight currently supports abort only. Refresh after each external step."
+            : activeOperation === "merge"
+              ? "Resolve and stage conflicts with an external Git tool, then finish the merge there. Refresh Branchlight afterward, or abort the merge here."
+              : hasRepositoryConflict
+                ? "Resolve and stage these files with an external Git tool, then refresh Branchlight to read Git’s latest state."
+                : "Review Git’s message below, then refresh Branchlight before continuing."}
         </p>
         <div>
           <button
