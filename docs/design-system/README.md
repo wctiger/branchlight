@@ -1,7 +1,7 @@
 # Branchlight design system: theme research
 
 Research for [#65](https://github.com/wctiger/branchlight/issues/65), prepared
-2026-10-12. This PR proposes visual foundations and six color directions for
+2026-10-12, updated 2026-10-18. This PR proposes visual foundations and seven color directions for
 review. It does not choose a product default or implement theme preferences.
 The existing app remains unchanged; #65 stays open for implementation.
 
@@ -13,7 +13,7 @@ network access, or Git repository access. GitHub displays its source rather than
 running it, so the screenshots below are also included for PR review.
 
 Use the scheme buttons to compare one direction at a time, or **All directions**
-to inspect all six. Each direction shows the same light/dark workspace, branches,
+to inspect all seven. Each direction shows the same light/dark workspace, branches,
 history, red/green diff, selection, control states, and operation status samples.
 Expand its token table to inspect all values. The workspace controls are visual
 samples, not working Git operations. `?scheme=cobalt` opens a particular proposal.
@@ -26,13 +26,14 @@ samples, not working Git operations. `?scheme=cobalt` opens a particular proposa
 | **Iris** | `#6b46b5` / `#c5a6f5` | Violet on neutral gray; distinct from Git red/green | A larger change to the brand; purple graph lanes need separate semantics |
 | **Ochre** | `#88520b` / `#e7bc70` | Bronze on warm paper/charcoal | Accent can resemble warnings; reading comfort is subjective |
 | **Graphite** | `#3e3e49` / `#d4d4df` | Monochrome chrome; Git content supplies the color | Less brand identity; selection needs a marker and label |
+| **Orange** | `#ff7518` / `#ff7518` | Vivid orange on neutral surfaces; requested primary stays exact | Needs dark button labels, darker light-mode text/focus, and distinct warning cues |
 
 **Recommendation for discussion:** start with Forest if preserving Branchlight's
 current green identity is the priority. Keep Cobalt as the strongest alternative
 if distinguishing interface actions from green Git additions matters more.
 These are design judgments, not user-research findings. Iris provides a useful
 third comparison with an accent outside the usual Git red/green/blue vocabulary.
-Do not ship all six as a theme picker merely because they are explored here.
+Do not ship all seven as a theme picker merely because they are explored here.
 
 ### Forest
 
@@ -57,6 +58,16 @@ Do not ship all six as a theme picker merely because they are explored here.
 ### Graphite
 
 ![Graphite light and dark proposal](screenshots/graphite.png)
+
+### Orange
+
+![Orange light and dark proposal](screenshots/orange.png)
+
+The requested `#ff7518` is the primary action fill in both modes. It pairs with
+dark `#24150c` button labels. Light-mode accent text and focus use deeper
+`#9b3d00`; the bright primary itself is not used for small text on a light
+surface. Hover/pressed fills stay orange. Warning and Git colors keep their
+existing independent meanings.
 
 ## Research and decisions it informs
 
@@ -85,7 +96,7 @@ Use three layers during implementation:
    such as `button.primary.background → action.primary`.
 
 The research stores resolved semantic colors in [themes.json](themes.json),
-making all twelve proposals easy to inspect. It does not prematurely create a
+making all fourteen proposals easy to inspect. It does not prematurely create a
 full primitive scale or component library. The same set of 34 color roles is
 present in each palette; the generator verifies parity.
 
@@ -147,7 +158,7 @@ offline review. The generator fails on mismatched token sets, invalid sRGB
 colors, undefined CSS variables, or a failed declared contrast pair. `--check`
 also fails when generated artifacts are stale.
 
-[Contrast evidence](CONTRAST.md) records all 732 passing pairs across twelve
+[Contrast evidence](CONTRAST.md) records all 854 passing pairs across fourteen
 palettes; [contrast.csv](contrast.csv) includes each ratio and target. This is
 pair evidence for the proposal, not a full accessibility audit or native runtime
 verification. Decorative dividers and disabled controls are excluded. Actual

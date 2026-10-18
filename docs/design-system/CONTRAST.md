@@ -23,7 +23,9 @@ distinguishability, native dialogs, transparency, or operating-system rendering.
 | Ochre | dark | 5.53:1 | 3.12:1 | 61 |
 | Graphite | light | 4.99:1 | 3.26:1 | 61 |
 | Graphite | dark | 5.44:1 | 3.16:1 | 61 |
+| Orange | light | 5.12:1 | 3.35:1 | 61 |
+| Orange | dark | 5.58:1 | 3.82:1 | 61 |
 
-All 732 declared pairs pass. Full evidence: [contrast.csv](contrast.csv).
+All 854 declared pairs pass. Full evidence: [contrast.csv](contrast.csv).
 The gallery intentionally uses text labels, +/− diff markers, and graph topology
 as additional cues; rendered accessibility still needs verification during implementation.

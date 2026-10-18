@@ -110,8 +110,8 @@ footer { color: #5d5d69; font-size: 12px; padding: 10px 0; }
 <body>
 <main>
 <header class="intro">
-<div><div class="eyebrow">Branchlight / Design study 01</div><h1>Six directions. One token language.</h1><p>Compare light and dark palettes in the same Git workspace. Color changes; layout, content, and Git status meanings stay consistent. All controls are visual samples; only the scheme filters and token disclosures are interactive.</p></div>
-<p class="review-note">Issue #65<br>Research proposals<br>12 October 2026<br>No product default selected</p>
+<div><div class="eyebrow">Branchlight / Design study 01</div><h1><!-- DIRECTION_COUNT --> directions. One token language.</h1><p>Compare light and dark palettes in the same Git workspace. Color changes; layout, content, and Git status meanings stay consistent. All controls are visual samples; only the scheme filters and token disclosures are interactive.</p></div>
+<p class="review-note">Issue #65<br>Research proposals<br>Updated 18 October 2026<br>No product default selected</p>
 </header>
 <nav aria-label="Color directions" id="filters"></nav>
 <div id="proposals" aria-live="polite"></div>
@@ -142,7 +142,7 @@ function workspace(scheme, mode) {
 }
 function render(id) {
   const schemes = study.schemes.filter((scheme) => id === "all" || id === scheme.id);
-  document.getElementById("proposals").innerHTML = schemes.map((scheme) => `<section class="proposal" id="${scheme.id}" aria-labelledby="${scheme.id}-title"><div class="proposal-heading"><div><h2 id="${scheme.id}-title">${scheme.name}</h2><p>${scheme.description}</p></div><span class="ordinal">0${study.schemes.indexOf(scheme) + 1} / 06</span></div><div class="paired">${workspace(scheme, "light")}${workspace(scheme, "dark")}</div><p class="tradeoff">${scheme.tradeoff}</p><details><summary>Inspect ${scheme.name} token values</summary><table class="token-table"><thead><tr><th scope="col">Role</th><th scope="col">Light</th><th scope="col">Dark</th></tr></thead><tbody>${Object.entries(scheme.modes.light).map(([key, value]) => `<tr><th scope="row">${key}</th><td>${value}</td><td>${scheme.modes.dark[key]}</td></tr>`).join("")}</tbody></table></details></section>`).join("");
+  document.getElementById("proposals").innerHTML = schemes.map((scheme) => `<section class="proposal" id="${scheme.id}" aria-labelledby="${scheme.id}-title"><div class="proposal-heading"><div><h2 id="${scheme.id}-title">${scheme.name}</h2><p>${scheme.description}</p></div><span class="ordinal">0${study.schemes.indexOf(scheme) + 1} / ${String(study.schemes.length).padStart(2, "0")}</span></div><div class="paired">${workspace(scheme, "light")}${workspace(scheme, "dark")}</div><p class="tradeoff">${scheme.tradeoff}</p><details><summary>Inspect ${scheme.name} token values</summary><table class="token-table"><thead><tr><th scope="col">Role</th><th scope="col">Light</th><th scope="col">Dark</th></tr></thead><tbody>${Object.entries(scheme.modes.light).map(([key, value]) => `<tr><th scope="row">${key}</th><td>${value}</td><td>${scheme.modes.dark[key]}</td></tr>`).join("")}</tbody></table></details></section>`).join("");
   document.querySelectorAll("#filters button").forEach((button) => button.setAttribute("aria-pressed", String(button.dataset.scheme === id)));
   // Samples intentionally cannot mutate Git or simulate successful operations.
   document.querySelectorAll("button.sample").forEach((button) => button.addEventListener("click", (event) => event.preventDefault()));
