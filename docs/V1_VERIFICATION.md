@@ -4,7 +4,7 @@ This records the original V1 baseline. Delivery 1 changes are tracked separately
 in [Delivery 1 verification](DELIVERY_1_VERIFICATION.md); these historical results
 do not prove acceptance of the new features. On 2026-10-13 the expanded Rust
 suite (50 tests), frontend tests, production frontend build, version check,
-rustfmt and clippy passed locally; Delivery 1 UI acceptance is still pending.
+rustfmt and clippy passed locally; Delivery 1 UI acceptance is tracked separately and remains incomplete.
 The Delivery 1 implementation at `d75afd3` also passed both platform CI jobs in
 [run 38399061448](https://github.com/wctiger/branchlight/actions/runs/38399061448).
 

@@ -314,10 +314,10 @@ button:disabled {
 }
 
 .repository-screen {
-  height: 100vh;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: visible;
   background:
     radial-gradient(circle at 50% 0%, rgba(76, 147, 98, 0.11), transparent 36%),
     #f3f6f3;
@@ -680,10 +680,11 @@ button:disabled {
 }
 
 .repository-body {
-  min-height: 0;
+  height: 70vh;
+  min-height: 420px;
   display: grid;
   grid-template-columns: 274px minmax(500px, 1.45fr) minmax(330px, 0.75fr);
-  flex: 1;
+  flex: none;
   overflow: hidden;
 }
 
@@ -1971,6 +1972,8 @@ button:disabled {
   }
 
   .repository-body {
+    height: auto;
+    min-height: 0;
     display: block;
     overflow: visible;
   }
@@ -2624,3 +2627,77 @@ button:disabled {
 .text-diff { max-height: 560px; overflow: auto; padding: 16px; background: #1d2820; color: #e0e9df; font-size: 13px; tab-size: 4; white-space: pre; }
 .blame-lines { max-height: 560px; overflow: auto; }
 .blame-lines > div { display: flex; gap: 12px; align-items: baseline; white-space: pre; }
+
+/* Workspace controls need explicit foregrounds alongside their surface colors. */
+.workspace-tabs,
+.repository-create,
+.inspection-panel {
+  --workspace-surface: #f6f8f4;
+  --workspace-control: #ffffff;
+  --workspace-text: #14241a;
+  --workspace-muted: #536157;
+  --workspace-border: #bdc9bf;
+  color: var(--workspace-text);
+}
+
+.workspace-tabs button,
+.workspace-tabs select,
+.workspace-tabs input,
+.repository-create button,
+.repository-create input,
+.inspection-panel button,
+.inspection-panel input {
+  color: var(--workspace-text);
+  background: var(--workspace-control);
+  border: 1px solid var(--workspace-border);
+}
+
+.inspection-panel {
+  background: var(--workspace-surface);
+  border-color: var(--workspace-border);
+}
+
+.inspection-panel p {
+  color: var(--workspace-muted);
+}
+
+.inspection-panel form {
+  border-color: var(--workspace-border);
+}
+
+.repository-create label {
+  display: inline-block;
+  max-width: 100%;
+}
+
+.repository-create input,
+.inspection-panel input {
+  max-width: 100%;
+}
+
+.inspection-panel button {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+
+@media (prefers-color-scheme: dark) {
+  .workspace-tabs,
+  .repository-create,
+  .inspection-panel {
+    --workspace-surface: #1b271f;
+    --workspace-control: #233128;
+    --workspace-text: #e9f0eb;
+    --workspace-muted: #b2c2b6;
+    --workspace-border: #475c4d;
+    border-color: var(--workspace-border);
+  }
+
+  .workspace-tabs {
+    background: #17221b;
+  }
+
+  .workspace-error {
+    color: #efb0a3;
+  }
+}

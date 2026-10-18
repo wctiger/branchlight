@@ -31,9 +31,42 @@ Local verification on 2026-10-13:
   locally with the same SDK, producing `Branchlight.app`.
 - Earlier evidence: desktop application compiled and launched through
   `bun run tauri dev` with the macOS 15.4 SDK. Launch is not UI acceptance.
-- Computer Use rechecked on 2026-10-17 reports the Mac is locked and automatic unlock
-  failed. Visual/runtime acceptance and screenshots remain pending until the Mac
-  is unlocked. No desktop acceptance is inferred from backend tests.
+- Desktop access became available on 2026-10-17. The release app was exercised
+  against disposable fixtures; the results below are partial runtime acceptance.
+
+### Desktop acceptance observed on 2026-10-17
+
+- Initialized and opened an empty repository; the app showed an unborn branch,
+  empty changes and empty history. Retrying the same destination showed the
+  existing-directory error without replacing the repository.
+- Cloned a local repository through the UI and opened it alongside the empty
+  repository. Created a group, assigned the clone tab, renamed the group and
+  removed it; the tab returned to Ungrouped.
+- Selected a root commit and inspected its empty-tree comparison and an addition
+  with a Unicode/pathspec-like filename (`café [one].txt`). Selected a rename
+  commit and inspected both rename paths in the text diff.
+- File history displayed author, timestamp and summary; blame displayed committed
+  line contents, author and commit. Clicking an attributed commit navigated to
+  its first-parent changed-path comparison.
+- Staged and unstaged `story.txt` previews showed distinct HEAD→index and
+  index→worktree contents. A staged binary showed the explicit fallback; discard
+  was disabled for that addition.
+- The tracked-file discard confirmation named `story.txt` and explained loss of
+  both staged and unstaged contents. Cancel left both versions unchanged, checked
+  independently against the file and index. Destructive confirmation remains
+  unverified in the desktop app.
+- Visual inspection found unreadable controls under dark appearance and a clipped
+  inspection panel at the default 800×600 window. Explicit themed foregrounds and
+  surfaces fix the contrast; allowing the page to scroll exposes the complete
+  diff and history/blame controls while retaining bounded repository panels.
+- Rebuilt the release app and verified the fixes visually at its default size.
+  Captured [unstaged diff](screenshots/delivery-1/unstaged-diff-dark.png) and
+  [committed blame](screenshots/delivery-1/blame-dark.png) screenshots. Light
+  appearance has explicit colors but has not been visually rechecked.
+- Frontend tests (3), production frontend build, version consistency and release
+  application bundling passed after these layout changes. The locally installed stable
+  Rust toolchain was selected directly because the rustup proxy attempted a
+  write outside the workspace while completing an earlier toolchain setup.
 
 ### Automated acceptance evidence
 
@@ -64,8 +97,8 @@ valuable uncommitted files, for destructive checks.
 | #32 scoped scheduling | Async Tauri commands, canonical common-directory locks, queued worker limit of 8; lock/permit ownership survives dropped callers. Stash global lock removed. | Slow checkout/fetch in A while inspecting/mutating independent B; linked-worktree mutations serialize; failures refresh originating views; no cross-tab stale results; previous staging/branch/stash/abort workflows still operate. |
 | #34 tabs/groups | Retained mounted repository views; open/select/close, group create/rename/remove and tab assignment; background operation/error markers; busy close blocked. | Switch during loading/mutations and confirm final results remain in source tab; duplicate path aliases; close/reopen; group lifecycle; no deletion of repository data. |
 | #35 initialize/clone | Atomically create a new directory, Git init/clone, open successful result; retain partial results and show destination errors. | Empty initialization, local-path clone, configured SSH/helper clone, invalid inputs, existing destinations untouched, interrupted/failed clone retained, unrelated repository remains usable. |
-| #37 text diffs | Staged/unstaged and commit/revision text diffs; first parent for merges, empty tree for roots; rename pairs; binary/empty/large fallbacks. | Desktop display of the automated cases above, Unicode filenames, stale file/repo selection. Untracked files currently show a stage-or-external-editor fallback. |
-| #39 file history/blame | Exact-path 100-entry history and committed porcelain blame; commit navigation; explicit no rename tracing or uncommitted attribution. | Author/date/summary, line attribution, history/blame navigation, empty history, removed/renamed path and missing revision, large blame truncation, loading/error/stale-result behavior. |
+| #37 text diffs | Staged/unstaged and commit/revision text diffs; first parent for merges, empty tree for roots; rename pairs; binary/empty/large fallbacks. | Remaining desktop cases: deletion/empty/large previews and stale file/repo selection. Root, rename, Unicode, staged/unstaged and binary cases observed above. Untracked files currently show a stage-or-external-editor fallback. |
+| #39 file history/blame | Exact-path 100-entry history and committed porcelain blame; commit navigation; explicit no rename tracing or uncommitted attribution. | Remaining desktop cases: empty history, removed/renamed path, missing revision, large blame truncation and loading/error/stale-result behavior. Metadata, attribution and blame-to-comparison navigation observed above. |
 | #41 comparisons | Base→target with resolved IDs, changed-path list and per-file text diff; reverse, identical pair; first-parent commit shortcut. | Desktop display/navigation for the automated comparison cases above; input changes during requests. |
 | #43 discard | Inline confirmation naming path and effects; tracked modified/deleted/type-change reset index+worktree to HEAD; individual untracked unlink with parent containment; explicit unsupported add/rename/copy/conflict/directory states. | Confirm/cancel with staged+unstaged contents, deletion restoration, untracked deletion, symlink containment, unsupported states, partial failure refresh and precise selection. |
 
