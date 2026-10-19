@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Branchlight · Theme directions</title>
+<title>Branchlight · Orange design system</title>
 <style>
 :root {
   /* FOUNDATION_TOKENS */
@@ -22,15 +22,9 @@ header > p { max-width: 790px; color: #5d5d69; }
 .eyebrow { font-size: 12px; letter-spacing: 1.7px; font-weight: 650; text-transform: uppercase; }
 .intro { display: flex; align-items: start; justify-content: space-between; gap: 24px; }
 .review-note { font-size: 12px; max-width: 200px; color: #5d5d69; text-align: right; }
-nav { display: flex; flex-wrap: wrap; gap: 8px; padding: 18px 0 30px; }
-nav button, nav a { font: inherit; font-size: 13px; padding: 9px 14px; border: 1px solid #7a7a85; border-radius: 6px; color: #202027; background: #fff; text-decoration: none; }
-nav button[aria-pressed="true"] { background: #202027; color: #fff; }
-nav button:hover, nav a:hover { border-color: #202027; }
-nav button:focus-visible, nav a:focus-visible { outline: 3px solid #42424d; outline-offset: 3px; }
 .proposal { margin: 0 0 48px; }
 .proposal-heading { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 18px; }
 .proposal-heading p { margin: 5px 0 0; color: #5d5d69; font-size: 13px; }
-.ordinal { font-size: 12px; color: #5d5d69; font-family: var(--font-mono); }
 .paired { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
 .theme {
   color: var(--text-primary); background: var(--surface-canvas);
@@ -110,17 +104,15 @@ footer { color: #5d5d69; font-size: 12px; padding: 10px 0; }
 <body>
 <main>
 <header class="intro">
-<div><div class="eyebrow">Branchlight / Design study 01</div><h1><!-- DIRECTION_COUNT --> directions. One token language.</h1><p>Compare light and dark palettes in the same Git workspace. Color changes; layout, content, and Git status meanings stay consistent. All controls are visual samples; only the scheme filters and token disclosures are interactive.</p></div>
-<p class="review-note">Issue #65<br>Research proposals<br>Updated 18 October 2026<br>No product default selected</p>
+<div><div class="eyebrow">Branchlight / Design study 01</div><h1>Orange. Light and dark.</h1><p>Review the selected orange color direction in light and dark modes. Primary #ff7518 stays exact in both. Workspace controls are visual samples; expand the token table to inspect the shared roles.</p></div>
+<p class="review-note">Issue #65<br>Selected color direction<br>Updated 19 October 2026<br>Implementation pending</p>
 </header>
-<nav aria-label="Color directions" id="filters"></nav>
 <div id="proposals" aria-live="polite"></div>
-<footer>Original Branchlight palettes · opaque sRGB · token-pair contrast verified separately · browser study, not a native app screenshot</footer>
+<footer>Branchlight Orange palettes · opaque sRGB · token-pair contrast verified separately · browser study, not a native app screenshot</footer>
 </main>
 <script>
 const study = /* THEME_DATA */ null;
 const cssName = (name) => `--${name.replaceAll(".", "-")}`;
-const escapeHtml = (value) => String(value).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
 const tokensAsStyle = (tokens) => Object.entries(tokens).map(([key, value]) => `${cssName(key)}:${value}`).join(";");
 function workspace(scheme, mode) {
   const tokens = scheme.modes[mode];
@@ -140,28 +132,12 @@ function workspace(scheme, mode) {
     <div class="specimen"><div class="specimen-label">Control states / static samples</div><div class="controls"><button type="button" class="primary sample">Default</button><button type="button" class="primary hover-sample sample">Hover</button><button type="button" class="primary active-sample sample">Pressed</button><button type="button" class="focus-sample sample">Focus</button><button type="button" disabled>Disabled</button></div><div class="status-row"><span class="status success">✓ Success</span><span class="status warning">! Rebase paused</span><span class="status error">× Conflict</span><span class="status info">i Fetch complete</span></div><div class="swatches">${swatches.map(([key, label]) => `<div class="swatch"><div class="swatch-color" style="background:${tokens[key]}"></div><span>${label}</span><code>${tokens[key]}</code></div>`).join("")}</div></div>
   </article>`;
 }
-function render(id) {
-  const schemes = study.schemes.filter((scheme) => id === "all" || id === scheme.id);
-  document.getElementById("proposals").innerHTML = schemes.map((scheme) => `<section class="proposal" id="${scheme.id}" aria-labelledby="${scheme.id}-title"><div class="proposal-heading"><div><h2 id="${scheme.id}-title">${scheme.name}</h2><p>${scheme.description}</p></div><span class="ordinal">0${study.schemes.indexOf(scheme) + 1} / ${String(study.schemes.length).padStart(2, "0")}</span></div><div class="paired">${workspace(scheme, "light")}${workspace(scheme, "dark")}</div><p class="tradeoff">${scheme.tradeoff}</p><details><summary>Inspect ${scheme.name} token values</summary><table class="token-table"><thead><tr><th scope="col">Role</th><th scope="col">Light</th><th scope="col">Dark</th></tr></thead><tbody>${Object.entries(scheme.modes.light).map(([key, value]) => `<tr><th scope="row">${key}</th><td>${value}</td><td>${scheme.modes.dark[key]}</td></tr>`).join("")}</tbody></table></details></section>`).join("");
-  document.querySelectorAll("#filters button").forEach((button) => button.setAttribute("aria-pressed", String(button.dataset.scheme === id)));
+function render() {
+  document.getElementById("proposals").innerHTML = study.schemes.map((scheme) => `<section class="proposal" id="${scheme.id}" aria-labelledby="${scheme.id}-title"><div class="proposal-heading"><div><h2 id="${scheme.id}-title">${scheme.name}</h2><p>${scheme.description}</p></div></div><div class="paired">${workspace(scheme, "light")}${workspace(scheme, "dark")}</div><p class="tradeoff">${scheme.tradeoff}</p><details><summary>Inspect ${scheme.name} token values</summary><table class="token-table"><thead><tr><th scope="col">Role</th><th scope="col">Light</th><th scope="col">Dark</th></tr></thead><tbody>${Object.entries(scheme.modes.light).map(([key, value]) => `<tr><th scope="row">${key}</th><td>${value}</td><td>${scheme.modes.dark[key]}</td></tr>`).join("")}</tbody></table></details></section>`).join("");
   // Samples intentionally cannot mutate Git or simulate successful operations.
   document.querySelectorAll("button.sample").forEach((button) => button.addEventListener("click", (event) => event.preventDefault()));
 }
-const params = new URLSearchParams(location.search);
-let selected = params.get("scheme") || "all";
-if (!study.schemes.some((scheme) => scheme.id === selected)) selected = "all";
-document.getElementById("filters").innerHTML = [{id:"all",name:"All directions"}, ...study.schemes].map((scheme) => `<button type="button" data-scheme="${scheme.id}" aria-pressed="false">${escapeHtml(scheme.name)}</button>`).join("");
-document.getElementById("filters").addEventListener("click", (event) => {
-  const button = event.target.closest("button[data-scheme]");
-  if (!button) return;
-  selected = button.dataset.scheme;
-  const next = new URL(location.href);
-  if (selected === "all") next.searchParams.delete("scheme");
-  else next.searchParams.set("scheme", selected);
-  history.replaceState(null, "", next);
-  render(selected);
-});
-render(selected);
+render();
 </script>
 </body>
 </html>

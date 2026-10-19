@@ -11,21 +11,9 @@ distinguishability, native dialogs, transparency, or operating-system rendering.
 
 | Scheme | Mode | Lowest text contrast | Lowest non-text contrast | Pairs checked |
 |---|---|---:|---:|---:|
-| Forest | light | 5.41:1 | 3.52:1 | 61 |
-| Forest | dark | 5.25:1 | 3.29:1 | 61 |
-| Tidal | light | 5.18:1 | 3.48:1 | 61 |
-| Tidal | dark | 5.76:1 | 3.12:1 | 61 |
-| Cobalt | light | 5.17:1 | 3.48:1 | 61 |
-| Cobalt | dark | 5.72:1 | 3.10:1 | 61 |
-| Iris | light | 5.12:1 | 3.35:1 | 61 |
-| Iris | dark | 5.76:1 | 3.66:1 | 61 |
-| Ochre | light | 5.01:1 | 3.49:1 | 61 |
-| Ochre | dark | 5.53:1 | 3.12:1 | 61 |
-| Graphite | light | 4.99:1 | 3.26:1 | 61 |
-| Graphite | dark | 5.44:1 | 3.16:1 | 61 |
 | Orange | light | 5.12:1 | 3.35:1 | 61 |
 | Orange | dark | 5.58:1 | 3.82:1 | 61 |
 
-All 854 declared pairs pass. Full evidence: [contrast.csv](contrast.csv).
+All 122 declared pairs pass. Full evidence: [contrast.csv](contrast.csv).
 The gallery intentionally uses text labels, +/− diff markers, and graph topology
 as additional cues; rendered accessibility still needs verification during implementation.
