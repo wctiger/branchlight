@@ -1,6 +1,4 @@
 {
-  "researchedOn": "2026-10-12",
-  "status": "Orange selected by the project owner; implementation pending",
   "foundations": {
     "font.ui": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
     "font.mono": "ui-monospace, \"SFMono-Regular\", Consolas, monospace",
@@ -17,8 +15,6 @@
     {
       "id": "orange",
       "name": "Orange",
-      "description": "Neutral surfaces \u00b7 vivid orange accent",
-      "tradeoff": "Primary #ff7518 stays exact in both modes. Dark button labels preserve contrast; deeper orange handles light-mode links and focus. Keep warning banners distinct through labels and separate status tokens.",
       "modes": {
         "light": {
           "surface.canvas": "#f4f4f5",
@@ -94,6 +90,5 @@
         }
       }
     }
-  ],
-  "updatedOn": "2026-10-19"
+  ]
 }
