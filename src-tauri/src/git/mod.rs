@@ -17,7 +17,11 @@ pub(crate) use conflicts::{abort_merge, abort_rebase};
 pub(crate) use history::get_history;
 pub(crate) use operations::{commit, stage_file, unstage_file};
 pub(crate) use remotes::{fetch, pull, push};
-pub(crate) use repository::open_repository;
+pub(crate) use repository::{create_repository, open_repository};
 pub(crate) use stashes::{apply_stash, create_stash, drop_stash, get_stashes, pop_stash};
 pub(crate) use status::get_repository_status;
 pub(crate) use version::get_git_version;
+
+pub(crate) use runner::repository_identity;
+
+pub(crate) mod inspection;

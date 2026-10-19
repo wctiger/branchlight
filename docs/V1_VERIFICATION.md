@@ -1,5 +1,13 @@
 # V1 verification
 
+This records the original V1 baseline. Delivery 1 changes are tracked separately
+in [Delivery 1 verification](DELIVERY_1_VERIFICATION.md); these historical results
+do not prove acceptance of the new features. On 2026-10-13 the expanded Rust
+suite (50 tests), frontend tests, production frontend build, version check,
+rustfmt and clippy passed locally; Delivery 1 UI acceptance is tracked separately.
+The Delivery 1 implementation at `d75afd3` also passed both platform CI jobs in
+[run 38399061448](https://github.com/wctiger/branchlight/actions/runs/38399061448).
+
 Verified on 2026-08-30 against disposable local Git repositories. Rust tests
 exercise system Git with real repositories and remotes; frontend tests exercise
 deterministic DAG fixtures. The production TypeScript build verifies typed Tauri
@@ -38,3 +46,9 @@ Additional hardening checks:
   them.
 - The full `bun test`, production web build, Tauri macOS application build,
   Rust test, rustfmt, and clippy gates pass together.
+
+Delivery 1 runtime regression checks on 2026-10-18 exercised independent staging
+and inspection during another repository's fetch, failed-operation refresh,
+stash create/apply and both merge/rebase abort paths. The expanded Rust suite
+passes 52 tests locally; the completed local acceptance audit and PR-head CI gate are in the
+[Delivery 1 record](DELIVERY_1_VERIFICATION.md).
