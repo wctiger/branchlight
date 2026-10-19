@@ -1,3 +1,6 @@
+import { Alert } from "./components/ui/alert";
+import { Button } from "./components/ui/button";
+import { Input } from "./components/ui/input";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import type { FormEvent } from "react";
 
@@ -33,10 +36,7 @@ import {
   BranchPanel,
   type BranchesState,
 } from "./features/branches/BranchPanel";
-import {
-  StashPanel,
-  type StashesState,
-} from "./features/stashes/StashPanel";
+import { StashPanel, type StashesState } from "./features/stashes/StashPanel";
 import {
   HistoryPanel,
   type HistoryState,
@@ -172,7 +172,7 @@ function ErrorNotice({
     error.output?.stderr.trim() || error.output?.stdout.trim() || undefined;
 
   return (
-    <div className="error-notice" role="alert">
+    <Alert variant="destructive" className="error-notice">
       <span className="error-notice__icon" aria-hidden="true">
         !
       </span>
@@ -181,7 +181,7 @@ function ErrorNotice({
         <p>{error.message}</p>
         {details && <pre>{details}</pre>}
       </div>
-    </div>
+    </Alert>
   );
 }
 
@@ -191,8 +191,8 @@ function BranchSummary({ branch }: { branch: BranchStatus }) {
     ? "Detached HEAD"
     : (branch.name ?? "Unknown branch");
   const trackingLabel = branch.isDetached
-    ? branch.oid?.slice(0, 10) ?? "No commit"
-    : branch.upstream ?? (branch.oid ? "No upstream" : "No commits yet");
+    ? (branch.oid?.slice(0, 10) ?? "No commit")
+    : (branch.upstream ?? (branch.oid ? "No upstream" : "No commits yet"));
 
   return (
     <div className="branch-summary">
@@ -277,8 +277,8 @@ function ConflictBanner({
             {!hasRepositoryConflict
               ? "Git no longer reports an active merge or rebase."
               : conflictCount === 0
-              ? "Git reports no conflicted files right now."
-              : `${conflictCount} ${conflictCount === 1 ? "file requires" : "files require"} manual resolution.`}
+                ? "Git reports no conflicted files right now."
+                : `${conflictCount} ${conflictCount === 1 ? "file requires" : "files require"} manual resolution.`}
           </p>
         </div>
       </div>
@@ -304,29 +304,37 @@ function ConflictBanner({
                 : "Review Git’s message below, then refresh Branchlight before continuing."}
         </p>
         <div>
-          <button
+          <Button
+            variant="outline"
             className="secondary-button"
             type="button"
             disabled={actionsDisabled}
             aria-busy={isRefreshing}
             onClick={onRefresh}
           >
-            {isRefreshing ? <span className="small-spinner" /> : <RefreshIcon />}
+            {isRefreshing ? (
+              <span className="small-spinner" />
+            ) : (
+              <RefreshIcon />
+            )}
             {isRefreshing ? "Refreshing…" : "Refresh status"}
-          </button>
+          </Button>
           {activeOperation !== "none" && (
-            <button
+            <Button
+              variant="outline"
               className="conflict-banner__abort"
               type="button"
               disabled={actionsDisabled}
               aria-busy={isAborting}
               onClick={() => onAbort(activeOperation)}
             >
-              {isAborting && <span className="small-spinner" aria-hidden="true" />}
+              {isAborting && (
+                <span className="small-spinner" aria-hidden="true" />
+              )}
               {isAborting
                 ? `Aborting ${activeOperation}…`
                 : `Abort ${activeOperation}`}
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -387,7 +395,9 @@ function ChangeSection({
       ) : (
         <ul className="change-list">
           {changes.map((change) => (
-            <li key={`${change.status}:${change.path}:${change.originalPath ?? ""}`}>
+            <li
+              key={`${change.status}:${change.path}:${change.originalPath ?? ""}`}
+            >
               <span
                 className={`change-symbol change-symbol--${change.status}`}
                 title={fileStatusLabels[change.status]}
@@ -404,7 +414,8 @@ function ChangeSection({
                 )}
               </div>
               {action ? (
-                <button
+                <Button
+                  variant="outline"
                   className="change-action"
                   type="button"
                   disabled={actionsDisabled}
@@ -417,7 +428,7 @@ function ChangeSection({
                     <StageIcon direction={action.direction} />
                   )}
                   {busyPath === change.path ? action.busyLabel : action.label}
-                </button>
+                </Button>
               ) : (
                 <span className="change-kind">
                   {fileStatusLabels[change.status]}
@@ -467,6 +478,8 @@ function RepositoryWorkspace({
   onPopStash: (stash: Stash) => Promise<boolean>;
   onDropStash: (stash: Stash) => Promise<boolean>;
 }) {
+  const changesTitleId = useId();
+  const commitMessageId = useId();
   if (state.state === "idle" || state.state === "loading") {
     return (
       <section className="status-loading" aria-live="polite">
@@ -484,7 +497,8 @@ function RepositoryWorkspace({
           error={state.error}
           title="Repository status couldn’t be refreshed"
         />
-        <button
+        <Button
+          variant="outline"
           className="secondary-button"
           type="button"
           disabled={controlsDisabled}
@@ -492,7 +506,7 @@ function RepositoryWorkspace({
         >
           <RefreshIcon />
           Try again
-        </button>
+        </Button>
       </section>
     );
   }
@@ -500,10 +514,8 @@ function RepositoryWorkspace({
   const { status } = state;
   const changeCount =
     status.staged.length + status.unstaged.length + status.conflicts.length;
-  const isMutating =
-    operation.state !== "idle" || status.operation !== "none";
-  const actionsDisabled =
-    controlsDisabled || isMutating || state.isRefreshing;
+  const isMutating = operation.state !== "idle" || status.operation !== "none";
+  const actionsDisabled = controlsDisabled || isMutating || state.isRefreshing;
   const canCommit =
     status.staged.length > 0 &&
     status.conflicts.length === 0 &&
@@ -533,11 +545,11 @@ function RepositoryWorkspace({
           : null;
 
   return (
-    <section className="repository-workspace" aria-labelledby="changes-title">
+    <section className="repository-workspace" aria-labelledby={changesTitleId}>
       <header className="workspace-heading">
         <div>
           <p className="eyebrow">Working tree</p>
-          <h2 id="changes-title">Repository changes</h2>
+          <h2 id={changesTitleId}>Repository changes</h2>
           <p>
             {changeCount === 0
               ? "Everything is clean and up to date."
@@ -561,7 +573,8 @@ function RepositoryWorkspace({
             }
           />
           {state.refreshError && !operationError && (
-            <button
+            <Button
+              variant="outline"
               className="secondary-button"
               type="button"
               disabled={state.isRefreshing || isMutating}
@@ -569,7 +582,7 @@ function RepositoryWorkspace({
             >
               <RefreshIcon />
               Try again
-            </button>
+            </Button>
           )}
         </div>
       )}
@@ -608,9 +621,7 @@ function RepositoryWorkspace({
             direction: "stage",
             onClick: onStage,
           }}
-          busyPath={
-            operation.state === "staging" ? operation.path : undefined
-          }
+          busyPath={operation.state === "staging" ? operation.path : undefined}
           actionsDisabled={actionsDisabled}
         />
         <ChangeSection
@@ -638,14 +649,12 @@ function RepositoryWorkspace({
             <p className="eyebrow">Next commit</p>
             <h3>Commit staged changes</h3>
           </div>
-          <span>
-            {status.staged.length} staged
-          </span>
+          <span>{status.staged.length} staged</span>
         </div>
-        <label htmlFor="commit-message">Commit message</label>
+        <label htmlFor={commitMessageId}>Commit message</label>
         <div className="commit-controls">
-          <input
-            id="commit-message"
+          <Input
+            id={commitMessageId}
             name="commitMessage"
             type="text"
             value={commitMessage}
@@ -655,7 +664,8 @@ function RepositoryWorkspace({
             autoComplete="off"
             onChange={(event) => onCommitMessageChange(event.target.value)}
           />
-          <button
+          <Button
+            variant="default"
             className="primary-button commit-button"
             type="submit"
             disabled={!canCommit}
@@ -665,7 +675,7 @@ function RepositoryWorkspace({
               <span className="button-spinner" aria-hidden="true" />
             )}
             {operation.state === "committing" ? "Committing…" : "Commit"}
-          </button>
+          </Button>
         </div>
         <p className="commit-hint">{commitHint}</p>
       </form>
@@ -804,14 +814,13 @@ function RepositoryScreen({
         <div className="repository-actions">
           {(["fetch", "pull", "push"] as const).map((kind) => {
             const operationState = `${kind}ing` as
-              | "fetching"
-              | "pulling"
-              | "pushing";
+              "fetching" | "pulling" | "pushing";
             const isRunning = operation.state === operationState;
             const label = `${kind[0].toUpperCase()}${kind.slice(1)}`;
 
             return (
-              <button
+              <Button
+                variant="outline"
                 className="secondary-button remote-button"
                 type="button"
                 key={kind}
@@ -824,12 +833,15 @@ function RepositoryScreen({
                 aria-busy={isRunning}
                 onClick={() => onRemoteOperation(kind)}
               >
-                {isRunning && <span className="small-spinner" aria-hidden="true" />}
+                {isRunning && (
+                  <span className="small-spinner" aria-hidden="true" />
+                )}
                 {isRunning ? `${label}ing…` : label}
-              </button>
+              </Button>
             );
           })}
-          <button
+          <Button
+            variant="outline"
             className="secondary-button"
             type="button"
             disabled={
@@ -839,21 +851,32 @@ function RepositoryScreen({
               hasActiveRepositoryOperation ||
               openState !== "idle"
             }
-            onClick={() => document.getElementById("stash-message")?.focus()}
+            onClick={(event) =>
+              event.currentTarget
+                .closest("main")
+                ?.querySelector<HTMLInputElement>('[name="stashMessage"]')
+                ?.focus()
+            }
           >
             Stash
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="outline"
             className="secondary-button"
             type="button"
             disabled={isRefreshing || isMutating || openState !== "idle"}
             aria-busy={isRefreshing}
             onClick={onRefresh}
           >
-            {isRefreshing ? <span className="small-spinner" /> : <RefreshIcon />}
+            {isRefreshing ? (
+              <span className="small-spinner" />
+            ) : (
+              <RefreshIcon />
+            )}
             {isRefreshing ? "Refreshing…" : "Refresh"}
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="outline"
             className="secondary-button"
             type="button"
             disabled={isMutating || openState !== "idle"}
@@ -862,7 +885,7 @@ function RepositoryScreen({
           >
             <FolderIcon />
             {openState === "idle" ? "Open another" : "Opening…"}
-          </button>
+          </Button>
         </div>
       </header>
 
@@ -946,16 +969,31 @@ function RepositoryScreen({
           onRefresh={onRefresh}
         />
       </div>
-      <InspectionPanel path={repository.path} status={status} commit={inspectionCommit} disabled={controlsDisabled} onDiscard={onDiscard} />
+      <InspectionPanel
+        path={repository.path}
+        status={status}
+        commit={inspectionCommit}
+        disabled={controlsDisabled}
+        onDiscard={onDiscard}
+      />
     </main>
   );
 }
 
 /** Owns system Git, repository, status, and mutation state for the app. */
-export function RepositoryApp({ initialRepository, onOpen, onFeedback }: {
+export function RepositoryApp({
+  initialRepository,
+  onOpen,
+  onFeedback,
+}: {
   initialRepository: Repository;
   onOpen: () => void;
-  onFeedback: (path: string, busy: boolean, error: boolean) => void;
+  onFeedback: (
+    path: string,
+    busy: boolean,
+    error: boolean,
+    dirty: boolean,
+  ) => void;
 }) {
   const repository = initialRepository;
   const repositoryError: GitError | null = null;
@@ -996,41 +1034,44 @@ export function RepositoryApp({ initialRepository, onOpen, onFeedback }: {
   const repositoryMutationInFlight = useRef(false);
 
   /** Refreshes Git state while retaining the last successful snapshot on failure. */
-  const refreshRepositoryStatus = useCallback(async (repositoryPath: string) => {
-    const requestId = ++statusRequestId.current;
-    setRepositoryStatus((current) =>
-      current.state === "ready"
-        ? { ...current, isRefreshing: true, refreshError: null }
-        : { state: "loading" },
-    );
+  const refreshRepositoryStatus = useCallback(
+    async (repositoryPath: string) => {
+      const requestId = ++statusRequestId.current;
+      setRepositoryStatus((current) =>
+        current.state === "ready"
+          ? { ...current, isRefreshing: true, refreshError: null }
+          : { state: "loading" },
+      );
 
-    try {
-      const status = await getRepositoryStatus(repositoryPath);
-      if (requestId === statusRequestId.current) {
-        setRepositoryStatus({
-          state: "ready",
-          status,
-          isRefreshing: false,
-          refreshError: null,
+      try {
+        const status = await getRepositoryStatus(repositoryPath);
+        if (requestId === statusRequestId.current) {
+          setRepositoryStatus({
+            state: "ready",
+            status,
+            isRefreshing: false,
+            refreshError: null,
+          });
+        }
+      } catch (error) {
+        const normalizedError = normalizeGitError(error);
+        setRepositoryStatus((current) => {
+          if (requestId !== statusRequestId.current) {
+            return current;
+          }
+
+          return current.state === "ready"
+            ? {
+                ...current,
+                isRefreshing: false,
+                refreshError: normalizedError,
+              }
+            : { state: "error", error: normalizedError };
         });
       }
-    } catch (error) {
-      const normalizedError = normalizeGitError(error);
-      setRepositoryStatus((current) => {
-        if (requestId !== statusRequestId.current) {
-          return current;
-        }
-
-        return current.state === "ready"
-          ? {
-              ...current,
-              isRefreshing: false,
-              refreshError: normalizedError,
-            }
-          : { state: "error", error: normalizedError };
-      });
-    }
-  }, []);
+    },
+    [],
+  );
 
   /** Refreshes branch refs while retaining the last successful snapshot on failure. */
   const refreshBranches = useCallback(async (repositoryPath: string) => {
@@ -1158,15 +1199,23 @@ export function RepositoryApp({ initialRepository, onOpen, onFeedback }: {
 
   /** Atomically prevents a second Git mutation before React can render disabled controls. */
   const beginRepositoryMutation = useCallback(() => {
-    if (
-      repositoryMutationInFlight.current
-    ) {
+    if (repositoryMutationInFlight.current) {
       return false;
     }
     repositoryMutationInFlight.current = true;
-    onFeedback(repository.path, true, false);
+    onFeedback(
+      repository.path,
+      true,
+      false,
+      repositoryStatus.state === "ready" &&
+        Boolean(
+          repositoryStatus.status.staged.length ||
+          repositoryStatus.status.unstaged.length ||
+          repositoryStatus.status.conflicts.length,
+        ),
+    );
     return true;
-  }, [onFeedback, repository.path]);
+  }, [onFeedback, repository.path, repositoryStatus]);
 
   /** Refreshes every Git-backed view and always releases the mutation guard. */
   const finishRepositoryMutation = useCallback(
@@ -1201,27 +1250,61 @@ export function RepositoryApp({ initialRepository, onOpen, onFeedback }: {
   const handleOpenRepository = onOpen;
 
   useEffect(() => {
-    onFeedback(repository.path, operation.state !== "idle", Boolean(
-      changeOperationError || branchOperationError || remoteOperationError ||
-      stashOperationError || conflictOperationError ||
-      repositoryStatus.state === "error" || branchesState.state === "error" ||
-      stashesState.state === "error" || historyState.state === "error" ||
-      (repositoryStatus.state === "ready" && repositoryStatus.refreshError) ||
-      (branchesState.state === "ready" && branchesState.refreshError) ||
-      (stashesState.state === "ready" && stashesState.refreshError) ||
-      (historyState.state === "ready" && historyState.refreshError)
-    ));
-  }, [repository.path, operation.state, changeOperationError, branchOperationError,
-    remoteOperationError, stashOperationError, conflictOperationError, repositoryStatus,
-    branchesState, stashesState, historyState, onFeedback]);
+    onFeedback(
+      repository.path,
+      operation.state !== "idle",
+      Boolean(
+        changeOperationError ||
+        branchOperationError ||
+        remoteOperationError ||
+        stashOperationError ||
+        conflictOperationError ||
+        repositoryStatus.state === "error" ||
+        branchesState.state === "error" ||
+        stashesState.state === "error" ||
+        historyState.state === "error" ||
+        (repositoryStatus.state === "ready" && repositoryStatus.refreshError) ||
+        (branchesState.state === "ready" && branchesState.refreshError) ||
+        (stashesState.state === "ready" && stashesState.refreshError) ||
+        (historyState.state === "ready" && historyState.refreshError),
+      ),
+      repositoryStatus.state === "ready" &&
+        Boolean(
+          repositoryStatus.status.staged.length ||
+          repositoryStatus.status.unstaged.length ||
+          repositoryStatus.status.conflicts.length,
+        ),
+    );
+  }, [
+    repository.path,
+    operation.state,
+    changeOperationError,
+    branchOperationError,
+    remoteOperationError,
+    stashOperationError,
+    conflictOperationError,
+    repositoryStatus,
+    branchesState,
+    stashesState,
+    historyState,
+    onFeedback,
+  ]);
 
   const handleDiscard = async (change: FileChange) => {
     const untracked = change.status === "untracked";
     if (!beginRepositoryMutation()) return;
     clearOperationFeedback();
     setOperation({ state: "discarding", path: change.path });
-    try { await discardFile(repository.path, change.path, untracked ? "untracked" : "tracked"); setOperationNotice(`Discarded ${change.path}.`); }
-    catch (error) { setChangeOperationError(normalizeGitError(error)); }
+    try {
+      await discardFile(
+        repository.path,
+        change.path,
+        untracked ? "untracked" : "tracked",
+      );
+      setOperationNotice(`Discarded ${change.path}.`);
+    } catch (error) {
+      setChangeOperationError(normalizeGitError(error));
+    }
     await finishRepositoryMutation(repository.path);
   };
 
@@ -1321,7 +1404,8 @@ export function RepositoryApp({ initialRepository, onOpen, onFeedback }: {
       if (mutation.kind === "delete" && selectedBranch?.isCurrent) {
         setBranchOperationError({
           code: "invalidOperationInput",
-          message: "Switch to another branch before deleting the current branch.",
+          message:
+            "Switch to another branch before deleting the current branch.",
         });
         return false;
       }
@@ -1664,15 +1748,9 @@ export function RepositoryApp({ initialRepository, onOpen, onFeedback }: {
         onCreateStash={(message) =>
           handleStashMutation({ kind: "create", message })
         }
-        onApplyStash={(stash) =>
-          handleStashMutation({ kind: "apply", stash })
-        }
-        onPopStash={(stash) =>
-          handleStashMutation({ kind: "pop", stash })
-        }
-        onDropStash={(stash) =>
-          handleStashMutation({ kind: "drop", stash })
-        }
+        onApplyStash={(stash) => handleStashMutation({ kind: "apply", stash })}
+        onPopStash={(stash) => handleStashMutation({ kind: "pop", stash })}
+        onDropStash={(stash) => handleStashMutation({ kind: "drop", stash })}
       />
     );
   }

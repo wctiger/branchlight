@@ -1,4 +1,7 @@
-import { useEffect, useState } from "react";
+import { OperationDialog } from "../../components/operation-dialog";
+import { Button } from "../../components/ui/button";
+import { Input } from "../../components/ui/input";
+import { useEffect, useState, useId } from "react";
 import type { FormEvent } from "react";
 
 import type { GitError } from "../../types/git";
@@ -58,6 +61,8 @@ export function StashPanel({
   onPop,
   onDrop,
 }: StashPanelProps) {
+  const titleId = useId();
+  const messageId = useId();
   const [message, setMessage] = useState("");
   const [pendingDropRef, setPendingDropRef] = useState<string | null>(null);
   const stashes = state.state === "ready" ? state.stashes : [];
@@ -98,20 +103,23 @@ export function StashPanel({
   };
 
   return (
-    <section className="stash-panel" aria-labelledby="stashes-title">
+    <section className="stash-panel" aria-labelledby={titleId}>
       <header className="stash-panel__header">
         <div>
           <p className="eyebrow">Saved work</p>
-          <h3 id="stashes-title">Stashes</h3>
+          <h3 id={titleId}>Stashes</h3>
         </div>
         <span>{stashes.length}</span>
       </header>
 
-      <form className="stash-create" onSubmit={(event) => void submitStash(event)}>
-        <label htmlFor="stash-message">Optional stash message</label>
+      <form
+        className="stash-create"
+        onSubmit={(event) => void submitStash(event)}
+      >
+        <label htmlFor={messageId}>Optional stash message</label>
         <div>
-          <input
-            id="stash-message"
+          <Input
+            id={messageId}
             name="stashMessage"
             type="text"
             value={message}
@@ -121,24 +129,33 @@ export function StashPanel({
             placeholder="What are you setting aside?"
             onChange={(event) => setMessage(event.target.value)}
           />
-          <button
+          <Button
+            variant="outline"
             className="secondary-button"
             type="submit"
             disabled={controlsDisabled}
             aria-busy={isCreating}
           >
-            {isCreating && <span className="small-spinner" aria-hidden="true" />}
+            {isCreating && (
+              <span className="small-spinner" aria-hidden="true" />
+            )}
             {isCreating ? "Stashing…" : "Create stash"}
-          </button>
+          </Button>
         </div>
       </form>
 
       {operationError ? (
-        <StashError title="Git couldn’t complete that stash action." error={operationError} />
+        <StashError
+          title="Git couldn’t complete that stash action."
+          error={operationError}
+        />
       ) : (
         state.state === "ready" &&
         state.refreshError && (
-          <StashError title="Git couldn’t refresh stashes." error={state.refreshError} />
+          <StashError
+            title="Git couldn’t refresh stashes."
+            error={state.refreshError}
+          />
         )
       )}
 
@@ -152,14 +169,15 @@ export function StashPanel({
       {state.state === "error" && (
         <div className="stash-panel__status">
           <StashError title="Git couldn’t load stashes." error={state.error} />
-          <button
+          <Button
+            variant="outline"
             className="secondary-button"
             type="button"
             disabled={actionsDisabled}
             onClick={onRefresh}
           >
             Try again
-          </button>
+          </Button>
         </div>
       )}
 
@@ -169,11 +187,9 @@ export function StashPanel({
 
       {state.state === "ready" && stashes.length > 0 && (
         <ul className="stash-list">
-          {stashes.map((stash, index) => {
+          {stashes.map((stash) => {
             const isBusy = stash.reference === busyReference;
             const isConfirmingDrop = pendingDropRef === stash.reference;
-            const titleId = `stash-drop-title-${index}`;
-            const descriptionId = `stash-drop-description-${index}`;
 
             return (
               <li key={stash.reference} className="stash-item">
@@ -186,16 +202,15 @@ export function StashPanel({
                 </div>
 
                 {isConfirmingDrop ? (
-                  <div
-                    className="stash-drop-confirmation"
-                    role="alertdialog"
-                    aria-labelledby={titleId}
-                    aria-describedby={descriptionId}
+                  <OperationDialog
+                    title={`Drop ${stash.reference}?`}
+                    description="This removes the stash permanently."
+                    busy={controlsDisabled}
+                    onClose={() => setPendingDropRef(null)}
                   >
-                    <strong id={titleId}>Drop {stash.reference}?</strong>
-                    <p id={descriptionId}>This removes the stash permanently.</p>
                     <div>
-                      <button
+                      <Button
+                        variant="destructive"
                         className="stash-button--danger"
                         type="button"
                         disabled={controlsDisabled}
@@ -205,42 +220,48 @@ export function StashPanel({
                         {isBusy && busyOperation === "drop"
                           ? "Dropping…"
                           : "Drop permanently"}
-                      </button>
-                      <button
+                      </Button>
+                      <Button
+                        variant="outline"
                         type="button"
                         disabled={controlsDisabled}
                         onClick={() => setPendingDropRef(null)}
                       >
                         Cancel
-                      </button>
+                      </Button>
                     </div>
-                  </div>
+                  </OperationDialog>
                 ) : (
                   <div className="stash-item__actions">
-                    <button
+                    <Button
+                      variant="outline"
                       type="button"
                       disabled={controlsDisabled}
                       aria-busy={isBusy && busyOperation === "apply"}
                       onClick={() => void onApply(stash)}
                     >
-                      {isBusy && busyOperation === "apply" ? "Applying…" : "Apply"}
-                    </button>
-                    <button
+                      {isBusy && busyOperation === "apply"
+                        ? "Applying…"
+                        : "Apply"}
+                    </Button>
+                    <Button
+                      variant="outline"
                       type="button"
                       disabled={controlsDisabled}
                       aria-busy={isBusy && busyOperation === "pop"}
                       onClick={() => void onPop(stash)}
                     >
                       {isBusy && busyOperation === "pop" ? "Popping…" : "Pop"}
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      variant="destructive"
                       className="stash-button--danger"
                       type="button"
                       disabled={controlsDisabled}
                       onClick={() => setPendingDropRef(stash.reference)}
                     >
                       Drop
-                    </button>
+                    </Button>
                   </div>
                 )}
               </li>

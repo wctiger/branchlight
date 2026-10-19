@@ -218,3 +218,51 @@ For submission, review [PR #67 checks](https://github.com/wctiger/branchlight/pu
 at the current head, including the final SSH/recovery/discard fixes. Passing this
 acceptance audit does not close issues or merge the PR by itself. Windows
 downloaded-app runtime compatibility remains the separate issue #28.
+
+## Design-system follow-up (#68), 2026-10-19
+
+The frontend now applies the reviewed Orange tokens through shared shadcn/ui
+components, dense layout, bundled Inter/Cascadia Code fonts, local appearance
+preferences, single-line repository tab overflow, and fixed-row virtual history.
+[Design-system integration and evidence](DESIGN_SYSTEM.md) documents the token
+mapping, intentional native controls, and before/after captures. The Rust Git
+implementation, scheduler, refresh generations, and production history bound are
+unchanged.
+
+Verification for this change:
+
+- 11 Bun tests pass, covering graph layout, token contrast/mapping, twelve-tab
+  navigation, busy close protection, bounded history rendering, commit 300
+  navigation, retained selection/scroll on refresh, confirmation cancellation,
+  focus restoration, and saved appearance resolution.
+- Production TypeScript/Vite build, version consistency, 52 Rust tests, rustfmt,
+  and Clippy with all targets/features and warnings denied pass. Native checks
+  use the installed stable toolchain and macOS 15.4 SDK; no SDK setting is added
+  to the project. macOS application bundling passes, including local font assets
+  and license notices.
+- The actual UI served with an isolated development-only backend fixture opens
+  12 repository tabs and displays a 300-commit/30-contributor workload in both
+  themes. Keyboard End reaches the last commit; refresh and switching away/back
+  retain the selected hash and scroll position. A local 85-frame scrolling sample
+  recorded 24.3ms p95 and 31 mounted rows. This is browser fixture evidence, not
+  a claim that Git now loads more than its existing 200-entry bound.
+- A diagnostic native build was relaunched after an initially blank window.
+  With real installed Git and a disposable repository, opening, whole-file
+  staging, staged diff inspection, and explicit light/dark appearance worked.
+  The complete diff remained reachable through page scrolling, with red/green
+  lines and readable Cascadia Code text. The discard dialog named the path,
+  focused Cancel, and Escape dismissed it. Independent Git checks confirmed
+  that index and working file still contained the staged changes after cancel.
+  No discard was executed.
+- The final normal release (without diagnostic features) was rebuilt and
+  relaunched successfully. It restored the saved Dark preference, loaded system
+  Git and the disposable repository, and unstaged the file through the UI. Git
+  independently confirmed that the index returned to HEAD while the working
+  file retained its edit. The earlier blank launch did not recur on this clean
+  normal-release relaunch.
+
+Windows native runtime/visual acceptance, and a complete repeat of the earlier
+Delivery 1 desktop matrix after migration, remain pending. Platform CI results
+establish test/build compatibility only. Keep #68 open until its remaining
+acceptance evidence is collected; this addendum does not overwrite or expand the
+scope of the prior Delivery 1 runtime audit.

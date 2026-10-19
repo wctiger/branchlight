@@ -1,4 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { OperationDialog } from "../../components/operation-dialog";
+import { Button } from "../../components/ui/button";
+import { Input } from "../../components/ui/input";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import type { DragEvent, FormEvent } from "react";
 
 import type { Branch, Branches } from "../../types/branch";
@@ -68,11 +71,12 @@ function BranchItem({
   const commitLabel = branch.commit?.slice(0, 8) ?? "No commits";
   const trackingLabel = isRemote
     ? "Remote reference"
-    : branch.upstream ?? (branch.commit ? "No upstream" : "No commits yet");
+    : (branch.upstream ?? (branch.commit ? "No upstream" : "No commits yet"));
 
   return (
     <li>
-      <button
+      <Button
+        variant="outline"
         className={`branch-item${isSelected ? " branch-item--selected" : ""}${isDropTarget ? " branch-item--drop-target" : ""}`}
         type="button"
         title={
@@ -110,7 +114,7 @@ function BranchItem({
         ) : (
           <code>{commitLabel}</code>
         )}
-      </button>
+      </Button>
     </li>
   );
 }
@@ -143,12 +147,15 @@ export function BranchPanel({
   onMerge,
   onRebase,
 }: BranchPanelProps) {
+  const titleId = useId();
+  const localId = useId();
+  const remoteId = useId();
+  const nameId = useId();
   const [selectedRef, setSelectedRef] = useState<string | null>(null);
   const [editor, setEditor] = useState<BranchEditor>({ mode: "closed" });
   const [draftName, setDraftName] = useState("");
   const [draggedRef, setDraggedRef] = useState<string | null>(null);
   const integrationTriggerRef = useRef<HTMLButtonElement>(null);
-  const integrationPrimaryActionRef = useRef<HTMLButtonElement>(null);
   const restoreIntegrationFocusRef = useRef(false);
   const branches = state.state === "ready" ? state.branches : null;
   const isRefreshing = state.state === "ready" && state.isRefreshing;
@@ -165,9 +172,7 @@ export function BranchPanel({
   const currentBranch = branches?.local.find((branch) => branch.isCurrent);
 
   useEffect(() => {
-    if (editor.mode === "integrate") {
-      integrationPrimaryActionRef.current?.focus();
-    } else if (restoreIntegrationFocusRef.current) {
+    if (editor.mode !== "integrate" && restoreIntegrationFocusRef.current) {
       restoreIntegrationFocusRef.current = false;
       integrationTriggerRef.current?.focus();
     }
@@ -221,12 +226,7 @@ export function BranchPanel({
 
   /** Opens the same explicit merge/rebase chooser for drag and keyboard input. */
   const openIntegration = (source: Branch) => {
-    if (
-      !currentBranch ||
-      source.isCurrent ||
-      actionsDisabled ||
-      isRefreshing
-    ) {
+    if (!currentBranch || source.isCurrent || actionsDisabled || isRefreshing) {
       return;
     }
 
@@ -349,14 +349,15 @@ export function BranchPanel({
     return (
       <aside className="branch-panel branch-panel--error">
         <BranchError title="Git couldn’t load branches." error={state.error} />
-        <button
+        <Button
+          variant="outline"
           className="branch-text-button"
           type="button"
           disabled={actionsDisabled}
           onClick={onRefresh}
         >
           Try again
-        </button>
+        </Button>
       </aside>
     );
   }
@@ -366,13 +367,14 @@ export function BranchPanel({
   }
 
   return (
-    <aside className="branch-panel" aria-labelledby="branches-title">
+    <aside className="branch-panel" aria-labelledby={titleId}>
       <header className="branch-panel__header">
         <div>
           <p className="eyebrow">Repository refs</p>
-          <h2 id="branches-title">Branches</h2>
+          <h2 id={titleId}>Branches</h2>
         </div>
-        <button
+        <Button
+          variant="outline"
           className="branch-add-button"
           type="button"
           title="Create a local branch"
@@ -381,7 +383,7 @@ export function BranchPanel({
           onClick={openCreate}
         >
           +
-        </button>
+        </Button>
       </header>
 
       {operationError ? (
@@ -405,9 +407,9 @@ export function BranchPanel({
       )}
 
       <div className="branch-groups">
-        <section className="branch-group" aria-labelledby="local-branches-title">
+        <section className="branch-group" aria-labelledby={localId}>
           <div className="branch-group__heading">
-            <h3 id="local-branches-title">Local</h3>
+            <h3 id={localId}>Local</h3>
             <span>{branches.local.length}</span>
           </div>
           {branches.local.length === 0 ? (
@@ -435,9 +437,9 @@ export function BranchPanel({
           )}
         </section>
 
-        <section className="branch-group" aria-labelledby="remote-branches-title">
+        <section className="branch-group" aria-labelledby={remoteId}>
           <div className="branch-group__heading">
-            <h3 id="remote-branches-title">Remote</h3>
+            <h3 id={remoteId}>Remote</h3>
             <span>{branches.remote.length}</span>
           </div>
           {branches.remote.length === 0 ? (
@@ -468,8 +470,12 @@ export function BranchPanel({
       </div>
 
       {selectedLocalBranch && editor.mode === "closed" && (
-        <div className="branch-actions" aria-label="Selected local branch actions">
-          <button
+        <div
+          className="branch-actions"
+          aria-label="Selected local branch actions"
+        >
+          <Button
+            variant="outline"
             type="button"
             disabled={
               actionsDisabled || isRefreshing || selectedLocalBranch.isCurrent
@@ -477,15 +483,17 @@ export function BranchPanel({
             onClick={() => void onSwitch(selectedLocalBranch.name)}
           >
             Switch
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="outline"
             type="button"
             disabled={actionsDisabled || isRefreshing}
             onClick={openRename}
           >
             Rename
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="outline"
             ref={integrationTriggerRef}
             type="button"
             disabled={
@@ -494,8 +502,9 @@ export function BranchPanel({
             onClick={() => openIntegration(selectedLocalBranch)}
           >
             Merge / rebase…
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="destructive"
             className="branch-action--danger"
             type="button"
             title={
@@ -511,17 +520,20 @@ export function BranchPanel({
             }
           >
             Delete
-          </button>
+          </Button>
         </div>
       )}
 
       {(editor.mode === "create" || editor.mode === "rename") && (
-        <form className="branch-editor" onSubmit={(event) => void submitName(event)}>
-          <label htmlFor="branch-name">
+        <form
+          className="branch-editor"
+          onSubmit={(event) => void submitName(event)}
+        >
+          <label htmlFor={nameId}>
             {editor.mode === "create" ? "New branch name" : "Rename branch"}
           </label>
-          <input
-            id="branch-name"
+          <Input
+            id={nameId}
             name="branchName"
             type="text"
             value={draftName}
@@ -533,94 +545,90 @@ export function BranchPanel({
             onChange={(event) => setDraftName(event.target.value)}
           />
           <div>
-            <button
+            <Button
+              variant="default"
               className="branch-editor__primary"
               type="submit"
               disabled={!draftName.trim() || actionsDisabled}
             >
               {editor.mode === "create" ? "Create & switch" : "Rename"}
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="outline"
               type="button"
               disabled={actionsDisabled}
               onClick={() => setEditor({ mode: "closed" })}
             >
               Cancel
-            </button>
+            </Button>
           </div>
         </form>
       )}
 
       {editor.mode === "delete" && (
-        <div
-          className="branch-editor branch-editor--delete"
-          role="alertdialog"
-          aria-labelledby="branch-delete-title"
-          aria-describedby="branch-delete-description"
+        <OperationDialog
+          title={`Delete ${editor.branch.name}?`}
+          description="Git will refuse if the branch is not fully merged."
+          busy={actionsDisabled}
+          onClose={() => setEditor({ mode: "closed" })}
         >
-          <strong id="branch-delete-title">Delete {editor.branch.name}?</strong>
-          <p id="branch-delete-description">
-            Git will refuse if the branch is not fully merged.
-          </p>
           <div>
-            <button
+            <Button
+              variant="destructive"
               className="branch-editor__danger"
               type="button"
               disabled={actionsDisabled}
               onClick={() => void confirmDelete()}
             >
               Delete safely
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="outline"
               type="button"
               disabled={actionsDisabled}
               onClick={() => setEditor({ mode: "closed" })}
             >
               Cancel
-            </button>
+            </Button>
           </div>
-        </div>
+        </OperationDialog>
       )}
 
       {editor.mode === "integrate" && (
-        <div
-          className="branch-editor branch-editor--integrate"
-          role="dialog"
-          aria-labelledby="branch-integrate-title"
-          aria-describedby="branch-integrate-description"
+        <OperationDialog
+          title={`${editor.source.name} → ${editor.destination.name}`}
+          description="Choose how the source branch should integrate with the current branch."
+          busy={actionsDisabled}
+          onClose={closeIntegration}
         >
-          <strong id="branch-integrate-title">
-            {editor.source.name} → {editor.destination.name}
-          </strong>
-          <p id="branch-integrate-description">
-            Choose how the source branch should integrate with the current branch.
-          </p>
           <div className="branch-integrate-actions">
-            <button
-              ref={integrationPrimaryActionRef}
+            <Button
+              variant="default"
               className="branch-editor__primary"
               type="button"
               disabled={actionsDisabled}
               onClick={() => void integrateBranch("merge")}
             >
               Merge {editor.source.name} into {editor.destination.name}
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="outline"
               type="button"
               disabled={actionsDisabled}
               onClick={() => void integrateBranch("rebase")}
             >
               Rebase {editor.destination.name} onto {editor.source.name}
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="outline"
               type="button"
               disabled={actionsDisabled}
               onClick={closeIntegration}
             >
               Cancel
-            </button>
+            </Button>
           </div>
-        </div>
+        </OperationDialog>
       )}
 
       {selectedBranch && !selectedLocalBranch && (

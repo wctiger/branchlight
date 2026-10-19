@@ -52,3 +52,12 @@ and inspection during another repository's fetch, failed-operation refresh,
 stash create/apply and both merge/rebase abort paths. The expanded Rust suite
 passes 52 tests locally; the completed local acceptance audit and PR-head CI gate are in the
 [Delivery 1 record](DELIVERY_1_VERIFICATION.md).
+
+## Design-system follow-up
+
+Issue #68 applies the selected Orange design tokens with shadcn/ui and dense
+repository/history views. See [design-system integration](DESIGN_SYSTEM.md) and
+the [Delivery 1 verification addendum](DELIVERY_1_VERIFICATION.md) for the current
+frontend, fixture, and native evidence. The initial V1 capability matrix above
+remains historical; Windows visual/runtime acceptance for the new design system
+is still pending.

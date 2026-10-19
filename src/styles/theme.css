@@ -1,0 +1,96 @@
+@import "tailwindcss";
+@import "@fontsource-variable/inter";
+@import "@fontsource/cascadia-code/400.css";
+@import "@fontsource/cascadia-code/600.css";
+@custom-variant dark (&:is(.dark *));
+@theme inline {
+  --color-background: var(--surface-panel);
+  --color-foreground: var(--text-primary);
+  --color-card: var(--surface-panel);
+  --color-card-foreground: var(--text-primary);
+  --color-popover: var(--surface-panel);
+  --color-popover-foreground: var(--text-primary);
+  --color-primary: var(--action-primary);
+  --color-primary-foreground: var(--action-onPrimary);
+  --color-secondary: var(--surface-subtle);
+  --color-secondary-foreground: var(--text-primary);
+  --color-muted: var(--surface-subtle);
+  --color-muted-foreground: var(--text-secondary);
+  --color-accent: var(--selection-background);
+  --color-accent-foreground: var(--selection-text);
+  --color-destructive: var(--status-error-text);
+  --color-border: var(--border-subtle);
+  --color-input: var(--border-control);
+  --color-ring: var(--focus-ring);
+  --radius-md: var(--radius-control);
+  --radius-lg: var(--radius-panel);
+  --font-sans: var(--font-ui);
+}
+:root {
+  --background: var(--surface-panel);
+  --foreground: var(--text-primary);
+  --border: var(--border-subtle);
+  --ring: var(--focus-ring);
+}
+[data-slot="button"] {
+  height: var(--size-control);
+  font-size: var(--type-body);
+  gap: var(--space-unit);
+  padding-inline: var(--space-controlInline);
+  border-radius: var(--radius-control);
+}
+[data-slot="button"][data-variant="default"] {
+  background: var(--action-primary);
+  color: var(--action-onPrimary);
+}
+[data-slot="button"][data-variant="default"]:hover {
+  background: var(--action-primary-hover);
+}
+[data-slot="button"][data-variant="default"]:active {
+  background: var(--action-primary-active);
+}
+[data-slot="button"][data-variant="destructive"] {
+  color: var(--status-error-text);
+  background: var(--status-error-background);
+}
+[data-slot="button"][data-variant="link"] {
+  color: var(--text-accent);
+}
+[data-slot="button"]:disabled {
+  opacity: 1;
+  color: var(--text-disabled);
+  background: var(--action-disabled);
+}
+[data-slot="input"] {
+  height: var(--size-control);
+  padding: 0 var(--space-controlInline);
+  border-color: var(--border-control);
+  background: var(--surface-panel);
+  color: var(--text-primary);
+  font-size: var(--type-body);
+}
+[data-slot="input"]::placeholder {
+  color: var(--text-secondary);
+}
+[data-slot="button"]:focus-visible,
+[data-slot="input"]:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+[data-slot="dialog-content"] {
+  padding: var(--space-panel);
+  gap: var(--space-panel);
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+}
+[data-slot="dialog-overlay"] {
+  background: var(--overlay-scrim);
+}
+[data-slot="dialog-title"] {
+  font-size: var(--type-section);
+}
+[data-slot="dropdown-menu-content"],
+[data-slot="tooltip-content"] {
+  font-size: var(--type-body);
+}
