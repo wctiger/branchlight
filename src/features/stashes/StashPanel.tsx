@@ -201,7 +201,7 @@ export function StashPanel({
                   <strong>{stash.message}</strong>
                 </div>
 
-                {isConfirmingDrop ? (
+                {isConfirmingDrop && (
                   <OperationDialog
                     title={`Drop ${stash.reference}?`}
                     description="This removes the stash permanently."
@@ -231,39 +231,38 @@ export function StashPanel({
                       </Button>
                     </div>
                   </OperationDialog>
-                ) : (
-                  <div className="stash-item__actions">
-                    <Button
-                      variant="outline"
-                      type="button"
-                      disabled={controlsDisabled}
-                      aria-busy={isBusy && busyOperation === "apply"}
-                      onClick={() => void onApply(stash)}
-                    >
-                      {isBusy && busyOperation === "apply"
-                        ? "Applying…"
-                        : "Apply"}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      type="button"
-                      disabled={controlsDisabled}
-                      aria-busy={isBusy && busyOperation === "pop"}
-                      onClick={() => void onPop(stash)}
-                    >
-                      {isBusy && busyOperation === "pop" ? "Popping…" : "Pop"}
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      className="stash-button--danger"
-                      type="button"
-                      disabled={controlsDisabled}
-                      onClick={() => setPendingDropRef(stash.reference)}
-                    >
-                      Drop
-                    </Button>
-                  </div>
                 )}
+                <div className="stash-item__actions" hidden={isConfirmingDrop}>
+                  <Button
+                    variant="outline"
+                    type="button"
+                    disabled={controlsDisabled}
+                    aria-busy={isBusy && busyOperation === "apply"}
+                    onClick={() => void onApply(stash)}
+                  >
+                    {isBusy && busyOperation === "apply"
+                      ? "Applying…"
+                      : "Apply"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    type="button"
+                    disabled={controlsDisabled}
+                    aria-busy={isBusy && busyOperation === "pop"}
+                    onClick={() => void onPop(stash)}
+                  >
+                    {isBusy && busyOperation === "pop" ? "Popping…" : "Pop"}
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    className="stash-button--danger"
+                    type="button"
+                    disabled={controlsDisabled}
+                    onClick={() => setPendingDropRef(stash.reference)}
+                  >
+                    Drop
+                  </Button>
+                </div>
               </li>
             );
           })}

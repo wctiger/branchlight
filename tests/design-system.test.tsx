@@ -13,8 +13,10 @@ import {
   RepositoryTabs,
   type RepositoryTab,
 } from "../src/components/repository-tabs";
+import { StashPanel } from "../src/features/stashes/StashPanel";
 import { BranchPanel } from "../src/features/branches/BranchPanel";
 import { OperationDialog } from "../src/components/operation-dialog";
+import { Button } from "../src/components/ui/button";
 import { TooltipProvider } from "../src/components/ui/tooltip";
 import { HistoryPanel } from "../src/features/history/HistoryPanel";
 import { visibleHistoryRange } from "../src/features/history/viewport";
@@ -191,19 +193,148 @@ test("appearance reads saved choices and resolves explicit modes without relying
   expect(readTheme()).toBe("system");
 });
 
-
 test("merge/rebase chooser opens from the selected branch and starts on Cancel", async () => {
   const user = userEvent.setup({ document });
-  const main = { name: "main", fullRef: "refs/heads/main", commit: "a".repeat(40), isCurrent: true, upstream: null };
-  const feature = { ...main, name: "feature/work", fullRef: "refs/heads/feature/work", isCurrent: false };
+  const main = {
+    name: "main",
+    fullRef: "refs/heads/main",
+    commit: "a".repeat(40),
+    isCurrent: true,
+    upstream: null,
+  };
+  const feature = {
+    ...main,
+    name: "feature/work",
+    fullRef: "refs/heads/feature/work",
+    isCurrent: false,
+  };
   const succeed = async () => true;
-  const view = render(<BranchPanel state={{ state: "ready", branches: { local: [main, feature], remote: [] }, isRefreshing: false, refreshError: null }}
-    operationError={null} operationNotice={null} actionsDisabled={false} busyBranchName={null} onRefresh={() => {}}
-    onSwitch={succeed} onCreate={succeed} onRename={succeed} onDelete={succeed} onMerge={succeed} onRebase={succeed} />);
-  await user.click(view.container.querySelectorAll<HTMLButtonElement>(".branch-item")[1]);
+  const view = render(
+    <BranchPanel
+      state={{
+        state: "ready",
+        branches: { local: [main, feature], remote: [] },
+        isRefreshing: false,
+        refreshError: null,
+      }}
+      operationError={null}
+      operationNotice={null}
+      actionsDisabled={false}
+      busyBranchName={null}
+      onRefresh={() => {}}
+      onSwitch={succeed}
+      onCreate={succeed}
+      onRename={succeed}
+      onDelete={succeed}
+      onMerge={succeed}
+      onRebase={succeed}
+    />,
+  );
+  await user.click(
+    view.container.querySelectorAll<HTMLButtonElement>(".branch-item")[1],
+  );
   await user.click(view.getByRole("button", { name: "Merge / rebase…" }));
   expect(view.getByRole("dialog")).not.toBeNull();
-  await waitFor(() => expect(document.activeElement?.textContent).toBe("Cancel"));
+  await waitFor(() =>
+    expect(document.activeElement?.textContent).toBe("Cancel"),
+  );
   await user.keyboard("{Escape}");
   await waitFor(() => expect(view.queryByRole("dialog")).toBeNull());
+});
+
+test("busy confirmations reject Escape and backdrop presses until the operation settles", async () => {
+  const user = userEvent.setup({ document });
+  let closed = 0;
+  const view = render(
+    <OperationDialog
+      title="Discard?"
+      description="Changes will be lost."
+      busy
+      onClose={() => closed++}
+    >
+      <Button disabled>Confirm discard</Button>
+      <Button disabled>Cancel</Button>
+    </OperationDialog>,
+  );
+  await user.keyboard("{Escape}");
+  await user.click(
+    document.querySelector<HTMLElement>('[data-slot="dialog-overlay"]')!,
+  );
+  expect(closed).toBe(0);
+  expect(view.getByRole("dialog")).not.toBeNull();
+  view.rerender(
+    <OperationDialog
+      title="Discard?"
+      description="Changes will be lost."
+      onClose={() => closed++}
+    >
+      <Button>Confirm discard</Button>
+      <Button>Cancel</Button>
+    </OperationDialog>,
+  );
+  await user.click(
+    document.querySelector<HTMLElement>('[data-slot="dialog-overlay"]')!,
+  );
+  expect(closed).toBe(0);
+  await user.keyboard("{Escape}");
+  expect(closed).toBe(1);
+});
+
+test("Base UI action buttons do not submit forms and explicit submit buttons do", async () => {
+  const user = userEvent.setup({ document });
+  let submissions = 0;
+  const view = render(
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+        submissions++;
+      }}
+    >
+      <Button>Action</Button>
+      <Button type="submit">Save</Button>
+    </form>,
+  );
+  await user.click(view.getByRole("button", { name: "Action" }));
+  expect(submissions).toBe(0);
+  await user.click(view.getByRole("button", { name: "Save" }));
+  expect(submissions).toBe(1);
+});
+
+test("cancelling stash drop returns focus to the same mounted Drop button", async () => {
+  const user = userEvent.setup({ document });
+  const succeed = async () => true;
+  const view = render(
+    <StashPanel
+      state={{
+        state: "ready",
+        stashes: [
+          {
+            reference: "stash@{0}",
+            commit: "a".repeat(40),
+            message: "Saved changes",
+          },
+        ],
+        isRefreshing: false,
+        refreshError: null,
+      }}
+      operationError={null}
+      actionsDisabled={false}
+      isCreating={false}
+      busyReference={null}
+      busyOperation={null}
+      onRefresh={() => {}}
+      onCreate={succeed}
+      onApply={succeed}
+      onPop={succeed}
+      onDrop={succeed}
+    />,
+  );
+  const trigger = view.getByRole("button", { name: "Drop", exact: true });
+  await user.click(trigger);
+  expect(trigger.isConnected).toBe(true);
+  await waitFor(() =>
+    expect(document.activeElement?.textContent).toBe("Cancel"),
+  );
+  await user.keyboard("{Escape}");
+  await waitFor(() => expect(document.activeElement).toBe(trigger));
 });

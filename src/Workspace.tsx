@@ -200,8 +200,8 @@ export default function Workspace() {
             >
               {opening ? "Opening…" : "Open repository"}
             </Button>
-            <DialogTrigger asChild>
-              <Button variant="ghost">Groups</Button>
+            <DialogTrigger render={<Button variant="ghost" />}>
+              Groups
             </DialogTrigger>
             <ThemeSelect />
           </div>
@@ -220,11 +220,7 @@ export default function Workspace() {
             }
           />
         </header>
-        <DialogContent
-          onCloseAutoFocus={(event) => {
-            if (editingGroup) event.preventDefault();
-          }}
-        >
+        <DialogContent finalFocus={() => (editingGroup ? false : true)}>
           <DialogHeader>
             <DialogTitle>Repository groups</DialogTitle>
             <DialogDescription>
@@ -246,7 +242,11 @@ export default function Workspace() {
               value={groupName}
               onChange={(event) => setGroupName(event.target.value)}
             />
-            <Button variant="default" disabled={!groupName.trim()}>
+            <Button
+              type="submit"
+              variant="default"
+              disabled={!groupName.trim()}
+            >
               Create group
             </Button>
           </form>
@@ -306,7 +306,9 @@ export default function Workspace() {
               }
             />
           </label>
-          <Button variant="outline">Save group name</Button>
+          <Button type="submit" variant="outline">
+            Save group name
+          </Button>
           <Button
             variant="outline"
             type="button"

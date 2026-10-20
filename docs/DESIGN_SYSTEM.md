@@ -6,13 +6,14 @@ part of the application or this change.
 
 ## Integration decision
 
-Use shadcn/ui's **New York / Radix** components, owned locally in
-`src/components/ui`, with Tailwind 4's Vite plugin and CSS-variable theming.
-The official registry sources were retrieved from
-`https://ui.shadcn.com/r/styles/new-york-v4/{component}.json` and adapted to local
-imports, formatting, and dense control dimensions. `components.json` records
-the CLI configuration. This keeps React 19 and the current Vite/Tauri pipeline;
-no router, provider accounts, or Rust Git changes are needed.
+Use shadcn/ui's **Base UI** components, owned locally in `src/components/ui`,
+with Tailwind 4's Vite plugin and CSS-variable theming. `components.json` uses
+`base-nova`, so the CLI resolves future additions to Base UI. Official components
+were generated with `bunx --bun shadcn@latest add @shadcn/<component>` in an
+isolated project, then merged with Branchlight's semantic colors, dense geometry,
+and local `cn()` helper. No Radix dependency remains. This keeps React 19 and the
+current Vite/Tauri pipeline; no router, provider accounts, or Rust Git changes
+are needed.
 
 Before adopting the components, the integration assessment identified:
 
@@ -21,10 +22,10 @@ Before adopting the components, the integration assessment identified:
 - Default shadcn spacing and opacity-based primary colors do not meet the dense
   Orange contract. Shared CSS overrides use explicit reviewed hover/pressed
   colors, dark labels, 28px controls, and consistent focus outlines.
-- Native form submission semantics must remain intact. Shared buttons do not
-  silently change their default type; operation handlers/guards remain owned
-  by the existing feature components.
-- Radix portals supply keyboard navigation and focus containment. Shared
+- Native form submission semantics must remain intact. Base UI buttons default to `type="button"`;
+  every submit action declares `type="submit"` explicitly. Operation handlers
+  and guards remain owned by the existing feature components.
+- Base UI portals supply keyboard navigation and focus containment. Shared
   operation dialogs initially focus Cancel, prevent outside dismissal, retain
   operation-time guards, and restore the triggering element on close.
 - The existing history graph needs identical row coordinates to the list.
@@ -33,7 +34,7 @@ Before adopting the components, the integration assessment identified:
 
 References: [Vite integration](https://ui.shadcn.com/docs/installation/vite),
 [theming](https://ui.shadcn.com/docs/theming),
-[component registry](https://ui.shadcn.com/r/styles/new-york-v4/button.json).
+[Base UI components](https://ui.shadcn.com/docs/components/base/dialog).
 Upstream MIT and both font OFL notices are packaged in `public/licenses/`.
 
 ## Token ownership and mapping
@@ -141,3 +142,29 @@ and back retained the selected hash and scroll offset (8926px in the recorded
 switch check). Token tests validate actual declared color pairs; they are not a
 complete accessibility certification. See the Delivery 1 verification addendum
 for native evidence and any remaining platform acceptance gaps.
+
+
+## Base UI migration verification
+
+The shadcn CLI recognizes `base: "base"`, `style: "base-nova"`, Vite, Tailwind 4,
+and all seven installed UI components. Buttons and badges use Base UI composition;
+menus/tooltips use Base UI positioners and portals. Triggers use `render`, menu
+selection uses `onClick`, and menu labels/items are inside groups. Input and Alert
+remain the existing native HTML components; they have no Radix dependency.
+
+Operation dialogs use `disablePointerDismissal`, cancel busy close requests,
+choose Cancel with `initialFocus`, and restore the captured target with
+`finalFocus`. Stash action buttons remain mounted while the confirmation is open,
+so cancelling can restore the original Drop button. Tooltip delay remains 350ms.
+
+Current Base UI captures: [light](screenshots/design-system/base-ui-light.png) and
+[dark](screenshots/design-system/base-ui-dark.png). The earlier density comparison
+and scrolling sample above are retained as historical measurements.
+
+The migration passes 14 Bun tests and the production TypeScript/Vite build.
+Browser fixture checks cover group creation by clicking Submit, group assignment,
+all 12 repository menu items, keyboard menu selection, Cancel-first stash dialogs,
+Escape focus restoration, both themes, and unchanged 28px controls/32px rows.
+The prior native smoke evidence above predates Base UI; native macOS/Windows
+acceptance must be repeated before claiming the migration has desktop runtime
+coverage. CI build/test evidence is separate from native runtime acceptance.

@@ -260,7 +260,11 @@ export function InspectionPanel({
             }}
           />
         </label>
-        <Button variant="outline" disabled={disabled || !base || !target}>
+        <Button
+          type="submit"
+          variant="outline"
+          disabled={disabled || !base || !target}
+        >
           Compare
         </Button>
         <Button
@@ -349,7 +353,11 @@ export function InspectionPanel({
             }}
           />
         </label>
-        <Button variant="outline" disabled={disabled || !file || !revision}>
+        <Button
+          type="submit"
+          variant="outline"
+          disabled={disabled || !file || !revision}
+        >
           File history
         </Button>
         <Button

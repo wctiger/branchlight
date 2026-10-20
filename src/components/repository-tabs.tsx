@@ -5,6 +5,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuGroup,
   DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
@@ -70,30 +71,32 @@ export function RepositoryTabs({
             className={`repository-tab${active === tab.repository.path ? " repository-tab--active" : ""}`}
           >
             <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  className="repository-tab-select"
-                  aria-label={`${tab.repository.name}${tab.dirty ? ", uncommitted changes" : ""}${tab.busy ? ", working" : tab.error ? ", error" : ""}`}
-                  aria-pressed={active === tab.repository.path}
-                  tabIndex={active === tab.repository.path ? 0 : -1}
-                  onKeyDown={(event) => move(event, index)}
-                  onClick={() => onSelect(tab.repository.path)}
-                >
-                  <FolderGit2 aria-hidden="true" />
-                  <span>
-                    {tab.group && <small>{tab.group} / </small>}
-                    {tab.repository.name}
+              <TooltipTrigger
+                render={
+                  <Button
+                    variant="ghost"
+                    className="repository-tab-select"
+                    aria-label={`${tab.repository.name}${tab.dirty ? ", uncommitted changes" : ""}${tab.busy ? ", working" : tab.error ? ", error" : ""}`}
+                    aria-pressed={active === tab.repository.path}
+                    tabIndex={active === tab.repository.path ? 0 : -1}
+                    onKeyDown={(event) => move(event, index)}
+                    onClick={() => onSelect(tab.repository.path)}
+                  />
+                }
+              >
+                <FolderGit2 aria-hidden="true" />
+                <span>
+                  {tab.group && <small>{tab.group} / </small>}
+                  {tab.repository.name}
+                </span>
+                {(tab.busy || tab.error || tab.dirty) && (
+                  <span
+                    className={tab.error ? "tab-error" : "tab-status"}
+                    aria-hidden="true"
+                  >
+                    {tab.busy ? "↻" : tab.error ? "!" : "●"}
                   </span>
-                  {(tab.busy || tab.error || tab.dirty) && (
-                    <span
-                      className={tab.error ? "tab-error" : "tab-status"}
-                      aria-hidden="true"
-                    >
-                      {tab.busy ? "↻" : tab.error ? "!" : "●"}
-                    </span>
-                  )}
-                </Button>
+                )}
               </TooltipTrigger>
               <TooltipContent>
                 {tab.repository.path}
@@ -101,27 +104,33 @@ export function RepositoryTabs({
               </TooltipContent>
             </Tooltip>
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  className="tab-icon"
-                  aria-label={`Options for ${tab.repository.name}`}
-                >
-                  <Ellipsis />
-                </Button>
+              <DropdownMenuTrigger
+                render={
+                  <Button
+                    variant="ghost"
+                    className="tab-icon"
+                    aria-label={`Options for ${tab.repository.name}`}
+                  />
+                }
+              >
+                <Ellipsis />
               </DropdownMenuTrigger>
               <DropdownMenuContent>
-                <DropdownMenuLabel>Move to group</DropdownMenuLabel>
-                <DropdownMenuRadioGroup
-                  value={tab.group}
-                  onValueChange={(group) => onGroup(tab.repository.path, group)}
-                >
-                  {["", ...groups].map((group) => (
-                    <DropdownMenuRadioItem key={group} value={group}>
-                      {group || "Ungrouped"}
-                    </DropdownMenuRadioItem>
-                  ))}
-                </DropdownMenuRadioGroup>
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel>Move to group</DropdownMenuLabel>
+                  <DropdownMenuRadioGroup
+                    value={tab.group}
+                    onValueChange={(group) =>
+                      onGroup(tab.repository.path, group)
+                    }
+                  >
+                    {["", ...groups].map((group) => (
+                      <DropdownMenuRadioItem key={group} value={group}>
+                        {group || "Ungrouped"}
+                      </DropdownMenuRadioItem>
+                    ))}
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuGroup>
               </DropdownMenuContent>
             </DropdownMenu>
             <Button
@@ -138,42 +147,46 @@ export function RepositoryTabs({
       </div>
       {!!tabs.length && (
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="outline"
-              className="repository-overflow"
-              aria-label={`All ${tabs.length} repositories`}
-            >
-              <ChevronDown />
-              <span>{tabs.length}</span>
-            </Button>
+          <DropdownMenuTrigger
+            render={
+              <Button
+                variant="outline"
+                className="repository-overflow"
+                aria-label={`All ${tabs.length} repositories`}
+              />
+            }
+          >
+            <ChevronDown />
+            <span>{tabs.length}</span>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="max-h-96 overflow-y-auto">
-            <DropdownMenuLabel>Open repositories</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {tabs.map((tab) => (
-              <DropdownMenuItem
-                key={tab.repository.path}
-                onSelect={() => onSelect(tab.repository.path)}
-                aria-current={
-                  active === tab.repository.path ? "true" : undefined
-                }
-              >
-                <span className="overflow-repo-name">
-                  {active === tab.repository.path ? "✓ " : ""}
-                  {tab.group && `${tab.group} / `}
-                  {tab.repository.name}
-                  <small>{tab.repository.path}</small>
-                </span>
-                {tab.busy
-                  ? "Working…"
-                  : tab.error
-                    ? "Error"
-                    : tab.dirty
-                      ? "●"
-                      : ""}
-              </DropdownMenuItem>
-            ))}
+            <DropdownMenuGroup>
+              <DropdownMenuLabel>Open repositories</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {tabs.map((tab) => (
+                <DropdownMenuItem
+                  key={tab.repository.path}
+                  onClick={() => onSelect(tab.repository.path)}
+                  aria-current={
+                    active === tab.repository.path ? "true" : undefined
+                  }
+                >
+                  <span className="overflow-repo-name">
+                    {active === tab.repository.path ? "✓ " : ""}
+                    {tab.group && `${tab.group} / `}
+                    {tab.repository.name}
+                    <small>{tab.repository.path}</small>
+                  </span>
+                  {tab.busy
+                    ? "Working…"
+                    : tab.error
+                      ? "Error"
+                      : tab.dirty
+                        ? "●"
+                        : ""}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuGroup>
           </DropdownMenuContent>
         </DropdownMenu>
       )}

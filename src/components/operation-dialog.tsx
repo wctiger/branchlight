@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import {
   Dialog,
   DialogContent,
@@ -24,39 +24,32 @@ export function OperationDialog({
   const [returnTarget] = useState(
     () => document.activeElement as HTMLElement | null,
   );
+  const contentRef = useRef<HTMLDivElement>(null);
   return (
     <Dialog
       open
-      onOpenChange={(open) => {
-        if (!open && !busy) onClose();
+      disablePointerDismissal
+      onOpenChange={(open, details) => {
+        if (busy) details.cancel();
+        else if (!open) onClose();
       }}
     >
       <DialogContent
         showCloseButton={false}
-        onEscapeKeyDown={(event) => {
-          if (busy) event.preventDefault();
-        }}
-        onInteractOutside={(event) => event.preventDefault()}
-        onOpenAutoFocus={(event) => {
-          const content = event.currentTarget as HTMLElement;
+        ref={contentRef}
+        initialFocus={() => {
           const cancel = [
-            ...content.querySelectorAll<HTMLButtonElement>("button"),
+            ...contentRef.current!.querySelectorAll<HTMLButtonElement>(
+              "button",
+            ),
           ].find((button) => button.textContent?.trim() === "Cancel");
-          if (cancel) {
-            event.preventDefault();
-            cancel.focus();
-          }
+          return cancel ?? true;
         }}
-        onCloseAutoFocus={(event) => {
-          event.preventDefault();
-          if (returnTarget?.isConnected) returnTarget.focus();
-        }}
+        finalFocus={() => (returnTarget?.isConnected ? returnTarget : false)}
       >
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
-          <DialogDescription asChild>
-            <div>{description}</div>
-          </DialogDescription>
+          <DialogDescription render={<div />}>{description}</DialogDescription>
         </DialogHeader>
         <div className="operation-dialog-actions">{children}</div>
       </DialogContent>

@@ -266,3 +266,17 @@ Delivery 1 desktop matrix after migration, remain pending. Platform CI results
 establish test/build compatibility only. Keep #68 open until its remaining
 acceptance evidence is collected; this addendum does not overwrite or expand the
 scope of the prior Delivery 1 runtime audit.
+
+
+### Base UI follow-up for issue #68 / PR #69
+
+The shadcn component layer now uses Base UI (`base-nova`), replacing Radix.
+The CLI recognizes Base UI, the locked install and production frontend build
+pass, and all 14 Bun tests pass. Browser checks cover repository menus, group
+creation/assignment, tooltip path display, Cancel-first dialogs, Escape focus
+return, both themes, and retained dense control/history geometry. Stash drop
+keeps its original trigger mounted so cancellation can restore focus.
+
+The native smoke results recorded above predate this primitive migration.
+They must not be read as native runtime acceptance of Base UI. Native macOS and
+Windows verification remains pending; CI build/test status is separate.
