@@ -30,8 +30,8 @@ support, what is deferred, and what is intentionally excluded.
   unrelated repositories to progress independently.
 
 Worktrees and advanced workflows remain product goals. Delivery 1 adds scoped
-repository scheduling and tabs; runtime acceptance is tracked separately from
-build checks in [Delivery 1 verification](docs/DELIVERY_1_VERIFICATION.md).
+repository scheduling and tabs. Build checks and desktop runtime acceptance
+are separate requirements.
 
 ## Current implementation
 
@@ -64,8 +64,7 @@ Worktree lifecycle and advanced commit actions remain planned. Merge and rebase
 target the checked-out branch; conflict resolution and rebase continuation require
 external tools/Git. Repository history is limited to 200 commits; file history to
 100 commits without rename tracing. Large-repository performance and full Delivery
-1 UI acceptance remain unverified. See [V1 evidence](docs/V1_VERIFICATION.md) and
-[Delivery 1 verification](docs/DELIVERY_1_VERIFICATION.md).
+1 UI acceptance remain unverified.
 
 ### Platform and distribution status
 
@@ -105,8 +104,7 @@ UI, and file restoration from commits. Hunk/line staging and branch/tag visibili
 controls have no committed delivery priority.
 
 The [feature selection](docs/FEATURE_SELECTION.md) is the detailed scope reference.
-The [V1 verification matrix](docs/V1_VERIFICATION.md) records evidence for the
-initial implementation; current product scope follows the feature selection.
+Current product scope follows the feature selection.
 
 ## Development
 

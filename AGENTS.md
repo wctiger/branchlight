@@ -2,15 +2,15 @@
 
 ## Project Structure & Module Organization
 
-Branchlight is a local-first Git desktop client targeting macOS and Windows, built with React 19, TypeScript, Vite, and Tauri 2/Rust. Delivery 1 introduces independent repository views, tabs/groups, and background scheduling scoped by the canonical common Git directory. Worktree lifecycle remains planned. Consult `docs/DELIVERY_1_VERIFICATION.md` for acceptance status; build success alone does not establish runtime verification.
+Branchlight is a local-first Git desktop client targeting macOS and Windows, built with React 19, TypeScript, Vite, and Tauri 2/Rust. Delivery 1 introduces independent repository views, tabs/groups, and background scheduling scoped by the canonical common Git directory. Worktree lifecycle remains planned. Build success alone does not establish runtime verification.
 
 - `src/features/` contains branch, stash, and history UI; `src/types/` defines frontend models.
 - `src/lib/tauri.ts` provides the typed frontend/backend boundary.
 - `src-tauri/src/commands/` contains thin Tauri adapters; `git/` owns Git execution and domain operations; `models/` defines serialized responses and errors.
 - `tests/` contains Bun tests; Rust tests live alongside implementation modules.
-- `src-tauri/icons/` holds application icons. `docs/` contains verification, distribution, and feature-planning guides.
+- `src-tauri/icons/` holds application icons. `docs/` contains design-system, distribution, and feature-planning guides.
 - `README.md` describes product direction and current implementation. `docs/FEATURE_SELECTION.md` defines selected scope, priorities, exclusions, and delivery order; GitHub milestones track that sequence.
-- Keep curated feature decisions in the repository; generated REA reports and evidence are transient.
+- Keep curated feature decisions in the repository; verification reports, screenshots, and generated REA evidence are transient. Keep application tokens under `src/`; application code must not import from `docs/`.
 
 ## Build, Test, and Development Commands
 
@@ -34,11 +34,11 @@ Match existing TypeScript style: two-space indentation, double quotes, semicolon
 
 ## Testing Guidelines
 
-Use `bun:test` with descriptive behavior names in `tests/*.test.ts`. Add Rust `#[test]` cases in module-local test blocks; exercise Git operations using disposable repositories and local remotes. Cover error paths and repository-state transitions. No numeric coverage threshold is configured. Run the checks above before submitting; update `docs/V1_VERIFICATION.md` when capability evidence changes.
+Use `bun:test` with descriptive behavior names in `tests/*.test.ts`. Add Rust `#[test]` cases in module-local test blocks; exercise Git operations using disposable repositories and local remotes. Cover error paths and repository-state transitions. No numeric coverage threshold is configured. Run the checks above before submitting and record validation in the PR.
 
 ## Commit & Pull Request Guidelines
 
-Follow history's prefixes: `feat:`, `fix:`, `docs:`, `ci:`, and `chore:` with concise imperative subjects. Describe behavior changes, link relevant issues, record validation, and include screenshots for UI changes. Ensure macOS and Windows CI pass. Build/artifact success does not establish downloaded-app runtime compatibility; consult `docs/DISTRIBUTION.md` and `docs/WINDOWS_DISTRIBUTION.md` for platform verification.
+Follow history's prefixes: `feat:`, `fix:`, `docs:`, `ci:`, and `chore:` with concise imperative subjects. Describe behavior changes, link relevant issues, record validation, and attach screenshots to the PR for UI changes instead of committing them. Ensure macOS and Windows CI pass. Build/artifact success does not establish downloaded-app runtime compatibility; consult `docs/DISTRIBUTION.md` and `docs/WINDOWS_DISTRIBUTION.md` for platform verification.
 
 ## Architecture & Safety
 

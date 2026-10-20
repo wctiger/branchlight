@@ -1,4 +1,4 @@
-import tokens from "../../docs/design-system/themes.json" with { type: "json" };
+import tokens from "../styles/tokens.json" with { type: "json" };
 
 export const foundations = tokens.foundations;
 export const historyRowHeight = Number.parseInt(

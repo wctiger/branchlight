@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import tokens from "../docs/design-system/themes.json";
+import tokens from "../src/styles/tokens.json";
 import { themeCSS } from "../src/lib/design-tokens";
 const luminance = (hex: string) => {
   const channels = hex
