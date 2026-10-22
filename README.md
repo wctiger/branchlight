@@ -35,8 +35,7 @@ are separate requirements.
 
 ## Current implementation
 
-The application implements the following workflows (new Delivery 1 runtime
-acceptance is pending):
+The application implements the following workflows:
 
 - Open and validate multiple local repositories in independent tabs and groups.
 - Initialize or clone into a new directory using system Git; retain partial
@@ -46,9 +45,17 @@ acceptance is pending):
 - Confirm whole-file discard of tracked modifications/deletions or individual
   untracked files; additions, renames, conflicts, and directories are unavailable.
 - Inspect branch, upstream, staged, unstaged, conflict, and stash state.
-- Stage or unstage whole files and create commits.
+- Stage or unstage whole files; compose commit summaries and bodies with explicit
+  per-commit hook bypass and optional push after commit. Push failure preserves
+  the successful local commit and reports the failure separately.
 - Create, switch, rename, safely delete, merge, and rebase local branches.
-- Display remote branches and fetch, pull, or push with the user's Git setup.
+- Create a branch at a selected history commit, optionally check it out, and
+  check out remote-tracking refs as named local branches. Choose local upstreams
+  from existing remote-tracking branches.
+- Fetch a configured remote with optional tracking-ref pruning; pull with merge,
+  rebase, or fast-forward-only strategy; push to the selected upstream.
+- Review an explicit force-with-lease push, retaining the expected remote commit
+  even if a subsequent fetch advances the remote-tracking ref.
 - Create, list, apply, pop, and drop stashes.
 - Detect active merges/rebases, list conflicts, refresh after external
   resolution, and safely abort the matching operation.
@@ -60,11 +67,13 @@ independent repositories to use up to eight background workers. Busy tabs cannot
 be closed until their operation and refresh finish. Git output capture is capped
 at 8 MiB per stream; text previews at 512 KiB.
 
-Worktree lifecycle and advanced commit actions remain planned. Merge and rebase
+Worktree lifecycle and history-editing actions remain planned. Merge and rebase
 target the checked-out branch; conflict resolution and rebase continuation require
 external tools/Git. Repository history is limited to 200 commits; file history to
-100 commits without rename tracing. Large-repository performance and full Delivery
-1 UI acceptance remain unverified.
+100 commits without rename tracing. Large-repository performance remains unverified.
+Delivery 1 acceptance is recorded in [PR #67](https://github.com/wctiger/branchlight/pull/67).
+Delivery 2 platform builds and desktop acceptance are tracked separately from
+backend tests.
 
 ### Platform and distribution status
 
@@ -148,3 +157,28 @@ while refreshing and does not apply optimistic repository mutations. Git command
 are constructed in Rust. Planned repository workers must preserve those
 properties, keep results tied to their originating repository/worktree, and
 coordinate shared Git metadata without imposing a global operation queue.
+
+### Commit and remote controls
+
+Select a commit in History, then expand **Branch start point and upstream** in
+Branches to create a local branch there. The same controls let you create a
+tracking branch from a remote ref or set an existing local branch's upstream.
+Configure new remotes outside Branchlight.
+
+**Fetch…** selects a configured remote and offers pruning of stale tracking refs.
+Pruning does not delete local branches or branches on the remote; custom fetch
+refspecs that prune outside that remote's tracking namespace are rejected.
+**Pull…** chooses merge, rebase, or fast-forward only without changing Git config.
+Conflicted pulls retain abort and external completion guidance.
+
+**Force push…** displays the local source commit, upstream destination, and expected
+remote commit. Confirming uses that exact lease; fetch cannot silently replace
+its expectation. A rejected push never retries with unprotected force. Force
+push requires a single matching fetch/push URL. Ordinary push also explicitly
+targets the current branch's upstream, regardless of push.default or other
+configured push refspecs.
+
+**Skip pre-commit and commit-msg hooks** applies only to the submitted commit.
+Prepare-commit-msg and post-commit still run, and push hooks are unaffected.
+Failed commits retain the draft. If an optional push fails after committing,
+resolve its error and use **Push**; the local commit already exists.

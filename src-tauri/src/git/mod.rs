@@ -25,3 +25,5 @@ pub(crate) use version::get_git_version;
 pub(crate) use runner::repository_identity;
 
 pub(crate) mod inspection;
+
+pub(crate) mod delivery;

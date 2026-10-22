@@ -1,3 +1,9 @@
+import type {
+  CommitOptions,
+  CommitResult,
+  PullStrategy,
+  PushReview,
+} from "../types/delivery";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 
@@ -131,13 +137,20 @@ export function abortRebase(path: string): Promise<GitOutput> {
 }
 
 /** Fetches remote refs using the repository's configured Git remotes. */
-export function fetchRemote(path: string): Promise<GitOutput> {
-  return invoke<GitOutput>("fetch_remote", { path });
+export function fetchRemote(
+  path: string,
+  remote?: string,
+  prune = false,
+): Promise<GitOutput> {
+  return invoke<GitOutput>("fetch_remote", { path, remote, prune });
 }
 
 /** Pulls the current branch using the user's configured pull strategy. */
-export function pullRemote(path: string): Promise<GitOutput> {
-  return invoke<GitOutput>("pull_remote", { path });
+export function pullRemote(
+  path: string,
+  strategy?: PullStrategy,
+): Promise<GitOutput> {
+  return invoke<GitOutput>("pull_remote", { path, strategy });
 }
 
 /** Pushes the current branch to its configured upstream. */
@@ -181,12 +194,18 @@ export function stageFile(path: string, filePath: string): Promise<GitOutput> {
 }
 
 /** Removes all staged changes for one repository-relative path. */
-export function unstageFile(path: string, filePath: string): Promise<GitOutput> {
+export function unstageFile(
+  path: string,
+  filePath: string,
+): Promise<GitOutput> {
   return invoke<GitOutput>("unstage_file", { path, filePath });
 }
 
 /** Creates a commit using the repository's configured Git identity. */
-export function commitChanges(path: string, message: string): Promise<GitOutput> {
+export function commitChanges(
+  path: string,
+  message: string,
+): Promise<GitOutput> {
   return invoke<GitOutput>("commit", { path, message });
 }
 
@@ -212,25 +231,109 @@ export function normalizeGitError(error: unknown): GitError {
   return output ? { code, message, output } : { code, message };
 }
 
-export interface ChangedPath { path: string; originalPath: string | null; status: string; }
-export interface Comparison { base: string; target: string; files: ChangedPath[]; }
-export interface TextDiff { context: string; text: string; truncated: boolean; binary: boolean; }
-export interface FileCommit { hash: string; author: string; timestamp: string; subject: string; }
-export function createRepository(destination: string, source: string | null): Promise<Repository> {
+export interface ChangedPath {
+  path: string;
+  originalPath: string | null;
+  status: string;
+}
+export interface Comparison {
+  base: string;
+  target: string;
+  files: ChangedPath[];
+}
+export interface TextDiff {
+  context: string;
+  text: string;
+  truncated: boolean;
+  binary: boolean;
+}
+export interface FileCommit {
+  hash: string;
+  author: string;
+  timestamp: string;
+  subject: string;
+}
+export function createRepository(
+  destination: string,
+  source: string | null,
+): Promise<Repository> {
   return invoke("create_repository", { destination, source });
 }
-export function compareRevisions(path: string, base: string, target: string): Promise<Comparison> {
+export function compareRevisions(
+  path: string,
+  base: string,
+  target: string,
+): Promise<Comparison> {
   return invoke("compare_revisions", { path, base, target });
 }
-export function getTextDiff(path: string, kind: string, filePath: string, base = "", target = ""): Promise<TextDiff> {
+export function getTextDiff(
+  path: string,
+  kind: string,
+  filePath: string,
+  base = "",
+  target = "",
+): Promise<TextDiff> {
   return invoke("get_text_diff", { path, kind, filePath, base, target });
 }
-export function getFileHistory(path: string, filePath: string, revision: string): Promise<FileCommit[]> {
+export function getFileHistory(
+  path: string,
+  filePath: string,
+  revision: string,
+): Promise<FileCommit[]> {
   return invoke("get_file_history", { path, filePath, revision });
 }
-export function getFileBlame(path: string, filePath: string, revision: string): Promise<TextDiff> {
+export function getFileBlame(
+  path: string,
+  filePath: string,
+  revision: string,
+): Promise<TextDiff> {
   return invoke("get_file_blame", { path, filePath, revision });
 }
-export function discardFile(path: string, filePath: string, expected: "tracked" | "untracked"): Promise<GitOutput> {
+export function discardFile(
+  path: string,
+  filePath: string,
+  expected: "tracked" | "untracked",
+): Promise<GitOutput> {
   return invoke("discard_file", { path, filePath, expected });
+}
+
+export function getRemotes(path: string): Promise<string[]> {
+  return invoke("get_remotes", { path });
+}
+export function createBranchAt(
+  path: string,
+  branchName: string,
+  revision: string,
+  checkout: boolean,
+): Promise<GitOutput> {
+  return invoke("create_branch_at", { path, branchName, revision, checkout });
+}
+export function checkoutRemoteBranch(
+  path: string,
+  branchName: string,
+  reference: string,
+): Promise<GitOutput> {
+  return invoke("checkout_remote_branch", { path, branchName, reference });
+}
+export function setBranchUpstream(
+  path: string,
+  branchName: string,
+  reference: string,
+): Promise<GitOutput> {
+  return invoke("set_branch_upstream", { path, branchName, reference });
+}
+export function reviewPush(path: string): Promise<PushReview> {
+  return invoke("review_push", { path });
+}
+export function forcePush(
+  path: string,
+  review: PushReview,
+): Promise<GitOutput> {
+  return invoke("force_push", { path, review });
+}
+export function composeCommit(
+  path: string,
+  options: CommitOptions,
+): Promise<CommitResult> {
+  return invoke("compose_commit", { path, options });
 }

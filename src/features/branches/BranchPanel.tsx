@@ -2,7 +2,7 @@ import { OperationDialog } from "../../components/operation-dialog";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-import type { DragEvent, FormEvent } from "react";
+import type { DragEvent, FormEvent, ReactNode } from "react";
 
 import type { Branch, Branches } from "../../types/branch";
 import type { GitError } from "../../types/git";
@@ -26,6 +26,7 @@ type BranchEditor =
   | { mode: "integrate"; source: Branch; destination: Branch };
 
 interface BranchPanelProps {
+  children?: ReactNode;
   state: BranchesState;
   operationError: GitError | null;
   operationNotice: string | null;
@@ -134,6 +135,7 @@ function BranchError({ title, error }: { title: string; error: GitError }) {
 
 /** Renders local branch actions and remote refs as a read-only repository sidebar. */
 export function BranchPanel({
+  children,
   state,
   operationError,
   operationNotice,
@@ -465,7 +467,8 @@ export function BranchPanel({
               ))}
             </ul>
           )}
-          <p className="branch-group__note">Remote refs are display-only.</p>
+          <p className="branch-group__note">Use the tracking controls below to check out a remote ref locally.</p>
+          {children}
         </section>
       </div>
 

@@ -107,6 +107,19 @@ export async function invoke<T>(
         ],
       };
       break;
+    case "get_remotes":
+      result = ["origin", "backup"];
+      break;
+    case "review_push":
+      result = {
+        branch: "main",
+        localOid: commits[0].hash,
+        remote: "origin",
+        remoteRef: "refs/heads/main",
+        expectedOid: commits[1].hash,
+        destinationId: "fixture",
+      };
+      break;
     case "get_stashes":
       result = [
         {

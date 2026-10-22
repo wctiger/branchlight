@@ -9,6 +9,13 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             commands::system::get_git_version,
+            commands::delivery::get_remotes,
+            commands::delivery::create_branch_at,
+            commands::delivery::checkout_remote_branch,
+            commands::delivery::set_branch_upstream,
+            commands::delivery::review_push,
+            commands::delivery::force_push,
+            commands::delivery::compose_commit,
             commands::inspection::discard_file,
             commands::inspection::compare_revisions,
             commands::inspection::get_text_diff,
