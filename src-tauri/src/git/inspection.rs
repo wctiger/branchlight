@@ -44,7 +44,7 @@ pub(super) fn validate_path(path: &str) -> Result<(), GitError> {
     }
     Ok(())
 }
-fn resolve(repository: &Path, revision: &str) -> Result<String, GitError> {
+pub(super) fn resolve(repository: &Path, revision: &str) -> Result<String, GitError> {
     if revision.is_empty() || revision.contains('\0') {
         return Err(invalid("Choose a revision."));
     }

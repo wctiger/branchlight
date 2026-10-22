@@ -8,3 +8,5 @@ pub(crate) mod repository;
 mod scheduler;
 pub(crate) mod stashes;
 pub(crate) mod system;
+
+pub(crate) mod delivery;

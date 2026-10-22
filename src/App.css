@@ -1104,3 +1104,41 @@ p {
     animation: none !important;
   }
 }
+
+.delivery-branch-controls {
+  padding: 8px;
+  overflow-wrap: anywhere;
+}
+.delivery-branch-controls form,
+.delivery-branch-controls label {
+  display: grid;
+  gap: 6px;
+  margin-block: 8px;
+}
+.delivery-branch-controls select {
+  width: 100%;
+  min-width: 0;
+}
+.push-review code {
+  overflow-wrap: anywhere;
+}
+.commit-panel label {
+  display: block;
+  margin-block: 4px;
+}
+.delivery-body {
+  display: block;
+  width: 100%;
+  min-height: 64px;
+  padding: 6px 8px;
+  resize: vertical;
+  border: 1px solid var(--border-control);
+  border-radius: 6px;
+  background: var(--surface-panel);
+  color: var(--text-primary);
+  font: inherit;
+}
+.delivery-body:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}

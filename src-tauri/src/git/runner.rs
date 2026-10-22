@@ -44,7 +44,7 @@ pub(super) fn run_git(repository: &Path, arguments: &[&str]) -> Result<GitOutput
         message: error.to_string(),
     })?;
     let succeeded = status.success();
-    let output = GitOutput {
+    let mut output = GitOutput {
         stdout: decode_git_bytes(&stdout_bytes),
         stderr: decode_git_bytes(&stderr_bytes),
         exit_code: status.code(),
@@ -57,6 +57,8 @@ pub(super) fn run_git(repository: &Path, arguments: &[&str]) -> Result<GitOutput
     if succeeded {
         Ok(output)
     } else {
+        output.stdout = sanitize_diagnostic(&output.stdout);
+        output.stderr = sanitize_diagnostic(&output.stderr);
         let status = output
             .exit_code
             .map_or_else(|| "a signal".to_owned(), |code| format!("exit code {code}"));
@@ -66,6 +68,32 @@ pub(super) fn run_git(repository: &Path, arguments: &[&str]) -> Result<GitOutput
             output,
         })
     }
+}
+
+/// Remote transports and hooks may echo credential-bearing URLs. Keep their
+/// useful host/path/error details, but never serialize HTTP userinfo or tokens.
+fn sanitize_diagnostic(value: &str) -> String {
+    value
+        .split_inclusive(char::is_whitespace)
+        .map(|part| {
+            let mut word = part.to_owned();
+            if let Some(scheme) = word.find("://") {
+                let start = scheme + 3;
+                let end = word[start..]
+                    .find(['/', '?', '#'])
+                    .map_or(word.len(), |offset| start + offset);
+                if let Some(at) = word[start..end].rfind('@') {
+                    word.replace_range(start..start + at + 1, "[redacted]@");
+                }
+                // Query/fragment contents are unnecessary for Git error recovery.
+                if let Some(query) = word[start..].find(['?', '#']) {
+                    let end = word.trim_end().len();
+                    word.replace_range(start + query..end, "?[redacted]");
+                }
+            }
+            word
+        })
+        .collect()
 }
 
 fn read_bounded(mut reader: impl Read) -> std::io::Result<(Vec<u8>, bool)> {
@@ -122,6 +150,16 @@ mod tests {
     use std::env;
 
     use super::*;
+
+    #[test]
+    fn transport_diagnostics_redact_url_credentials_and_tokens() {
+        let message = "fatal: https://user:secret@example.invalid/repo?token=private failed\nssh://login@host/repo\n";
+        let safe = sanitize_diagnostic(message);
+        assert!(!safe.contains("secret"));
+        assert!(!safe.contains("private"));
+        assert!(safe.contains("example.invalid/repo"));
+        assert!(safe.contains("failed\n"));
+    }
 
     #[test]
     fn runs_system_git_and_returns_structured_output() {
