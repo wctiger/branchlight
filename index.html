@@ -8,6 +8,15 @@
       content="Branchlight is a focused, local-first Git desktop client for macOS."
     />
     <title>Branchlight</title>
+    <script>
+      // Resolve before the first paint; changing appearance never needs a Git request.
+      (() => {
+        let theme = "system";
+        try { theme = localStorage.getItem("branchlight.theme") || "system"; } catch {}
+        const dark = theme === "dark" || (theme !== "light" && matchMedia("(prefers-color-scheme: dark)").matches);
+        document.documentElement.classList.toggle("dark", dark);
+      })();
+    </script>
   </head>
 
   <body>
