@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
-import { layoutCommitGraph } from "../src/features/history/graph";
-import type { Commit } from "../src/types/history";
+import { layoutCommitGraph } from "@/features/history/graph";
+import type { Commit } from "@/types/history";
 
 /** Builds concise graph fixtures without omitting any production commit field. */
 function commit(

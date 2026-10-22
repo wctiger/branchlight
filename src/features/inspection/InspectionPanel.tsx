@@ -1,6 +1,6 @@
-import { OperationDialog } from "../../components/operation-dialog";
-import { Button } from "../../components/ui/button";
-import { Input } from "../../components/ui/input";
+import { OperationDialog } from "@/components/operation-dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useEffect, useRef, useState } from "react";
 import {
   compareRevisions,
@@ -8,9 +8,9 @@ import {
   getFileBlame,
   getFileHistory,
   normalizeGitError,
-} from "../../lib/tauri";
-import type { Comparison, FileCommit, TextDiff } from "../../lib/tauri";
-import type { RepositoryStatus, FileChange } from "../../types/status";
+} from "@/lib/tauri";
+import type { Comparison, FileCommit, TextDiff } from "@/lib/tauri";
+import type { RepositoryStatus, FileChange } from "@/types/status";
 
 type BlameLine = {
   hash: string;

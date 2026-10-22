@@ -5,7 +5,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "./ui/dialog";
+} from "@/components/ui/dialog";
 
 /** Shared modal shell; each caller retains its existing mutation guards and actions. */
 export function OperationDialog({

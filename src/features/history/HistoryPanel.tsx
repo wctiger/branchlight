@@ -6,13 +6,13 @@ import {
   useState,
   type KeyboardEvent,
 } from "react";
-import { Button } from "../../components/ui/button";
-import { Badge } from "../../components/ui/badge";
-import { historyRowHeight } from "../../lib/design-tokens";
-import type { GitError } from "../../types/git";
-import type { Commit } from "../../types/history";
-import { layoutCommitGraph } from "./graph";
-import { visibleHistoryRange } from "./viewport";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { historyRowHeight } from "@/lib/design-tokens";
+import type { GitError } from "@/types/git";
+import type { Commit } from "@/types/history";
+import { layoutCommitGraph } from "@/features/history/graph";
+import { visibleHistoryRange } from "@/features/history/viewport";
 
 export type HistoryState =
   | { state: "idle" }

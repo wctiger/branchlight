@@ -1,19 +1,19 @@
-import { Button } from "./components/ui/button";
-import { Input } from "./components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { RepositoryApp } from "./App";
+import { RepositoryApp } from "@/App";
 import {
   chooseRepositoryFolder,
   createRepository,
   getGitVersion,
   normalizeGitError,
   openRepository,
-} from "./lib/tauri";
+} from "@/lib/tauri";
 import {
   RepositoryTabs,
   type RepositoryTab,
-} from "./components/repository-tabs";
-import { ThemeSelect } from "./components/theme-select";
+} from "@/components/repository-tabs";
+import { ThemeSelect } from "@/components/theme-select";
 import {
   Dialog,
   DialogContent,
@@ -21,7 +21,7 @@ import {
   DialogTitle,
   DialogDescription,
   DialogTrigger,
-} from "./components/ui/dialog";
+} from "@/components/ui/dialog";
 
 type Tab = RepositoryTab;
 export default function Workspace() {

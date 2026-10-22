@@ -4,7 +4,7 @@ import {
   readTheme,
   themeStorageKey,
   type ThemePreference,
-} from "../lib/theme";
+} from "@/lib/theme";
 export function ThemeSelect() {
   const [preference, setPreference] = useState<ThemePreference>(readTheme);
   useEffect(() => {

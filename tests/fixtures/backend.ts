@@ -1,5 +1,5 @@
 // Development-only Vite fixture. Production builds always use the real Tauri API.
-import type { Commit } from "../../src/types/history";
+import type { Commit } from "@/types/history";
 const names = [
   "branchlight",
   "payments-service",

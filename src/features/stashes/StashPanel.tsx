@@ -1,11 +1,11 @@
-import { OperationDialog } from "../../components/operation-dialog";
-import { Button } from "../../components/ui/button";
-import { Input } from "../../components/ui/input";
+import { OperationDialog } from "@/components/operation-dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useEffect, useState, useId } from "react";
 import type { FormEvent } from "react";
 
-import type { GitError } from "../../types/git";
-import type { Stash } from "../../types/stash";
+import type { GitError } from "@/types/git";
+import type { Stash } from "@/types/stash";
 
 export type StashesState =
   | { state: "idle" }

@@ -1,19 +1,11 @@
-import {
-  CommitComposer,
-  RemoteControls,
-  BranchControls,
-} from "./features/DeliveryControls";
-import type {
-  CommitOptions,
-  RunDelivery,
-  DeliveryAction,
-} from "./types/delivery";
-import { Alert } from "./components/ui/alert";
-import { Button } from "./components/ui/button";
+import { CommitComposer, RemoteControls, BranchControls } from "@/features/DeliveryControls";
+import type { CommitOptions, RunDelivery, DeliveryAction } from "@/types/delivery";
+import { Alert } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 
-import "./App.css";
-import { InspectionPanel } from "./features/inspection/InspectionPanel";
+import "@/App.css";
+import { InspectionPanel } from "@/features/inspection/InspectionPanel";
 import {
   abortMerge,
   abortRebase,
@@ -43,25 +35,25 @@ import {
   stageFile,
   switchBranch,
   unstageFile,
-} from "./lib/tauri";
+} from "@/lib/tauri";
 import {
   BranchPanel,
   type BranchesState,
-} from "./features/branches/BranchPanel";
-import { StashPanel, type StashesState } from "./features/stashes/StashPanel";
+} from "@/features/branches/BranchPanel";
+import { StashPanel, type StashesState } from "@/features/stashes/StashPanel";
 import {
   HistoryPanel,
   type HistoryState,
-} from "./features/history/HistoryPanel";
-import type { GitError } from "./types/git";
-import type { Repository } from "./types/repository";
-import type { Stash } from "./types/stash";
+} from "@/features/history/HistoryPanel";
+import type { GitError } from "@/types/git";
+import type { Repository } from "@/types/repository";
+import type { Stash } from "@/types/stash";
 import type {
   BranchStatus,
   FileChange,
   FileStatus,
   RepositoryStatus,
-} from "./types/status";
+} from "@/types/status";
 
 type OpenState = "idle" | "choosing" | "validating";
 

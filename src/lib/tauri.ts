@@ -7,12 +7,12 @@ import type {
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 
-import type { GitError, GitErrorCode, GitOutput } from "../types/git";
-import type { Branches } from "../types/branch";
-import type { Repository } from "../types/repository";
-import type { RepositoryStatus } from "../types/status";
-import type { Stash } from "../types/stash";
-import type { Commit } from "../types/history";
+import type { GitError, GitErrorCode, GitOutput } from "@/types/git";
+import type { Branches } from "@/types/branch";
+import type { Repository } from "@/types/repository";
+import type { RepositoryStatus } from "@/types/status";
+import type { Stash } from "@/types/stash";
+import type { Commit } from "@/types/history";
 
 const gitErrorCodes: GitErrorCode[] = [
   "workingDirectoryUnavailable",

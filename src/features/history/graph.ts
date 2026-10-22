@@ -1,4 +1,4 @@
-import type { Commit } from "../../types/history";
+import type { Commit } from "@/types/history";
 
 export interface GraphNode {
   hash: string;

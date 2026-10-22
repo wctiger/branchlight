@@ -1,11 +1,11 @@
-import { OperationDialog } from "../../components/operation-dialog";
-import { Button } from "../../components/ui/button";
-import { Input } from "../../components/ui/input";
+import { OperationDialog } from "@/components/operation-dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import type { DragEvent, FormEvent, ReactNode } from "react";
 
-import type { Branch, Branches } from "../../types/branch";
-import type { GitError } from "../../types/git";
+import type { Branch, Branches } from "@/types/branch";
+import type { GitError } from "@/types/git";
 
 export type BranchesState =
   | { state: "idle" }
