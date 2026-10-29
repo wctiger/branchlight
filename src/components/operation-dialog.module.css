@@ -1,0 +1,6 @@
+.operation-dialog-actions,
+.operation-dialog-actions > div {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}

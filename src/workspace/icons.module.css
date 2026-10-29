@@ -1,0 +1,7 @@
+.brand-mark {
+  display: inline-block;
+  height: 20px;
+  width: 20px;
+  flex-shrink: 0;
+  object-fit: contain;
+}

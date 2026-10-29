@@ -1,3 +1,5 @@
+import changesStyles from "@/workspace/ChangesPanel.module.css";
+import sharedStyles from "@/styles/shared.module.css";
 import type { ReactNode } from "react";
 
 export function ChangesInspector({
@@ -13,13 +15,13 @@ export function ChangesInspector({
 }) {
   return (
     <aside
-      className="changes-inspector"
+      className={changesStyles["changes-inspector"]}
       hidden={!open}
       aria-label="Changes inspector"
     >
       {children}
       <input
-        className="sidebar-width"
+        className={sharedStyles["sidebar-width"]}
         type="range"
         min="300"
         max="420"

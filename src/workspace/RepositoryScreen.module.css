@@ -1,0 +1,57 @@
+.repository-notice > svg {
+  width: var(--size-icon);
+  height: var(--size-icon);
+}
+.repository-body {
+  display: grid;
+  grid-template-columns: var(--size-sidebar) 320px minmax(360px, 1fr);
+  min-height: 400px;
+  height: calc(100dvh - 186px);
+  background: var(--surface-panel);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.repository-notice {
+  background: var(--status-info-background);
+  color: var(--status-info-text);
+  padding: 6px 12px;
+  font-size: var(--type-label);
+}
+.repository-notice pre {
+  max-height: 120px;
+  overflow: auto;
+}
+@media (max-width: 1100px) {
+  .repository-body {
+    grid-template-columns: 170px 280px minmax(300px, 1fr);
+  }
+}
+@media (max-width: 800px) {
+  .repository-body {
+    grid-template-columns: 160px minmax(0, 1fr);
+    height: auto;
+  }
+}
+.repository-screen {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.repository-body {
+  flex: 1;
+  min-height: 0;
+  height: auto;
+  grid-template-columns: 230px minmax(480px, 1fr) var(--inspector-width);
+  overflow: auto;
+}
+.repository-body--inspector-hidden {
+  grid-template-columns: 230px minmax(480px, 1fr);
+}
+@media (max-width: 1100px) {
+  .repository-body {
+    grid-template-columns: 220px minmax(480px, 1fr) var(--inspector-width);
+  }
+  .repository-body--inspector-hidden {
+    grid-template-columns: 220px minmax(480px, 1fr);
+  }
+}

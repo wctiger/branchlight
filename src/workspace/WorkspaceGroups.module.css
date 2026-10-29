@@ -1,0 +1,10 @@
+.group-create,
+.group-manager-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.group-manager-row strong {
+  flex: 1;
+  overflow-wrap: anywhere;
+}

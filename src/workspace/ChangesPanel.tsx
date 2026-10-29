@@ -1,9 +1,12 @@
+import styles from "@/workspace/ChangesPanel.module.css";
+import sharedStyles from "@/styles/shared.module.css";
+import { cn } from "@/lib/utils";
+import { Plus, Minus, RefreshCw, LoaderCircle } from "lucide-react";
 import { useId } from "react";
 import { Button } from "@/components/ui/button";
 import { CommitComposer } from "@/features/DeliveryControls";
 import { StashPanel, type StashesState } from "@/features/stashes/StashPanel";
 import { ErrorNotice } from "@/workspace/ErrorNotice";
-import { RefreshIcon, StageIcon } from "@/workspace/icons";
 import type { RepositoryStatusState, AppOperation } from "@/workspace/types";
 import type { CommitOptions } from "@/types/delivery";
 import type { GitError } from "@/types/git";
@@ -60,27 +63,27 @@ function ChangeSection({
   actionsDisabled?: boolean;
 }) {
   return (
-    <section className={`change-section change-section--${tone}`}>
-      <header className="change-section__header">
+    <section className={cn(styles["change-section"], styles[`change-section--${tone}`])}>
+      <header className={styles["change-section__header"]}>
         <div>
           <h3>{title}</h3>
           <p>{description}</p>
         </div>
-        <span className="change-count" aria-label={`${changes.length} files`}>
+        <span className={styles["change-count"]} aria-label={`${changes.length} files`}>
           {changes.length}
         </span>
       </header>
 
       {changes.length === 0 ? (
-        <p className="change-section__empty">{emptyMessage}</p>
+        <p className={styles["change-section__empty"]}>{emptyMessage}</p>
       ) : (
-        <ul className="change-list">
+        <ul className={styles["change-list"]}>
           {changes.map((change) => (
             <li
               key={`${change.status}:${change.path}:${change.originalPath ?? ""}`}
             >
               <span
-                className={`change-symbol change-symbol--${change.status}`}
+                className={cn(styles["change-symbol"], styles[`change-symbol--${change.status}`])}
                 title={fileStatusLabels[change.status]}
                 aria-label={fileStatusLabels[change.status]}
               >
@@ -88,7 +91,7 @@ function ChangeSection({
               </span>
               <button
                 type="button"
-                className="change-path"
+                className={styles["change-path"]}
                 onClick={() => onSelect?.(change)}
                 title={change.path}
               >
@@ -102,21 +105,27 @@ function ChangeSection({
               {action ? (
                 <Button
                   variant="outline"
-                  className="change-action"
+                  className={styles["change-action"]}
                   type="button"
                   disabled={actionsDisabled}
                   aria-label={`${action.label} ${change.path}`}
                   onClick={() => action.onClick(change.path)}
                 >
                   {busyPath === change.path ? (
-                    <span className="small-spinner" aria-hidden="true" />
+                    <LoaderCircle
+                      className={sharedStyles["small-spinner"]}
+                      aria-hidden="true"
+                      data-icon="inline-start"
+                    />
+                  ) : action.direction === "stage" ? (
+                    <Plus aria-hidden="true" data-icon="inline-start" />
                   ) : (
-                    <StageIcon direction={action.direction} />
+                    <Minus aria-hidden="true" data-icon="inline-start" />
                   )}
                   {busyPath === change.path ? action.busyLabel : action.label}
                 </Button>
               ) : (
-                <span className="change-kind">
+                <span className={styles["change-kind"]}>
                   {fileStatusLabels[change.status]}
                 </span>
               )}
@@ -165,8 +174,8 @@ export function ChangesPanel({
   const changesTitleId = useId();
   if (state.state === "idle" || state.state === "loading") {
     return (
-      <section className="status-loading" aria-live="polite">
-        <span className="workspace-spinner" aria-hidden="true" />
+      <section className={styles["status-loading"]} aria-live="polite">
+        <LoaderCircle className={sharedStyles["workspace-spinner"]} aria-hidden="true" />
         <strong>Reading repository status…</strong>
         <p>Asking system Git for the latest working-tree state.</p>
       </section>
@@ -175,19 +184,18 @@ export function ChangesPanel({
 
   if (state.state === "error") {
     return (
-      <section className="status-error">
+      <section className={styles["status-error"]}>
         <ErrorNotice
           error={state.error}
           title="Repository status couldn’t be refreshed"
         />
         <Button
           variant="outline"
-          className="secondary-button"
           type="button"
           disabled={controlsDisabled}
           onClick={onRefresh}
         >
-          <RefreshIcon />
+          <RefreshCw aria-hidden="true" data-icon="inline-start" />
           Try again
         </Button>
       </section>
@@ -215,10 +223,10 @@ export function ChangesPanel({
           : null;
 
   return (
-    <section className="repository-workspace" aria-labelledby={changesTitleId}>
-      <header className="workspace-heading">
+    <section className={styles["repository-workspace"]} aria-labelledby={changesTitleId}>
+      <header className={styles["workspace-heading"]}>
         <div>
-          <p className="eyebrow">Working tree</p>
+          <p data-slot="eyebrow" className={sharedStyles["eyebrow"]}>Working tree</p>
           <h2 id={changesTitleId}>Repository changes</h2>
           <p>
             {changeCount === 0
@@ -226,14 +234,14 @@ export function ChangesPanel({
               : `${changeCount} ${changeCount === 1 ? "change" : "changes"} reported by Git.`}
           </p>
         </div>
-        <div className="workspace-facts">
+        <div className={styles["workspace-facts"]}>
           <span>{status.stashCount} stashed</span>
           <span>{changeCount} total</span>
         </div>
       </header>
 
       {(operationError || state.refreshError) && (
-        <div className="workspace-error">
+        <div className={sharedStyles["workspace-error"]}>
           <ErrorNotice
             error={operationError ?? state.refreshError!}
             title={
@@ -245,19 +253,18 @@ export function ChangesPanel({
           {state.refreshError && !operationError && (
             <Button
               variant="outline"
-              className="secondary-button"
               type="button"
               disabled={state.isRefreshing || isMutating}
               onClick={onRefresh}
             >
-              <RefreshIcon />
+              <RefreshCw aria-hidden="true" data-icon="inline-start" />
               Try again
             </Button>
           )}
         </div>
       )}
 
-      <details className="stash-disclosure">
+      <details className={styles["stash-disclosure"]}>
         <summary>Stashes</summary>
         <StashPanel
           state={stashesState}
@@ -273,7 +280,7 @@ export function ChangesPanel({
           onDrop={onDropStash}
         />
       </details>
-      <div className="changes-grid">
+      <div className={styles["changes-grid"]}>
         <ChangeSection
           title="Conflicts"
           description="Files that need manual resolution"

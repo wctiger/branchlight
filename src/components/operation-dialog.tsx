@@ -1,3 +1,4 @@
+import styles from "@/components/operation-dialog.module.css";
 import { useRef, useState, type ReactNode } from "react";
 import {
   Dialog,
@@ -51,7 +52,7 @@ export function OperationDialog({
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription render={<div />}>{description}</DialogDescription>
         </DialogHeader>
-        <div className="operation-dialog-actions">{children}</div>
+        <div className={styles["operation-dialog-actions"]}>{children}</div>
       </DialogContent>
     </Dialog>
   );

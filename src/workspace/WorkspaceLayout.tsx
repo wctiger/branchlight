@@ -1,6 +1,7 @@
+import styles from "@/workspace/WorkspaceLayout.module.css";
 import { Button } from "@/components/ui/button";
+import { BranchlightMark } from "@/workspace/icons";
 import type { CSSProperties, ReactNode } from "react";
-import "@/App.css";
 
 export function WorkspaceLayout({
   width,
@@ -15,12 +16,12 @@ export function WorkspaceLayout({
 }) {
   return (
     <div
-      className="workspace-shell"
+      className={styles["workspace-shell"]}
       style={{ "--repository-sidebar-width": `${width}px` } as CSSProperties}
     >
       {header}
       {sidebar}
-      <div className="workspace-content">{children}</div>
+      <div className={styles["workspace-content"]}>{children}</div>
     </div>
   );
 }
@@ -35,9 +36,12 @@ export function WorkspaceLanding({
   onOpen: () => void;
 }) {
   return (
-    <main className="landing-screen">
-      <section className="landing-card">
-        <h1>Branchlight</h1>
+    <main className={styles["landing-screen"]}>
+      <section className={styles["landing-card"]}>
+        <h1>
+          <BranchlightMark />
+          Branchlight
+        </h1>
         <p>
           Switch repositories from the sidebar. Each uses your installed Git and
           local configuration.

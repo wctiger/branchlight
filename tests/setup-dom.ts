@@ -1,3 +1,4 @@
+import "./setup-css";
 import { Window } from "happy-dom";
 const browser = new Window({ url: "http://localhost" });
 for (const key of [

@@ -1,0 +1,232 @@
+.repository-tabs-container {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  padding: 0 8px;
+  gap: 4px;
+}
+.repository-tab-strip {
+  display: flex;
+  gap: 3px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  min-width: 0;
+  flex: 1;
+  padding: 3px 2px;
+}
+.repository-tab {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  max-width: calc(var(--size-tabMax) + 48px);
+  height: var(--size-tab);
+  border: 1px solid transparent;
+  border-bottom: 2px solid transparent;
+  border-radius: var(--radius-control) var(--radius-control) 0 0;
+}
+.repository-tab--active {
+  background: var(--selection-background);
+  border-bottom-color: var(--text-accent);
+}
+.repository-tab [data-slot="button"] {
+  border-radius: 3px;
+}
+.repository-tab .repository-tab-select {
+  justify-content: start;
+  min-width: var(--size-tabMin);
+  max-width: var(--size-tabMax);
+  flex: 1;
+  gap: 6px;
+}
+.repository-tab-select > span:not(.tab-status):not(.tab-error) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.repository-tab-select svg {
+  width: var(--size-icon);
+  height: var(--size-icon);
+}
+.repository-tab-select small {
+  color: var(--text-secondary);
+}
+.repository-tab--active .repository-tab-select {
+  color: var(--selection-text);
+}
+.repository-tab .tab-icon {
+  width: 24px;
+  height: 26px;
+  padding: 3px;
+}
+.tab-icon svg {
+  width: 13px;
+  height: 13px;
+}
+.tab-status {
+  color: var(--text-accent);
+  font-size: var(--type-meta);
+}
+.tab-error {
+  color: var(--status-error-text);
+  font-weight: 700;
+}
+.repository-overflow {
+  flex: 0 0 auto;
+}
+.overflow-repo-name {
+  max-width: 360px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.overflow-repo-name small {
+  display: block;
+  color: var(--text-secondary);
+}
+.system-git-status {
+  color: var(--text-secondary);
+  font-size: var(--type-label);
+  padding: 2px 12px;
+  background: var(--surface-canvas);
+}
+.repository-create {
+  padding: 4px 12px;
+  background: var(--surface-panel);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.repository-create summary {
+  color: var(--text-secondary);
+  font-size: var(--type-label);
+}
+.repository-create[open] {
+  padding: 12px;
+}
+.repository-create p {
+  margin: 8px 0;
+  color: var(--text-secondary);
+}
+.repository-create label {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 6px;
+  width: min(320px, 100%);
+}
+.repository-create > button {
+  margin: 4px;
+}
+@media (pointer: coarse) {
+  .repository-tab {
+    height: 44px;
+  }
+}
+.repository-sidebar {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  background: var(--surface-panel);
+  border-right: 1px solid var(--border-subtle);
+}
+.sidebar-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 36px;
+  padding: 0 8px;
+}
+.repository-sidebar .repository-tabs-container {
+  flex-direction: column;
+  align-items: stretch;
+  flex: 1;
+  min-height: 0;
+  padding: 0 4px;
+}
+.repository-sidebar .repository-tab-strip {
+  flex-direction: column;
+  overflow: auto;
+  gap: 0;
+}
+.repository-sidebar .repository-tab {
+  width: 100%;
+  max-width: none;
+  height: 30px;
+  border: 0;
+  border-radius: 3px;
+}
+.repository-sidebar .repository-tab--active {
+  box-shadow: inset 2px 0 var(--text-accent);
+}
+.repository-sidebar .repository-tab-select {
+  min-width: 0;
+  max-width: none;
+  height: 30px;
+  padding-inline: 6px;
+}
+.repository-row-name {
+  flex: 0 1 auto;
+  min-width: 40px;
+}
+.repository-row-path {
+  flex: 1 1 30px;
+  min-width: 0;
+  color: var(--text-secondary);
+  font-size: var(--type-meta);
+}
+.repository-row-branch {
+  flex: 0 1 65px;
+  color: var(--text-accent);
+  font-size: var(--type-meta);
+}
+.repository-sidebar .tab-icon {
+  width: 20px;
+}
+.repository-sidebar--compact .repository-row-path,
+.repository-sidebar--compact .repository-row-branch,
+.repository-sidebar--compact .tab-status,
+.repository-sidebar--compact .tab-error,
+.repository-sidebar--compact .repository-row-name small {
+  display: none;
+}
+.repository-sidebar--compact .repository-tab > .tab-icon {
+  display: none;
+}
+.repository-sidebar--compact .repository-tab:focus-within > .tab-icon {
+  display: inline-flex;
+}
+.repository-sidebar--compact .repository-row-name {
+  min-width: 0;
+}
+.system-git-status {
+  height: 22px;
+  flex-shrink: 0;
+}
+.repository-create {
+  flex-shrink: 0;
+}
+.repository-sidebar .system-git-status {
+  height: auto;
+  font-size: var(--type-meta);
+  padding: 4px 8px;
+}
+.repository-sidebar .repository-create {
+  padding: 4px 8px;
+  max-height: 50vh;
+  overflow: auto;
+}
+.repository-sidebar .repository-create label {
+  width: 100%;
+  margin: 6px 0;
+}
+.repository-sidebar:not(.repository-sidebar--compact)
+.repository-tab
+> .tab-icon {
+  display: none;
+}
+.repository-sidebar:not(.repository-sidebar--compact)
+.repository-tab:hover
+> .tab-icon,
+.repository-sidebar:not(.repository-sidebar--compact)
+.repository-tab:focus-within
+> .tab-icon {
+  display: inline-flex;
+}

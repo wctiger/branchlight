@@ -1,3 +1,7 @@
+import styles from "@/workspace/RepositoryScreen.module.css";
+import changesStyles from "@/workspace/ChangesPanel.module.css";
+import { cn } from "@/lib/utils";
+import { Check } from "lucide-react";
 import { ChangesInspector } from "@/workspace/ChangesInspector";
 import { RepositoryToolbar } from "@/workspace/RepositoryToolbar";
 import { RepositoryMainContent } from "@/workspace/RepositoryMainContent";
@@ -150,7 +154,7 @@ export function RepositoryScreen({
       : null;
 
   return (
-    <main ref={screen} className="repository-screen">
+    <main ref={screen} className={styles["repository-screen"]}>
       <RepositoryToolbar
         repository={repository}
         status={status}
@@ -167,7 +171,7 @@ export function RepositoryScreen({
           requestAnimationFrame(() => {
             const details =
               screen.current?.querySelector<HTMLDetailsElement>(
-                ".stash-disclosure",
+                `.${changesStyles["stash-disclosure"]}`,
               );
             if (details) details.open = true;
             screen.current
@@ -178,13 +182,13 @@ export function RepositoryScreen({
       />
 
       {repositoryError && (
-        <div className="repository-alert">
+        <div>
           <ErrorNotice error={repositoryError} />
         </div>
       )}
 
       {remoteOperationError && (
-        <div className="repository-alert">
+        <div>
           <ErrorNotice
             title="Git couldn’t synchronize this repository"
             error={remoteOperationError}
@@ -193,13 +197,12 @@ export function RepositoryScreen({
       )}
 
       <div
-        className="repository-notice-region"
         role="status"
         aria-live="polite"
       >
         {operationNotice && (
-          <div className="repository-notice">
-            <span aria-hidden="true">✓</span>
+          <div className={styles["repository-notice"]}>
+            <Check aria-hidden="true" />
             <p>{operationNotice}</p>
           </div>
         )}
@@ -218,7 +221,10 @@ export function RepositoryScreen({
       )}
 
       <div
-        className={`repository-body${inspectorOpen ? "" : " repository-body--inspector-hidden"}`}
+        className={cn(
+          styles["repository-body"],
+          !inspectorOpen && styles["repository-body--inspector-hidden"],
+        )}
         style={
           { "--inspector-width": `${inspectorWidth}px` } as React.CSSProperties
         }

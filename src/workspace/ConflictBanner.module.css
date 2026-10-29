@@ -1,0 +1,27 @@
+.conflict-banner__icon {
+  width: var(--size-icon);
+  height: var(--size-icon);
+}
+.conflict-banner {
+  background: var(--status-warning-background);
+  color: var(--status-warning-text);
+  padding: 10px 12px;
+}
+.conflict-banner__heading {
+  display: flex;
+  gap: 8px;
+}
+.conflict-banner__files {
+  padding-left: 18px;
+  max-height: 120px;
+  overflow: auto;
+}
+.conflict-banner__guidance {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.conflict-banner__guidance p {
+  flex: 1 1 300px;
+}

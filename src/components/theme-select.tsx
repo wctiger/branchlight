@@ -1,3 +1,4 @@
+import styles from "@/components/theme-select.module.css";
 import { useEffect, useState } from "react";
 import {
   applyTheme,
@@ -23,7 +24,7 @@ export function ThemeSelect() {
     return () => window.removeEventListener("storage", sync);
   }, []);
   return (
-    <label className="theme-select">
+    <label className={styles["theme-select"]}>
       Appearance
       <select
         value={preference}

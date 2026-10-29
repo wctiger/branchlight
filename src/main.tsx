@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import Workspace from "@/Workspace";
+import "@/styles/global.css";
 import "@/styles/theme.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
 

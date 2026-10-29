@@ -1,0 +1,38 @@
+.eyebrow {
+  font-size: var(--type-label);
+  color: var(--text-secondary);
+}
+.workspace-error {
+  background: var(--status-error-background);
+  color: var(--status-error-text);
+  padding: 8px 12px;
+  font-size: var(--type-label);
+  overflow-wrap: anywhere;
+}
+.small-spinner,
+.button-spinner,
+.workspace-spinner {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  color: var(--text-accent);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .small-spinner,
+  .button-spinner,
+  .workspace-spinner {
+    animation: spin 1s linear infinite;
+  }
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.sidebar-width {
+  width: calc(100% - 24px);
+  margin: 8px 12px;
+  height: 12px;
+  flex-shrink: 0;
+  accent-color: var(--text-accent);
+}

@@ -1,0 +1,42 @@
+.workspace-chrome {
+  background: var(--surface-panel);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.workspace-tools {
+  display: flex;
+  gap: 6px;
+  padding: 6px 12px;
+  align-items: center;
+}
+.app-wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 650;
+  margin-right: 12px;
+  letter-spacing: -0.2px;
+}
+.app-wordmark span {
+  font-weight: 400;
+  color: var(--text-secondary);
+}
+@media (max-width: 800px) {
+  .app-wordmark span {
+    display: none;
+  }
+  .workspace-tools {
+    flex-wrap: wrap;
+  }
+}
+.workspace-chrome {
+  grid-column: 1 / -1;
+}
+.workspace-tools {
+  height: 36px;
+  padding: 3px 10px;
+}
+@media (max-width: 1100px) {
+  .workspace-tools {
+    flex-wrap: nowrap;
+  }
+}

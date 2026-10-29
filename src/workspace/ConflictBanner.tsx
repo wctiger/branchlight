@@ -1,7 +1,9 @@
+import styles from "@/workspace/ConflictBanner.module.css";
+import sharedStyles from "@/styles/shared.module.css";
+import { TriangleAlert, RefreshCw, LoaderCircle } from "lucide-react";
 import { useId } from "react";
 import { Button } from "@/components/ui/button";
 import { ErrorNotice } from "@/workspace/ErrorNotice";
-import { RefreshIcon } from "@/workspace/icons";
 import type { AppOperation } from "@/workspace/types";
 import type { GitError } from "@/types/git";
 import type { RepositoryStatus } from "@/types/status";
@@ -49,16 +51,14 @@ export function ConflictBanner({
 
   return (
     <section
-      className="conflict-banner"
+      className={styles["conflict-banner"]}
       aria-labelledby={headingId}
       aria-live="polite"
     >
-      <div className="conflict-banner__heading">
-        <span className="conflict-banner__icon" aria-hidden="true">
-          !
-        </span>
+      <div className={styles["conflict-banner__heading"]}>
+        <TriangleAlert className={styles["conflict-banner__icon"]} aria-hidden="true" />
         <div>
-          <p className="eyebrow">Git operation</p>
+          <p data-slot="eyebrow" className={sharedStyles["eyebrow"]}>Git operation</p>
           <h2 id={headingId}>
             {activeOperation === "none"
               ? operationLabel
@@ -75,7 +75,7 @@ export function ConflictBanner({
       </div>
 
       {conflictCount > 0 && (
-        <ul className="conflict-banner__files" aria-label="Conflicted files">
+        <ul className={styles["conflict-banner__files"]} aria-label="Conflicted files">
           {status.conflicts.map((conflict) => (
             <li key={conflict.path}>
               <code title={conflict.path}>{conflict.path}</code>
@@ -84,7 +84,7 @@ export function ConflictBanner({
         </ul>
       )}
 
-      <div className="conflict-banner__guidance">
+      <div className={styles["conflict-banner__guidance"]}>
         <p>
           {activeOperation === "rebase"
             ? "Resolve and stage conflicts with an external Git tool, then continue or skip the rebase there. Branchlight currently supports abort only. Refresh after each external step."
@@ -97,30 +97,36 @@ export function ConflictBanner({
         <div>
           <Button
             variant="outline"
-            className="secondary-button"
             type="button"
             disabled={actionsDisabled}
             aria-busy={isRefreshing}
             onClick={onRefresh}
           >
             {isRefreshing ? (
-              <span className="small-spinner" />
+              <LoaderCircle
+                className={sharedStyles["small-spinner"]}
+                aria-hidden="true"
+                data-icon="inline-start"
+              />
             ) : (
-              <RefreshIcon />
+              <RefreshCw aria-hidden="true" data-icon="inline-start" />
             )}
             {isRefreshing ? "Refreshing…" : "Refresh status"}
           </Button>
           {activeOperation !== "none" && (
             <Button
               variant="outline"
-              className="conflict-banner__abort"
               type="button"
               disabled={actionsDisabled}
               aria-busy={isAborting}
               onClick={() => onAbort(activeOperation)}
             >
               {isAborting && (
-                <span className="small-spinner" aria-hidden="true" />
+                <LoaderCircle
+                  className={sharedStyles["small-spinner"]}
+                  aria-hidden="true"
+                  data-icon="inline-start"
+                />
               )}
               {isAborting
                 ? `Aborting ${activeOperation}…`

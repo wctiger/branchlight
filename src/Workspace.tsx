@@ -1,3 +1,6 @@
+import navigationStyles from "@/workspace/RepositorySidebar.module.css";
+import sharedStyles from "@/styles/shared.module.css";
+import layoutStyles from "@/workspace/WorkspaceLayout.module.css";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -190,7 +193,7 @@ export default function Workspace() {
               )
             }
           />
-          <p className="system-git-status" role="status">
+          <p className={navigationStyles["system-git-status"]} role="status">
             {gitMessage}{" "}
             {!gitReady && (
               <Button variant="outline" onClick={() => void checkGit()}>
@@ -231,7 +234,7 @@ export default function Workspace() {
         />
       )}
       {error && (
-        <p role="alert" className="workspace-error">
+        <p role="alert" className={sharedStyles["workspace-error"]}>
           {error}
         </p>
       )}
@@ -244,7 +247,7 @@ export default function Workspace() {
       )}
       {tabs.map((tab) => (
         <div
-          className="repository-view"
+          className={layoutStyles["repository-view"]}
           key={tab.repository.path}
           hidden={active !== tab.repository.path}
         >

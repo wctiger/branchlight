@@ -1,3 +1,6 @@
+import styles from "@/workspace/RepositorySidebar.module.css";
+import sharedStyles from "@/styles/shared.module.css";
+import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 
@@ -16,10 +19,13 @@ export function RepositorySidebar({
 }) {
   return (
     <aside
-      className={`repository-sidebar${compact ? " repository-sidebar--compact" : ""}`}
+      className={cn(
+        styles["repository-sidebar"],
+        compact && styles["repository-sidebar--compact"],
+      )}
       aria-label="Repositories"
     >
-      <header className="sidebar-heading">
+      <header className={styles["sidebar-heading"]}>
         <strong>Repositories</strong>
         <Button
           variant="ghost"
@@ -37,7 +43,7 @@ export function RepositorySidebar({
       {children}
       {!compact && (
         <input
-          className="sidebar-width"
+          className={sharedStyles["sidebar-width"]}
           type="range"
           min="300"
           max="420"

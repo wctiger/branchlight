@@ -1,0 +1,11 @@
+.error-notice {
+  background: var(--status-error-background);
+  color: var(--status-error-text);
+  padding: 8px 12px;
+  font-size: var(--type-label);
+  overflow-wrap: anywhere;
+}
+.error-notice pre {
+  max-height: 120px;
+  overflow: auto;
+}
