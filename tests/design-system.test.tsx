@@ -9,10 +9,7 @@ import {
   waitFor,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import {
-  RepositoryTabs,
-  type RepositoryTab,
-} from "@/components/repository-tabs";
+import { RepositoryTabs, type RepositoryTab } from "@/workspace/RepositoryTabs";
 import { StashPanel } from "@/features/stashes/StashPanel";
 import { BranchPanel } from "@/features/branches/BranchPanel";
 import { OperationDialog } from "@/components/operation-dialog";

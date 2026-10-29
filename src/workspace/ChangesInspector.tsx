@@ -1,0 +1,33 @@
+import type { ReactNode } from "react";
+
+export function ChangesInspector({
+  open,
+  width,
+  onWidthChange,
+  children,
+}: {
+  open: boolean;
+  width: number;
+  onWidthChange: (width: number) => void;
+  children: ReactNode;
+}) {
+  return (
+    <aside
+      className="changes-inspector"
+      hidden={!open}
+      aria-label="Changes inspector"
+    >
+      {children}
+      <input
+        className="sidebar-width"
+        type="range"
+        min="300"
+        max="420"
+        step="10"
+        value={width}
+        onChange={(event) => onWidthChange(Number(event.target.value))}
+        aria-label="Changes inspector width"
+      />
+    </aside>
+  );
+}

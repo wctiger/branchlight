@@ -1,58 +1,25 @@
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Dialog } from "@/components/ui/dialog";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { RepositoryApp } from "@/App";
 import {
   chooseRepositoryFolder,
-  createRepository,
   getGitVersion,
   normalizeGitError,
   openRepository,
 } from "@/lib/tauri";
-import {
-  RepositoryTabs,
-  type RepositoryTab,
-} from "@/components/repository-tabs";
-import { ThemeSelect } from "@/components/theme-select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { RepositoryTabs, type RepositoryTab } from "@/workspace/RepositoryTabs";
+import { WorkspaceLayout, WorkspaceLanding } from "@/workspace/WorkspaceLayout";
+import { WorkspaceHeader } from "@/workspace/WorkspaceHeader";
+import { WorkspaceGroups, GroupRenameForm } from "@/workspace/WorkspaceGroups";
+import { RepositorySidebar } from "@/workspace/RepositorySidebar";
+import { RepositoryCreation } from "@/workspace/RepositoryCreation";
+import { useRepositorySidebar } from "@/workspace/useRepositorySidebar";
 
 type Tab = RepositoryTab;
-function readSidebarPreference() {
-  try {
-    return JSON.parse(
-      localStorage.getItem("branchlight.repositorySidebar") ?? "null",
-    );
-  } catch {
-    return null;
-  }
-}
 export default function Workspace() {
-  const [compact, setCompact] = useState(
-    () => readSidebarPreference()?.compact === true,
-  );
-  const [sidebarWidth, setSidebarWidth] = useState(() => {
-    const width = readSidebarPreference()?.width;
-    return typeof width === "number" && Number.isFinite(width)
-      ? Math.min(420, Math.max(300, width))
-      : 310;
-  });
-  useEffect(() => {
-    try {
-      localStorage.setItem(
-        "branchlight.repositorySidebar",
-        JSON.stringify({ compact, width: sidebarWidth }),
-      );
-    } catch {
-      /* Storage may be unavailable. */
-    }
-  }, [compact, sidebarWidth]);
+  const { compact, setCompact, sidebarWidth, setSidebarWidth } =
+    useRepositorySidebar();
   const [gitReady, setGitReady] = useState(false);
   const [gitMessage, setGitMessage] = useState("Checking system Git…");
   const checkGit = useCallback(async () => {
@@ -70,14 +37,6 @@ export default function Workspace() {
   useEffect(() => {
     void checkGit();
   }, [checkGit]);
-  const [destination, setDestination] = useState("");
-  const [source, setSource] = useState("");
-  const [creation, setCreation] = useState<{
-    destination: string;
-    message: string;
-    busy: boolean;
-  } | null>(null);
-  const creatingRef = useRef(false);
   const [tabs, setTabs] = useState<Tab[]>([]);
   const [active, setActive] = useState("");
   const [groups, setGroups] = useState<string[]>([]);
@@ -151,53 +110,6 @@ export default function Workspace() {
       setOpening(false);
     }
   }, []);
-  async function create(clone: boolean) {
-    if (creatingRef.current) return;
-    creatingRef.current = true;
-    const chosenDestination = destination;
-    setCreation({
-      destination: chosenDestination,
-      message: clone
-        ? "Cloning with system Git…"
-        : "Initializing with system Git…",
-      busy: true,
-    });
-    try {
-      const repository = await createRepository(
-        chosenDestination,
-        clone ? source : null,
-      );
-      setTabs((tabs) =>
-        tabs.some((tab) => tab.repository.path === repository.path)
-          ? tabs
-          : [
-              ...tabs,
-              {
-                repository,
-                group: "",
-                busy: false,
-                error: false,
-                dirty: false,
-              },
-            ],
-      );
-      setActive(repository.path);
-      setCreation({
-        destination: chosenDestination,
-        message: "Repository ready.",
-        busy: false,
-      });
-    } catch (error) {
-      const failure = normalizeGitError(error);
-      setCreation({
-        destination: chosenDestination,
-        message: `${failure.message} ${failure.output?.stderr.trim() ?? ""}`,
-        busy: false,
-      });
-    } finally {
-      creatingRef.current = false;
-    }
-  }
   function close(tab: Tab) {
     if (busyPaths.current.has(tab.repository.path)) {
       setError(
@@ -223,270 +135,126 @@ export default function Workspace() {
     );
   }
   return (
-    <div
-      className="workspace-shell"
-      style={
-        {
-          "--repository-sidebar-width": `${compact ? 160 : sidebarWidth}px`,
-        } as React.CSSProperties
-      }
-    >
-      <Dialog open={manageGroups} onOpenChange={setManageGroups}>
-        <header className="workspace-chrome">
-          <div className="workspace-tools">
-            <strong className="app-wordmark">
-              Branchlight<span> / Workspace</span>
-            </strong>
-            <Button
-              variant="outline"
-              onClick={() => void open()}
-              disabled={opening || !gitReady}
-            >
-              {opening ? "Opening…" : "Open repository"}
-            </Button>
-            <DialogTrigger render={<Button variant="ghost" />}>
-              Groups
-            </DialogTrigger>
-            <ThemeSelect />
-          </div>
-        </header>
-        <DialogContent finalFocus={() => (editingGroup ? false : true)}>
-          <DialogHeader>
-            <DialogTitle>Repository groups</DialogTitle>
-            <DialogDescription>
-              Organize open repositories. Changes last for this session.
-            </DialogDescription>
-          </DialogHeader>
-          <form
-            className="group-create"
-            onSubmit={(event) => {
-              event.preventDefault();
+    <WorkspaceLayout
+      width={compact ? 160 : sidebarWidth}
+      header={
+        <Dialog open={manageGroups} onOpenChange={setManageGroups}>
+          <WorkspaceHeader
+            opening={opening}
+            gitReady={gitReady}
+            onOpen={() => void open()}
+          />
+          <WorkspaceGroups
+            groups={groups}
+            editingGroup={editingGroup}
+            groupName={groupName}
+            onGroupNameChange={setGroupName}
+            onCreate={() => {
               const name = groupName.trim();
               if (name && !groups.includes(name)) setGroups([...groups, name]);
               setGroupName("");
             }}
-          >
-            <Input
-              aria-label="New group name"
-              placeholder="New group"
-              value={groupName}
-              onChange={(event) => setGroupName(event.target.value)}
-            />
-            <Button
-              type="submit"
-              variant="default"
-              disabled={!groupName.trim()}
-            >
-              Create group
-            </Button>
-          </form>
-          {groups.map((group) => (
-            <div className="group-manager-row" key={group}>
-              <strong>{group}</strong>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setEditingGroup({ original: group, name: group });
-                  setManageGroups(false);
-                }}
-              >
-                Rename
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setGroups(groups.filter((item) => item !== group));
-                  setTabs((tabs) =>
-                    tabs.map((tab) =>
-                      tab.group === group ? { ...tab, group: "" } : tab,
-                    ),
-                  );
-                }}
-              >
-                Remove group
-              </Button>
-            </div>
-          ))}
-          {!groups.length && <p>No groups yet.</p>}
-        </DialogContent>
-      </Dialog>
-      <aside
-        className={`repository-sidebar${compact ? " repository-sidebar--compact" : ""}`}
-        aria-label="Repositories"
-      >
-        <header className="sidebar-heading">
-          <strong>Repositories</strong>
-          <Button
-            variant="ghost"
-            aria-label={
-              compact
-                ? "Expand repository sidebar"
-                : "Collapse repository sidebar"
-            }
-            aria-expanded={!compact}
-            onClick={() => setCompact(!compact)}
-          >
-            {compact ? "»" : "«"}
-          </Button>
-        </header>
-        <RepositoryTabs
-          tabs={tabs}
-          active={active}
-          groups={groups}
-          onSelect={setActive}
-          onClose={close}
-          onGroup={(path, group) =>
-            setTabs((tabs) =>
-              tabs.map((tab) =>
-                tab.repository.path === path ? { ...tab, group } : tab,
-              ),
-            )
-          }
-        />
-        <p className="system-git-status" role="status">
-          {gitMessage}{" "}
-          {!gitReady && (
-            <Button variant="outline" onClick={() => void checkGit()}>
-              Check again
-            </Button>
-          )}
-        </p>
-        <details className="repository-create">
-          <summary>Initialize or clone a repository</summary>
-          <p>
-            Choose a new directory inside an existing parent. Existing
-            destinations are never overwritten. Partial results are retained on
-            failure.
-          </p>
-          <label>
-            New destination directory{" "}
-            <Input
-              value={destination}
-              onChange={(event) => setDestination(event.target.value)}
-              placeholder="Absolute path to a new directory"
-            />
-          </label>
-          <Button
-            variant="outline"
-            disabled={!!creation?.busy}
-            onClick={() => {
-              void chooseRepositoryFolder()
-                .then((parent) => {
-                  if (parent) setDestination(`${parent}/new-repository`);
-                })
-                .catch((error) => setError(normalizeGitError(error).message));
+            onRename={(group) => {
+              setEditingGroup({ original: group, name: group });
+              setManageGroups(false);
             }}
-          >
-            Choose parent folder
-          </Button>
-          <label>
-            Clone source URL or local path{" "}
-            <Input
-              value={source}
-              onChange={(event) => setSource(event.target.value)}
-            />
-          </label>
-          <Button
-            variant="outline"
-            disabled={!!creation?.busy || !destination || !gitReady}
-            onClick={() => void create(false)}
-          >
-            Initialize
-          </Button>
-          <Button
-            variant="outline"
-            disabled={!!creation?.busy || !destination || !source || !gitReady}
-            onClick={() => void create(true)}
-          >
-            Clone
-          </Button>
-          {creation && (
-            <p role="status" aria-busy={creation.busy}>
-              <code>{creation.destination}</code>: {creation.message}
-            </p>
-          )}
-        </details>
-        {!compact && (
-          <input
-            className="sidebar-width"
-            type="range"
-            min="300"
-            max="420"
-            step="10"
-            value={sidebarWidth}
-            onChange={(event) => setSidebarWidth(Number(event.target.value))}
-            aria-label="Repository sidebar width"
+            onRemove={(group) => {
+              setGroups(groups.filter((item) => item !== group));
+              setTabs((tabs) =>
+                tabs.map((tab) =>
+                  tab.group === group ? { ...tab, group: "" } : tab,
+                ),
+              );
+            }}
           />
-        )}
-      </aside>
-      <div className="workspace-content">
-        {editingGroup && (
-          <form
-            className="repository-create"
-            onSubmit={(event) => {
-              event.preventDefault();
-              renameGroup(editingGroup.original, editingGroup.name);
-            }}
-          >
-            <label>
-              Rename {editingGroup.original}{" "}
-              <Input
-                autoFocus
-                value={editingGroup.name}
-                onChange={(event) =>
-                  setEditingGroup({ ...editingGroup, name: event.target.value })
-                }
-              />
-            </label>
-            <Button type="submit" variant="outline">
-              Save group name
-            </Button>
-            <Button
-              variant="outline"
-              type="button"
-              onClick={() => setEditingGroup(null)}
-            >
-              Cancel
-            </Button>
-          </form>
-        )}
-        {error && (
-          <p role="alert" className="workspace-error">
-            {error}
-          </p>
-        )}
-        {!tabs.length && (
-          <main className="landing-screen">
-            <section className="landing-card">
-              <h1>Branchlight</h1>
-              <p>
-                Switch repositories from the sidebar. Each uses your installed
-                Git and local configuration.
-              </p>
-              <Button
-                variant="outline"
-                onClick={() => void open()}
-                disabled={opening || !gitReady}
-              >
-                Open repository
+        </Dialog>
+      }
+      sidebar={
+        <RepositorySidebar
+          compact={compact}
+          sidebarWidth={sidebarWidth}
+          onCompactChange={setCompact}
+          onWidthChange={setSidebarWidth}
+        >
+          <RepositoryTabs
+            tabs={tabs}
+            active={active}
+            groups={groups}
+            onSelect={setActive}
+            onClose={close}
+            onGroup={(path, group) =>
+              setTabs((tabs) =>
+                tabs.map((tab) =>
+                  tab.repository.path === path ? { ...tab, group } : tab,
+                ),
+              )
+            }
+          />
+          <p className="system-git-status" role="status">
+            {gitMessage}{" "}
+            {!gitReady && (
+              <Button variant="outline" onClick={() => void checkGit()}>
+                Check again
               </Button>
-            </section>
-          </main>
-        )}
-        {tabs.map((tab) => (
-          <div
-            className="repository-view"
-            key={tab.repository.path}
-            hidden={active !== tab.repository.path}
-          >
-            <RepositoryApp
-              initialRepository={tab.repository}
-              onOpen={() => void open()}
-              onFeedback={feedback}
-            />
-          </div>
-        ))}
-      </div>
-    </div>
+            )}
+          </p>
+          <RepositoryCreation
+            gitReady={gitReady}
+            onError={setError}
+            onCreated={(repository) => {
+              setTabs((tabs) =>
+                tabs.some((tab) => tab.repository.path === repository.path)
+                  ? tabs
+                  : [
+                      ...tabs,
+                      {
+                        repository,
+                        group: "",
+                        busy: false,
+                        error: false,
+                        dirty: false,
+                      },
+                    ],
+              );
+              setActive(repository.path);
+            }}
+          />
+        </RepositorySidebar>
+      }
+    >
+      {editingGroup && (
+        <GroupRenameForm
+          editingGroup={editingGroup}
+          onSave={() => renameGroup(editingGroup.original, editingGroup.name)}
+          onNameChange={(name) => setEditingGroup({ ...editingGroup, name })}
+          onCancel={() => setEditingGroup(null)}
+        />
+      )}
+      {error && (
+        <p role="alert" className="workspace-error">
+          {error}
+        </p>
+      )}
+      {!tabs.length && (
+        <WorkspaceLanding
+          opening={opening}
+          gitReady={gitReady}
+          onOpen={() => void open()}
+        />
+      )}
+      {tabs.map((tab) => (
+        <div
+          className="repository-view"
+          key={tab.repository.path}
+          hidden={active !== tab.repository.path}
+        >
+          <RepositoryApp
+            initialRepository={tab.repository}
+            onOpen={() => void open()}
+            onFeedback={feedback}
+          />
+        </div>
+      ))}
+    </WorkspaceLayout>
   );
 }

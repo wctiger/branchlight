@@ -92,6 +92,16 @@ the body font below 13px. Feature layout lives in `src/App.css`; shared foundati
 live in the token source. Legacy tab and 32px branch-row foundations remain for
 compatibility; sidebar rules supply the current 30px rows.
 
+### Layout component ownership
+
+`src/Workspace.tsx` coordinates open repositories and groups; `src/App.tsx` owns
+each repository's Git operations and refresh state. Components under
+`src/workspace/` render the shell/header, repository navigation and setup,
+repository toolbar, main History/Diff region, changes inspector, and feedback.
+`RepositoryScreen` owns local view mode, inspector visibility, and selection;
+`useRepositorySidebar` owns persisted sidebar geometry. Keep repository views and
+both main modes mounted when hidden to preserve context and drafts.
+
 ### Repository and branch navigation
 
 Expanded repository rows show a generic repository icon, name, path, and current
