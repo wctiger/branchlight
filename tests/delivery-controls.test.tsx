@@ -654,3 +654,83 @@ test("history actions use the repository store guard and refresh conflicts befor
   );
   expect(store.getState().conflictOperationError).toBe(null);
 });
+
+test.each([
+  ["merge", "Merge", "abortingMerge"],
+  ["rebase", "Rebase", "abortingRebase"],
+  ["cherryPick", "Cherry-pick", "abortingHistory"],
+  ["revert", "Revert", "abortingHistory"],
+] as const)(
+  "abort controls display %s labels consistently",
+  async (kind, label, state) => {
+    const { ConflictBanner } = await import("../src/workspace/ConflictBanner");
+    const status = await fixture<
+      import("../src/types/status").RepositoryStatus
+    >("get_repository_status");
+    const props = {
+      status: { ...status, operation: kind },
+      operation: {
+        state: "idle",
+      } as import("../src/workspace/types").AppOperation,
+      operationError: null,
+      isRefreshing: false,
+      controlsDisabled: false,
+      onRefresh: () => {},
+      onAbort: () => {},
+    };
+    const view = render(<ConflictBanner {...props} />);
+    expect(
+      view.getByRole("button", { name: `Abort ${label}`, exact: true }),
+    ).toBeTruthy();
+    view.rerender(<ConflictBanner {...props} operation={{ state }} />);
+    expect(
+      (
+        view.getByRole("button", {
+          name: `Aborting ${label}…`,
+          exact: true,
+        }) as HTMLButtonElement
+      ).disabled,
+    ).toBe(true);
+  },
+);
+
+test("abort errors and notices never expose the cherryPick identifier", async () => {
+  const store = createRepositoryStore(
+    { name: "labels", path: "/labels" },
+    () => {},
+  );
+  await store.getState().onRefresh();
+  store.getState().onAbortOperation("cherryPick");
+  expect(store.getState().conflictOperationError?.message).toContain(
+    "active Cherry-pick to abort",
+  );
+  intercept = (command) => {
+    if (command === "get_repository_status")
+      return fixture<import("../src/types/status").RepositoryStatus>(
+        command,
+      ).then((status) => ({ ...status, operation: "cherryPick" }));
+    if (command === "abort_history_operation")
+      return Promise.resolve({ stdout: "", stderr: "", exitCode: 0 });
+    return undefined;
+  };
+  await store.getState().onRefresh();
+  store.getState().onAbortOperation("cherryPick");
+  await waitFor(() => expect(store.getState().operation.state).toBe("idle"));
+  expect(store.getState().operationNotice).toBe(
+    "Cherry-pick aborted successfully.",
+  );
+});
+
+test("diagnostics labels the PATH scan as a candidate", async () => {
+  const { DiagnosticsPanel } = await import("../src/features/DiagnosticsPanel");
+  const user = userEvent.setup({ document });
+  const view = render(<DiagnosticsPanel path="/diagnostics" />);
+  await user.click(view.getByRole("button", { name: "Diagnostics" }));
+  await waitFor(() =>
+    expect(view.getByText(/Git on PATH \(candidate\)/)).toBeTruthy(),
+  );
+  expect(view.getByText("/fixture/bin/git")).toBeTruthy();
+  expect(
+    view.getByText(/operating system may select a different executable/),
+  ).toBeTruthy();
+});

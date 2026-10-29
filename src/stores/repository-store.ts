@@ -43,7 +43,7 @@ import type { HistoryState } from "@/features/history/HistoryPanel";
 import type { GitError } from "@/types/git";
 import type { Repository } from "@/types/repository";
 import type { Stash } from "@/types/stash";
-import type { FileChange } from "@/types/status";
+import { repositoryOperationLabels, type FileChange } from "@/types/status";
 import type { RunDelivery } from "@/types/delivery";
 type StashMutation =
   | {
@@ -633,7 +633,7 @@ export function createRepositoryStore(
         set({
           conflictOperationError: {
             code: "invalidOperationInput",
-            message: `Git does not report an active ${kind} to abort. Refresh status and try again.`,
+            message: `Git does not report an active ${repositoryOperationLabels[kind]} to abort. Refresh status and try again.`,
           },
         });
         return;
@@ -660,7 +660,7 @@ export function createRepositoryStore(
           await abortHistoryOperation(repository.path, kind);
         }
         set({
-          operationNotice: `${kind === "cherryPick" ? "Cherry-pick" : kind[0].toUpperCase() + kind.slice(1)} aborted successfully.`,
+          operationNotice: `${repositoryOperationLabels[kind]} aborted successfully.`,
         });
       } catch (error) {
         set({

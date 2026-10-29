@@ -44,6 +44,7 @@ fn quote(value: &str) -> String {
     format!("'{}'", value.replace('\'', "'\\''"))
 }
 
+/// Validates the reviewed branch/HEAD and executes one serialized history action.
 pub(crate) fn execute(
     repository: &Path,
     expected_head: &str,
@@ -102,6 +103,8 @@ pub(crate) fn execute(
                 "rebase.abbreviateCommands=false",
                 "-c",
                 "rebase.instructionFormat=%s",
+                "-c",
+                "commit.cleanup=whitespace",
                 "rebase",
                 "--interactive",
                 "--no-autosquash",
@@ -138,6 +141,7 @@ pub(crate) fn execute(
     }
 }
 
+/// Aborts only the matching active cherry-pick or revert.
 pub(crate) fn abort(repository: &Path, kind: &str) -> Result<GitOutput, GitError> {
     let expected = match kind {
         "cherryPick" => RepositoryOperation::CherryPick,
@@ -162,6 +166,7 @@ pub(crate) fn abort(repository: &Path, kind: &str) -> Result<GitOutput, GitError
     )
 }
 
+/// Applies one non-merge commit only after verifying the worktree is clean.
 fn apply(repository: &Path, command: &str, revision: &str) -> Result<GitOutput, GitError> {
     clean(repository)?;
     let oid = resolve(repository, revision)?;
@@ -281,6 +286,28 @@ mod tests {
                 super::super::conflicts::get_repository_operation(&f.0).unwrap(),
                 RepositoryOperation::None
             );
+        }
+    }
+    #[test]
+    fn reword_preserves_hash_subjects_and_markdown_in_older_commits() {
+        for root in [false, true] {
+            let f = Fixture::new();
+            if !root {
+                f.commit("second", "second");
+            }
+            let target = f.head();
+            f.commit("third", "third");
+            let tree = f.git(&["rev-parse", "HEAD^{tree}"]);
+            let message = "#123 Fix crash\n\n# Markdown heading\nDetails remain.";
+            // Explicit editor cleanup settings must not strip user-entered content.
+            f.git(&["config", "commit.cleanup", "strip"]);
+            f.execute(HistoryAction::Reword {
+                revision: target,
+                message: message.into(),
+            });
+            assert_eq!(f.git(&["log", "-1", "--format=%B", "HEAD~1"]), message);
+            assert_eq!(f.git(&["rev-parse", "HEAD^{tree}"]), tree);
+            assert!(f.git(&["status", "--porcelain"]).is_empty());
         }
     }
     #[test]

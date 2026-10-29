@@ -61,7 +61,7 @@ export async function invoke<T>(
     case "get_diagnostics":
       result = {
         version: "git version 2.50.0 (fixture)",
-        executable: "/fixture/bin/git",
+        pathCandidate: "/fixture/bin/git",
         logs: [
           {
             command: "commit",

@@ -344,7 +344,12 @@ export function executeHistoryAction(
   expectedBranch: string,
   action: import("@/types/delivery").HistoryAction,
 ): Promise<GitOutput> {
-  return invoke("execute_history_action", { path, expectedHead, expectedBranch, action });
+  return invoke("execute_history_action", {
+    path,
+    expectedHead,
+    expectedBranch,
+    action,
+  });
 }
 export function abortHistoryOperation(
   path: string,
@@ -354,7 +359,7 @@ export function abortHistoryOperation(
 }
 export interface Diagnostics {
   version: string;
-  executable: string;
+  pathCandidate: string | null;
   logs: {
     command: string;
     timestamp: number;

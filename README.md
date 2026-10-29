@@ -63,7 +63,7 @@ The application implements the following workflows:
 - Cherry-pick or revert a selected non-merge commit from a clean working tree;
   reset the checked-out local branch using soft, mixed, or hard mode. History
   confirmations recheck HEAD before executing.
-- Inspect system Git version/path and bounded session operation logs. Logs retain
+- Inspect system Git version and a labeled PATH candidate and bounded session operation logs. Logs retain
   command names, exit codes, and timings, excluding arguments and output.
 - Detect active merges/rebases/cherry-picks/reverts, list conflicts, refresh after external
   resolution, and safely abort the matching operation.

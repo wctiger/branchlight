@@ -23,7 +23,8 @@ export interface BranchStatus {
   behind: number | null;
 }
 
-export type RepositoryOperation = "none" | "merge" | "rebase" | "cherryPick" | "revert";
+export type RepositoryOperation =
+  "none" | "merge" | "rebase" | "cherryPick" | "revert";
 
 export interface RepositoryStatus {
   operation: RepositoryOperation;
@@ -33,3 +34,11 @@ export interface RepositoryStatus {
   conflicts: FileChange[];
   stashCount: number;
 }
+
+/** Display text shared by operation banners, notices, and recovery errors. */
+export const repositoryOperationLabels = {
+  merge: "Merge",
+  rebase: "Rebase",
+  cherryPick: "Cherry-pick",
+  revert: "Revert",
+} satisfies Record<Exclude<RepositoryOperation, "none">, string>;

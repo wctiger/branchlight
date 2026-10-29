@@ -6,9 +6,12 @@ import { Button } from "@/components/ui/button";
 import { ErrorNotice } from "@/workspace/ErrorNotice";
 import type { AppOperation } from "@/workspace/types";
 import type { GitError } from "@/types/git";
-import type { RepositoryStatus } from "@/types/status";
+import {
+  repositoryOperationLabels,
+  type RepositoryStatus,
+} from "@/types/status";
 
-/** Keeps active merge/rebase conflicts visible with only the matching abort action. */
+/** Keeps active Git operation conflicts visible with only the matching abort action. */
 export function ConflictBanner({
   status,
   operation,
@@ -35,17 +38,11 @@ export function ConflictBanner({
   }
 
   const operationLabel =
-    activeOperation === "merge"
-      ? "Merge"
-      : activeOperation === "rebase"
-        ? "Rebase"
-        : activeOperation === "cherryPick"
-          ? "Cherry-pick"
-          : activeOperation === "revert"
-            ? "Revert"
-            : status.conflicts.length > 0
-              ? "Unresolved conflicts"
-              : "Repository operation changed";
+    activeOperation !== "none"
+      ? repositoryOperationLabels[activeOperation]
+      : status.conflicts.length > 0
+        ? "Unresolved conflicts"
+        : "Repository operation changed";
   const conflictCount = status.conflicts.length;
   const isAborting =
     (activeOperation === "merge" && operation.state === "abortingMerge") ||
@@ -144,8 +141,8 @@ export function ConflictBanner({
                 />
               )}
               {isAborting
-                ? `Aborting ${activeOperation}…`
-                : `Abort ${activeOperation === "cherryPick" ? "cherry-pick" : activeOperation}`}
+                ? `Aborting ${operationLabel}…`
+                : `Abort ${operationLabel}`}
             </Button>
           )}
         </div>

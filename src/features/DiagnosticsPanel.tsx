@@ -50,7 +50,12 @@ export function DiagnosticsPanel({ path }: { path: string }) {
             <div className={styles["diagnostics"]}>
               <p>{data.version}</p>
               <p>
-                Executable: <code>{data.executable}</code>
+                Git on PATH (candidate):{" "}
+                <code>{data.pathCandidate ?? "Not found"}</code>
+              </p>
+              <p>
+                Git is launched by name. The operating system may select a
+                different executable.
               </p>
               {!data.logs.length && (
                 <p>No operations recorded in this session.</p>
