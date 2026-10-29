@@ -280,7 +280,7 @@ export function ChangesPanel({
           emptyMessage="No conflicted files"
           changes={status.conflicts}
           tone="conflict"
-          onSelect={(change) => onSelectFile(change, "conflict")}
+          onSelect={(change) => onSelectFile(change, "unstaged")}
         />
         <ChangeSection
           title="Unstaged"

@@ -143,8 +143,26 @@ export function InspectionPanel({
     void load(() => getTextDiff(path, kind, change.path), setDiff);
   }
   useEffect(() => {
-    if (selectedFile) showChange(selectedFile.change, selectedFile.kind);
-    // Reload the selected comparison after status refreshes, including staging.
+    if (!selectedFile) return;
+    if (!status) {
+      showChange(selectedFile.change, selectedFile.kind);
+      return;
+    }
+    const groups: { kind: string; files: FileChange[] }[] = [
+      { kind: "unstaged", files: status.conflicts },
+      { kind: "unstaged", files: status.unstaged },
+      { kind: "staged", files: status.staged },
+    ];
+    const matches = groups.flatMap(({ kind, files }) =>
+      files
+        .filter((change) => change.path === selectedFile.change.path)
+        .map((change) => ({ kind, change })),
+    );
+    const current =
+      matches.find(({ kind }) => kind === selectedFile.kind) ?? matches[0];
+    if (current) showChange(current.change, current.kind);
+    else invalidate();
+    // Follow files between status groups, preserving the chosen comparison when both exist.
   }, [selectedFile, status, path]);
   const unsupportedPaths = new Set(
     [...(status?.staged ?? []), ...(status?.unstaged ?? [])]
