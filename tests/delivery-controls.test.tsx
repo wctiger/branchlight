@@ -326,7 +326,9 @@ test("selected diff follows staging and unstaging, preserves partial comparison,
   const count = diffs().length;
   view.rerender(<InspectionPanel {...props} status={emptyStatus} />);
   expect(diffs()).toHaveLength(count);
-  expect(view.container.querySelector(`.${inspectionStyles["text-diff"]}`)).toBeNull();
+  expect(
+    view.container.querySelector(`.${inspectionStyles["text-diff"]}`),
+  ).toBeNull();
 });
 
 test("conflict selection uses the supported unstaged comparison and refreshes from conflict status", async () => {
@@ -384,4 +386,84 @@ test("conflict selection uses the supported unstaged comparison and refreshes fr
         .kind,
     ).toBe("unstaged"),
   );
+});
+
+test("history reset captures the reviewed HEAD and requires an explicit destructive action", async () => {
+  const { HistoryControls } =
+    await import("../src/features/history/HistoryControls");
+  const { commits } = await import("./fixtures/backend");
+  const user = userEvent.setup({ document });
+  const actions: DeliveryAction[] = [];
+  const props = {
+    commit: commits[0],
+    head: commits[0].hash,
+    branch: "main",
+    disabled: false,
+    run: async (action: DeliveryAction) => {
+      actions.push(action);
+      return true;
+    },
+  };
+  const view = render(<HistoryControls {...props} />);
+  await user.click(
+    view.getByRole("button", { name: "Reset branch", exact: true }),
+  );
+  await user.click(view.getByRole("radio", { name: "hard", exact: true }));
+  expect(view.getByText(/Untracked paths obstructing/)).toBeTruthy();
+  view.rerender(<HistoryControls {...props} head={commits[1].hash} />);
+  await user.click(
+    view.getByRole("button", { name: "Discard changes and reset" }),
+  );
+  expect(actions).toEqual([
+    {
+      kind: "history",
+      expectedHead: commits[0].hash,
+      expectedBranch: "main",
+      action: { kind: "reset", revision: commits[0].hash, mode: "hard" },
+    },
+  ]);
+});
+
+test("reword requires a full message and preserves the dialog on failure", async () => {
+  const { HistoryControls } =
+    await import("../src/features/history/HistoryControls");
+  const { commits } = await import("./fixtures/backend");
+  const user = userEvent.setup({ document });
+  const view = render(
+    <HistoryControls
+      commit={commits[1]}
+      head={commits[0].hash}
+      branch="main"
+      disabled={false}
+      run={async () => false}
+    />,
+  );
+  expect(
+    (
+      view.getByRole("button", {
+        name: "Amend latest commit",
+      }) as HTMLButtonElement
+    ).disabled,
+  ).toBe(true);
+  await user.click(
+    view.getByRole("button", { name: "Reword commit", exact: true }),
+  );
+  const confirm = view
+    .getAllByRole("button", { name: "Reword commit", exact: true })
+    .at(-1) as HTMLButtonElement;
+  expect(confirm.disabled).toBe(true);
+  await user.type(
+    view.getByLabelText("New full commit message"),
+    "New summary\n\nBody",
+  );
+  await user.click(confirm);
+  await waitFor(() =>
+    expect(view.getByRole("alert").textContent).toContain(
+      "Git could not complete",
+    ),
+  );
+  expect(
+    (view.getByLabelText("New full commit message") as HTMLTextAreaElement)
+      .value,
+  ).toContain("Body");
 });

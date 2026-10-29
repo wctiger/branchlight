@@ -57,7 +57,15 @@ The application implements the following workflows:
 - Review an explicit force-with-lease push, retaining the expected remote commit
   even if a subsequent fetch advances the remote-tracking ref.
 - Create, list, apply, pop, and drop stashes.
-- Detect active merges/rebases, list conflicts, refresh after external
+- Amend the latest commit (including staged changes), or reword a commit while
+  preserving staged content. Older rewording uses rebase; histories spanning
+  merge commits require external Git.
+- Cherry-pick or revert a selected non-merge commit from a clean working tree;
+  reset the checked-out local branch using soft, mixed, or hard mode. History
+  confirmations recheck HEAD before executing.
+- Inspect system Git version/path and bounded session operation logs. Logs retain
+  command names, exit codes, and timings, excluding arguments and output.
+- Detect active merges/rebases/cherry-picks/reverts, list conflicts, refresh after external
   resolution, and safely abort the matching operation.
 - Browse a bounded 200-commit history with a read-only SVG DAG.
 
@@ -67,9 +75,9 @@ independent repositories to use up to eight background workers. Busy tabs cannot
 be closed until their operation and refresh finish. Git output capture is capped
 at 8 MiB per stream; text previews at 512 KiB.
 
-Worktree lifecycle and history-editing actions remain planned. Merge and rebase
+Worktree lifecycle remains planned. Merge and rebase
 target the checked-out branch; conflict resolution and rebase continuation require
-external tools/Git. Repository history is limited to 200 commits; file history to
+external tools/Git, including continuation of stopped cherry-picks/reverts. Repository history is limited to 200 commits; file history to
 100 commits without rename tracing. Large-repository performance remains unverified.
 Delivery 1 acceptance is recorded in [PR #67](https://github.com/wctiger/branchlight/pull/67).
 Delivery 2 platform builds and desktop acceptance are tracked separately from

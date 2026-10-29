@@ -337,3 +337,31 @@ export function composeCommit(
 ): Promise<CommitResult> {
   return invoke("compose_commit", { path, options });
 }
+
+export function executeHistoryAction(
+  path: string,
+  expectedHead: string,
+  expectedBranch: string,
+  action: import("@/types/delivery").HistoryAction,
+): Promise<GitOutput> {
+  return invoke("execute_history_action", { path, expectedHead, expectedBranch, action });
+}
+export function abortHistoryOperation(
+  path: string,
+  kind: "cherryPick" | "revert",
+): Promise<GitOutput> {
+  return invoke("abort_history_operation", { path, kind });
+}
+export interface Diagnostics {
+  version: string;
+  executable: string;
+  logs: {
+    command: string;
+    timestamp: number;
+    exitCode: number | null;
+    durationMs: number;
+  }[];
+}
+export function getDiagnostics(path: string): Promise<Diagnostics> {
+  return invoke("get_diagnostics", { path });
+}

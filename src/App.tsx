@@ -8,6 +8,8 @@ import type {
 import type { CommitOptions, DeliveryAction } from "@/types/delivery";
 import {
   abortMerge,
+  abortHistoryOperation,
+  executeHistoryAction,
   abortRebase,
   applyStash,
   composeCommit,
@@ -620,7 +622,7 @@ export function RepositoryApp({
 
   /** Aborts only the operation reported by Git and refreshes every view afterward. */
   const handleAbortOperation = useCallback(
-    async (kind: "merge" | "rebase") => {
+    async (kind: "merge" | "rebase" | "cherryPick" | "revert") => {
       if (
         !repository ||
         operation.state !== "idle" ||
@@ -646,18 +648,23 @@ export function RepositoryApp({
       }
 
       setOperation({
-        state: kind === "merge" ? "abortingMerge" : "abortingRebase",
+        state:
+          kind === "merge"
+            ? "abortingMerge"
+            : kind === "rebase"
+              ? "abortingRebase"
+              : "abortingHistory",
       });
 
       try {
         if (kind === "merge") {
           await abortMerge(repository.path);
-        } else {
+        } else if (kind === "rebase") {
           await abortRebase(repository.path);
+        } else {
+          await abortHistoryOperation(repository.path, kind);
         }
-        setOperationNotice(
-          `${kind === "merge" ? "Merge" : "Rebase"} aborted successfully.`,
-        );
+        setOperationNotice(`${kind} aborted successfully.`);
       } catch (error) {
         setConflictOperationError(normalizeGitError(error));
       }
@@ -684,20 +691,30 @@ export function RepositoryApp({
         action.kind === "checkoutRemote" ||
         action.kind === "upstream";
       setOperation(
-        branchAction
-          ? { state: "creating", branchName: action.name }
-          : {
-              state:
-                action.kind === "fetch"
-                  ? "fetching"
-                  : action.kind === "pull"
-                    ? "pulling"
-                    : "pushing",
-            },
+        action.kind === "history"
+          ? { state: "editingHistory" }
+          : branchAction
+            ? { state: "creating", branchName: action.name }
+            : {
+                state:
+                  action.kind === "fetch"
+                    ? "fetching"
+                    : action.kind === "pull"
+                      ? "pulling"
+                      : "pushing",
+              },
       );
       let succeeded = false;
       try {
         switch (action.kind) {
+          case "history":
+            await executeHistoryAction(
+              repository.path,
+              action.expectedHead,
+              action.expectedBranch,
+              action.action,
+            );
+            break;
           case "createAt":
             await createBranchAt(
               repository.path,
@@ -736,7 +753,10 @@ export function RepositoryApp({
         setOperationNotice("Git operation completed successfully.");
         succeeded = true;
       } catch (error) {
-        if (branchAction) setBranchOperationError(normalizeGitError(error));
+        if (action.kind === "history")
+          setConflictOperationError(normalizeGitError(error));
+        else if (branchAction)
+          setBranchOperationError(normalizeGitError(error));
         else setRemoteOperationError(normalizeGitError(error));
       }
       await finishRepositoryMutation(repository.path);

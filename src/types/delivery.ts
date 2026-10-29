@@ -19,7 +19,13 @@ export interface CommitResult {
   output: GitOutput;
   pushError: GitError | null;
 }
+export type HistoryAction =
+  | { kind: "amend"; message: string }
+  | { kind: "reword"; revision: string; message: string }
+  | { kind: "cherryPick" | "revert"; revision: string }
+  | { kind: "reset"; revision: string; mode: "soft" | "mixed" | "hard" };
 export type DeliveryAction =
+  | { kind: "history"; expectedHead: string; expectedBranch: string; action: HistoryAction }
   | { kind: "createAt"; name: string; revision: string; checkout: boolean }
   | { kind: "checkoutRemote"; name: string; reference: string }
   | { kind: "upstream"; name: string; reference: string }

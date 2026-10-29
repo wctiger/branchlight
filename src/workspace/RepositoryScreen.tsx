@@ -6,6 +6,7 @@ import { ChangesInspector } from "@/workspace/ChangesInspector";
 import { RepositoryToolbar } from "@/workspace/RepositoryToolbar";
 import { RepositoryMainContent } from "@/workspace/RepositoryMainContent";
 import { useEffect, useRef, useState } from "react";
+import { HistoryControls } from "@/features/history/HistoryControls";
 import { BranchControls } from "@/features/DeliveryControls";
 import {
   BranchPanel,
@@ -94,7 +95,9 @@ export function RepositoryScreen({
   onDeleteBranch: (branchName: string) => Promise<boolean>;
   onMergeBranch: (sourceBranch: string) => Promise<boolean>;
   onRebaseBranch: (sourceBranch: string) => Promise<boolean>;
-  onAbortOperation: (kind: "merge" | "rebase") => void;
+  onAbortOperation: (
+    kind: "merge" | "rebase" | "cherryPick" | "revert",
+  ) => void;
   onDelivery: RunDelivery;
   onCreateStash: (message: string) => Promise<boolean>;
   onApplyStash: (stash: Stash) => Promise<boolean>;
@@ -169,10 +172,9 @@ export function RepositoryScreen({
         onStash={() => {
           setInspectorOpen(true);
           requestAnimationFrame(() => {
-            const details =
-              screen.current?.querySelector<HTMLDetailsElement>(
-                `.${changesStyles["stash-disclosure"]}`,
-              );
+            const details = screen.current?.querySelector<HTMLDetailsElement>(
+              `.${changesStyles["stash-disclosure"]}`,
+            );
             if (details) details.open = true;
             screen.current
               ?.querySelector<HTMLInputElement>('[name="stashMessage"]')
@@ -196,10 +198,7 @@ export function RepositoryScreen({
         </div>
       )}
 
-      <div
-        role="status"
-        aria-live="polite"
-      >
+      <div role="status" aria-live="polite">
         {operationNotice && (
           <div className={styles["repository-notice"]}>
             <Check aria-hidden="true" />
@@ -262,6 +261,22 @@ export function RepositoryScreen({
           onInspectorToggle={() => setInspectorOpen(!inspectorOpen)}
           history={
             <HistoryPanel
+              renderActions={(commit) => (
+                <HistoryControls
+                  key={commit.hash}
+                  commit={commit}
+                  head={status?.branch.oid ?? null}
+                  branch={status?.branch.name ?? null}
+                  disabled={
+                    controlsDisabled ||
+                    isRefreshing ||
+                    !status ||
+                    status.branch.isDetached ||
+                    hasActiveRepositoryOperation
+                  }
+                  run={onDelivery}
+                />
+              )}
               onSelectCommit={(hash) => {
                 setSelectedFile(null);
                 setInspectionCommit(hash);

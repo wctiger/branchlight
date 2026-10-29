@@ -24,7 +24,7 @@ export function ConflictBanner({
   isRefreshing: boolean;
   controlsDisabled: boolean;
   onRefresh: () => void;
-  onAbort: (kind: "merge" | "rebase") => void;
+  onAbort: (kind: "merge" | "rebase" | "cherryPick" | "revert") => void;
 }) {
   const headingId = useId();
   const activeOperation = status.operation;
@@ -39,13 +39,18 @@ export function ConflictBanner({
       ? "Merge"
       : activeOperation === "rebase"
         ? "Rebase"
-        : status.conflicts.length > 0
-          ? "Unresolved conflicts"
-          : "Repository operation changed";
+        : activeOperation === "cherryPick"
+          ? "Cherry-pick"
+          : activeOperation === "revert"
+            ? "Revert"
+            : status.conflicts.length > 0
+              ? "Unresolved conflicts"
+              : "Repository operation changed";
   const conflictCount = status.conflicts.length;
   const isAborting =
     (activeOperation === "merge" && operation.state === "abortingMerge") ||
-    (activeOperation === "rebase" && operation.state === "abortingRebase");
+    (activeOperation === "rebase" && operation.state === "abortingRebase") ||
+    operation.state === "abortingHistory";
   const actionsDisabled =
     controlsDisabled || operation.state !== "idle" || isRefreshing;
 
@@ -56,9 +61,14 @@ export function ConflictBanner({
       aria-live="polite"
     >
       <div className={styles["conflict-banner__heading"]}>
-        <TriangleAlert className={styles["conflict-banner__icon"]} aria-hidden="true" />
+        <TriangleAlert
+          className={styles["conflict-banner__icon"]}
+          aria-hidden="true"
+        />
         <div>
-          <p data-slot="eyebrow" className={sharedStyles["eyebrow"]}>Git operation</p>
+          <p data-slot="eyebrow" className={sharedStyles["eyebrow"]}>
+            Git operation
+          </p>
           <h2 id={headingId}>
             {activeOperation === "none"
               ? operationLabel
@@ -66,7 +76,7 @@ export function ConflictBanner({
           </h2>
           <p>
             {!hasRepositoryConflict
-              ? "Git no longer reports an active merge or rebase."
+              ? "Git no longer reports an active operation."
               : conflictCount === 0
                 ? "Git reports no conflicted files right now."
                 : `${conflictCount} ${conflictCount === 1 ? "file requires" : "files require"} manual resolution.`}
@@ -75,7 +85,10 @@ export function ConflictBanner({
       </div>
 
       {conflictCount > 0 && (
-        <ul className={styles["conflict-banner__files"]} aria-label="Conflicted files">
+        <ul
+          className={styles["conflict-banner__files"]}
+          aria-label="Conflicted files"
+        >
           {status.conflicts.map((conflict) => (
             <li key={conflict.path}>
               <code title={conflict.path}>{conflict.path}</code>
@@ -90,9 +103,11 @@ export function ConflictBanner({
             ? "Resolve and stage conflicts with an external Git tool, then continue or skip the rebase there. Branchlight currently supports abort only. Refresh after each external step."
             : activeOperation === "merge"
               ? "Resolve and stage conflicts with an external Git tool, then finish the merge there. Refresh Branchlight afterward, or abort the merge here."
-              : hasRepositoryConflict
-                ? "Resolve and stage these files with an external Git tool, then refresh Branchlight to read Git’s latest state."
-                : "Review Git’s message below, then refresh Branchlight before continuing."}
+              : activeOperation === "cherryPick" || activeOperation === "revert"
+                ? "Resolve and stage conflicts using external Git, then continue or skip there. You can also abort here. Refresh after each external step."
+                : hasRepositoryConflict
+                  ? "Resolve and stage these files with an external Git tool, then refresh Branchlight to read Git’s latest state."
+                  : "Review Git’s message below, then refresh Branchlight before continuing."}
         </p>
         <div>
           <Button
@@ -130,21 +145,14 @@ export function ConflictBanner({
               )}
               {isAborting
                 ? `Aborting ${activeOperation}…`
-                : `Abort ${activeOperation}`}
+                : `Abort ${activeOperation === "cherryPick" ? "cherry-pick" : activeOperation}`}
             </Button>
           )}
         </div>
       </div>
 
       {operationError && (
-        <ErrorNotice
-          error={operationError}
-          title={
-            activeOperation === "none"
-              ? "Git couldn’t abort the repository operation"
-              : `Git couldn’t abort the ${activeOperation}`
-          }
-        />
+        <ErrorNotice error={operationError} title="Git operation failed" />
       )}
     </section>
   );

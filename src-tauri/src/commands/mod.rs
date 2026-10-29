@@ -1,6 +1,7 @@
 pub(crate) mod branches;
 pub(crate) mod conflicts;
 pub(crate) mod history;
+pub(crate) mod history_operations;
 pub(crate) mod inspection;
 pub(crate) mod operations;
 pub(crate) mod remotes;

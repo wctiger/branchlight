@@ -1,6 +1,8 @@
 mod branches;
 mod conflicts;
+pub(crate) mod diagnostics;
 mod history;
+pub(crate) mod history_operations;
 mod operations;
 mod remotes;
 mod repository;
