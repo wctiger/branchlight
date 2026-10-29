@@ -9,18 +9,15 @@ import {
   waitFor,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import {
-  RepositoryTabs,
-  type RepositoryTab,
-} from "../src/components/repository-tabs";
-import { StashPanel } from "../src/features/stashes/StashPanel";
-import { BranchPanel } from "../src/features/branches/BranchPanel";
-import { OperationDialog } from "../src/components/operation-dialog";
-import { Button } from "../src/components/ui/button";
-import { TooltipProvider } from "../src/components/ui/tooltip";
-import { HistoryPanel } from "../src/features/history/HistoryPanel";
-import { visibleHistoryRange } from "../src/features/history/viewport";
-import { applyTheme, readTheme, themeStorageKey } from "../src/lib/theme";
+import { RepositoryTabs, type RepositoryTab } from "@/workspace/RepositoryTabs";
+import { StashPanel } from "@/features/stashes/StashPanel";
+import { BranchPanel } from "@/features/branches/BranchPanel";
+import { OperationDialog } from "@/components/operation-dialog";
+import { Button } from "@/components/ui/button";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { HistoryPanel } from "@/features/history/HistoryPanel";
+import { visibleHistoryRange } from "@/features/history/viewport";
+import { applyTheme, readTheme, themeStorageKey } from "@/lib/theme";
 import { commits } from "./fixtures/backend";
 
 afterEach(() => {

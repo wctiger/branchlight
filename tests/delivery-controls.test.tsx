@@ -249,3 +249,138 @@ test("commit success with push failure clears the draft, refreshes the source an
   ).toBeGreaterThan(previousReads);
   expect((view.getByLabelText("Summary") as HTMLInputElement).value).toBe("");
 });
+
+const { InspectionPanel } =
+  await import("../src/features/inspection/InspectionPanel");
+const { ChangesPanel } = await import("../src/workspace/ChangesPanel");
+const change = {
+  path: "src/review.ts",
+  status: "modified" as const,
+  originalPath: null,
+};
+const emptyStatus = {
+  operation: "none" as const,
+  branch: {
+    name: "main",
+    oid: "a".repeat(40),
+    isDetached: false,
+    upstream: null,
+    ahead: null,
+    behind: null,
+  },
+  staged: [],
+  unstaged: [],
+  conflicts: [],
+  stashCount: 0,
+};
+
+test("selected diff follows staging and unstaging, preserves partial comparison, and clears removed paths", async () => {
+  const selectedFile = { change, kind: "unstaged" };
+  const props = {
+    path: "/repo",
+    commit: null,
+    disabled: false,
+    onDiscard: () => {},
+    selectedFile,
+  };
+  const view = render(
+    <InspectionPanel
+      {...props}
+      status={{ ...emptyStatus, unstaged: [change] }}
+    />,
+  );
+  const diffs = () =>
+    calls.filter(({ command }) => command === "get_text_diff");
+  await waitFor(() => expect(diffs().at(-1)?.args.kind).toBe("unstaged"));
+  view.rerender(
+    <InspectionPanel
+      {...props}
+      status={{ ...emptyStatus, staged: [change] }}
+    />,
+  );
+  await waitFor(() => expect(diffs().at(-1)?.args.kind).toBe("staged"));
+  view.rerender(
+    <InspectionPanel
+      {...props}
+      status={{ ...emptyStatus, staged: [change], unstaged: [change] }}
+    />,
+  );
+  await waitFor(() => expect(diffs().at(-1)?.args.kind).toBe("unstaged"));
+  view.rerender(
+    <InspectionPanel
+      {...props}
+      selectedFile={{ change, kind: "staged" }}
+      status={{ ...emptyStatus, staged: [change], unstaged: [change] }}
+    />,
+  );
+  await waitFor(() => expect(diffs().at(-1)?.args.kind).toBe("staged"));
+  view.rerender(
+    <InspectionPanel
+      {...props}
+      selectedFile={{ change, kind: "staged" }}
+      status={{ ...emptyStatus, unstaged: [change] }}
+    />,
+  );
+  await waitFor(() => expect(diffs().at(-1)?.args.kind).toBe("unstaged"));
+  const count = diffs().length;
+  view.rerender(<InspectionPanel {...props} status={emptyStatus} />);
+  expect(diffs()).toHaveLength(count);
+  expect(view.container.querySelector(".text-diff")).toBeNull();
+});
+
+test("conflict selection uses the supported unstaged comparison and refreshes from conflict status", async () => {
+  const conflict = { ...change, status: "conflicted" as const };
+  const status = { ...emptyStatus, conflicts: [conflict] };
+  let selection: { change: typeof change; kind: string } | null = null;
+  const view = render(
+    <ChangesPanel
+      state={{
+        state: "ready",
+        status,
+        isRefreshing: false,
+        refreshError: null,
+      }}
+      stashesState={{
+        state: "ready",
+        stashes: [],
+        isRefreshing: false,
+        refreshError: null,
+      }}
+      controlsDisabled={false}
+      onRefresh={() => {}}
+      operation={{ state: "idle" }}
+      operationError={null}
+      stashOperationError={null}
+      onSelectFile={(change, kind) => {
+        selection = { change: change as typeof conflict, kind };
+      }}
+      onStage={() => {}}
+      onUnstage={() => {}}
+      onCommit={async () => true}
+      onCreateStash={async () => true}
+      onApplyStash={async () => true}
+      onPopStash={async () => true}
+      onDropStash={async () => true}
+    />,
+  );
+  const user = userEvent.setup({ document });
+  await user.click(view.getByRole("button", { name: change.path }));
+  expect(selection?.kind).toBe("unstaged");
+  view.unmount();
+  render(
+    <InspectionPanel
+      path="/repo"
+      commit={null}
+      disabled={false}
+      onDiscard={() => {}}
+      selectedFile={selection}
+      status={status}
+    />,
+  );
+  await waitFor(() =>
+    expect(
+      calls.filter(({ command }) => command === "get_text_diff").at(-1)?.args
+        .kind,
+    ).toBe("unstaged"),
+  );
+});
