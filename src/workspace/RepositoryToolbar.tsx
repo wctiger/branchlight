@@ -3,6 +3,7 @@ import summaryStyles from "@/workspace/BranchSummary.module.css";
 import sharedStyles from "@/styles/shared.module.css";
 import { FolderOpen, RefreshCw, LoaderCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { DiagnosticsPanel } from "@/features/DiagnosticsPanel";
 import { RemoteControls } from "@/features/DeliveryControls";
 import { BranchSummary } from "@/workspace/BranchSummary";
 import { BranchlightMark } from "@/workspace/icons";
@@ -65,6 +66,7 @@ export function RepositoryToolbar({
       </div>
 
       <div className={styles["repository-actions"]}>
+        <DiagnosticsPanel path={repository.path} />
         <RemoteControls
           path={repository.path}
           disabled={

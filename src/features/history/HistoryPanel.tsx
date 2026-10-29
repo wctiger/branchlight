@@ -1,5 +1,6 @@
 import styles from "@/features/history/HistoryPanel.module.css";
 import {
+  type ReactNode,
   useEffect,
   useId,
   useMemo,
@@ -26,6 +27,7 @@ export type HistoryState =
     }
   | { state: "error"; error: GitError };
 interface HistoryPanelProps {
+  renderActions?: (commit: Commit) => ReactNode;
   state: HistoryState;
   controlsDisabled: boolean;
   onRefresh: () => void;
@@ -50,6 +52,7 @@ export function HistoryPanel({
   controlsDisabled,
   onRefresh,
   onSelectCommit,
+  renderActions,
 }: HistoryPanelProps) {
   const titleId = useId();
   const commits = useMemo(
@@ -149,7 +152,7 @@ export function HistoryPanel({
         )}
       </header>
       <p className={styles["history-bound"]}>
-        Read-only · latest 200 commits from Git
+        Latest 200 commits from Git
         {commits.length > 200 ? " · synthetic fixture" : ""}
       </p>
       {failure && (
@@ -303,6 +306,7 @@ export function HistoryPanel({
       </div>
       {selected && (
         <footer className={styles["history-selection"]}>
+          {renderActions?.(selected)}
           <code>{selected.hash.slice(0, 12)}</code>
           <strong>{selected.subject || "(no subject)"}</strong>
           <span>

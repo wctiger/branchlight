@@ -9,9 +9,19 @@ use std::{
 use crate::models::{GitError, GitOutput};
 
 pub(super) fn run_git(repository: &Path, arguments: &[&str]) -> Result<GitOutput, GitError> {
+    run_git_with_env(repository, arguments, &[])
+}
+
+pub(super) fn run_git_with_env(
+    repository: &Path,
+    arguments: &[&str],
+    environment: &[(&str, &str)],
+) -> Result<GitOutput, GitError> {
+    let started = std::time::Instant::now();
     let mut child = Command::new("git")
         .current_dir(repository)
         .args(arguments)
+        .envs(environment.iter().copied())
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
@@ -44,6 +54,12 @@ pub(super) fn run_git(repository: &Path, arguments: &[&str]) -> Result<GitOutput
         message: error.to_string(),
     })?;
     let succeeded = status.success();
+    super::diagnostics::record(
+        repository,
+        arguments,
+        status.code(),
+        started.elapsed().as_millis(),
+    );
     let mut output = GitOutput {
         stdout: decode_git_bytes(&stdout_bytes),
         stderr: decode_git_bytes(&stderr_bytes),

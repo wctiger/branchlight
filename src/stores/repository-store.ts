@@ -7,6 +7,8 @@ import type {
 import type { CommitOptions, DeliveryAction } from "@/types/delivery";
 import {
   abortMerge,
+  abortHistoryOperation,
+  executeHistoryAction,
   abortRebase,
   applyStash,
   composeCommit,
@@ -41,7 +43,7 @@ import type { HistoryState } from "@/features/history/HistoryPanel";
 import type { GitError } from "@/types/git";
 import type { Repository } from "@/types/repository";
 import type { Stash } from "@/types/stash";
-import type { FileChange } from "@/types/status";
+import { repositoryOperationLabels, type FileChange } from "@/types/status";
 import type { RunDelivery } from "@/types/delivery";
 type StashMutation =
   | {
@@ -106,7 +108,9 @@ export type RepositoryState = {
   onDeleteBranch: (branchName: string) => Promise<boolean>;
   onMergeBranch: (sourceBranch: string) => Promise<boolean>;
   onRebaseBranch: (sourceBranch: string) => Promise<boolean>;
-  onAbortOperation: (kind: "merge" | "rebase") => void;
+  onAbortOperation: (
+    kind: "merge" | "rebase" | "cherryPick" | "revert",
+  ) => void;
   onDelivery: RunDelivery;
   onCreateStash: (message: string) => Promise<boolean>;
   onApplyStash: (stash: Stash) => Promise<boolean>;
@@ -615,7 +619,9 @@ export function createRepositoryStore(
     };
 
     /** Aborts only the operation reported by Git and refreshes every view afterward. */
-    const handleAbortOperation = async (kind: "merge" | "rebase") => {
+    const handleAbortOperation = async (
+      kind: "merge" | "rebase" | "cherryPick" | "revert",
+    ) => {
       const statusState = get().statusState;
       if (get().operation.state !== "idle" || repositoryMutationInFlight) {
         return;
@@ -627,7 +633,7 @@ export function createRepositoryStore(
         set({
           conflictOperationError: {
             code: "invalidOperationInput",
-            message: `Git does not report an active ${kind} to abort. Refresh status and try again.`,
+            message: `Git does not report an active ${repositoryOperationLabels[kind]} to abort. Refresh status and try again.`,
           },
         });
         return;
@@ -637,17 +643,24 @@ export function createRepositoryStore(
       }
       set({
         operation: {
-          state: kind === "merge" ? "abortingMerge" : "abortingRebase",
+          state:
+            kind === "merge"
+              ? "abortingMerge"
+              : kind === "rebase"
+                ? "abortingRebase"
+                : "abortingHistory",
         },
       });
       try {
         if (kind === "merge") {
           await abortMerge(repository.path);
-        } else {
+        } else if (kind === "rebase") {
           await abortRebase(repository.path);
+        } else {
+          await abortHistoryOperation(repository.path, kind);
         }
         set({
-          operationNotice: `${kind === "merge" ? "Merge" : "Rebase"} aborted successfully.`,
+          operationNotice: `${repositoryOperationLabels[kind]} aborted successfully.`,
         });
       } catch (error) {
         set({
@@ -665,23 +678,34 @@ export function createRepositoryStore(
         action.kind === "checkoutRemote" ||
         action.kind === "upstream";
       set({
-        operation: branchAction
-          ? {
-              state: "creating",
-              branchName: action.name,
-            }
-          : {
-              state:
-                action.kind === "fetch"
-                  ? "fetching"
-                  : action.kind === "pull"
-                    ? "pulling"
-                    : "pushing",
-            },
+        operation:
+          action.kind === "history"
+            ? { state: "editingHistory" }
+            : branchAction
+              ? {
+                  state: "creating",
+                  branchName: action.name,
+                }
+              : {
+                  state:
+                    action.kind === "fetch"
+                      ? "fetching"
+                      : action.kind === "pull"
+                        ? "pulling"
+                        : "pushing",
+                },
       });
       let succeeded = false;
       try {
         switch (action.kind) {
+          case "history":
+            await executeHistoryAction(
+              repository.path,
+              action.expectedHead,
+              action.expectedBranch,
+              action.action,
+            );
+            break;
           case "createAt":
             await createBranchAt(
               repository.path,
@@ -722,7 +746,9 @@ export function createRepositoryStore(
         });
         succeeded = true;
       } catch (error) {
-        if (branchAction)
+        if (action.kind === "history")
+          set({ conflictOperationError: normalizeGitError(error) });
+        else if (branchAction)
           set({
             branchOperationError: normalizeGitError(error),
           });

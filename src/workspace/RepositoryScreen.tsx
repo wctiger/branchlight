@@ -8,6 +8,7 @@ import { ChangesInspector } from "@/workspace/ChangesInspector";
 import { RepositoryToolbar } from "@/workspace/RepositoryToolbar";
 import { RepositoryMainContent } from "@/workspace/RepositoryMainContent";
 import { useEffect, useRef, useState } from "react";
+import { HistoryControls } from "@/features/history/HistoryControls";
 import { BranchControls } from "@/features/DeliveryControls";
 import { BranchPanel } from "@/features/branches/BranchPanel";
 import { HistoryPanel } from "@/features/history/HistoryPanel";
@@ -210,6 +211,22 @@ export function RepositoryScreen() {
           onInspectorToggle={() => setInspectorOpen(!inspectorOpen)}
           history={
             <HistoryPanel
+              renderActions={(commit) => (
+                <HistoryControls
+                  key={commit.hash}
+                  commit={commit}
+                  head={status?.branch.oid ?? null}
+                  branch={status?.branch.name ?? null}
+                  disabled={
+                    controlsDisabled ||
+                    isRefreshing ||
+                    !status ||
+                    status.branch.isDetached ||
+                    hasActiveRepositoryOperation
+                  }
+                  run={onDelivery}
+                />
+              )}
               onSelectCommit={(hash) => {
                 setSelectedFile(null);
                 setInspectionCommit(hash);

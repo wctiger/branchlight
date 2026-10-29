@@ -74,3 +74,27 @@
   flex-direction: column;
   gap: 6px;
 }
+
+.history-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  width: 100%;
+}
+.diagnostics {
+  max-height: 55vh;
+  overflow: auto;
+  overflow-wrap: anywhere;
+  font-size: var(--type-label);
+}
+.history-message,
+.reset-modes {
+  width: 100%;
+}
+.reset-modes label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 16px;
+  padding-block: 6px;
+}

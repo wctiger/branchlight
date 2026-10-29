@@ -500,3 +500,237 @@ test("mutations stay guarded through refresh while another repository can progre
   expect(workspace.getState().tabs).toHaveLength(0);
   unsubscribe();
 });
+
+test("history reset captures the reviewed HEAD and requires an explicit destructive action", async () => {
+  const { HistoryControls } =
+    await import("../src/features/history/HistoryControls");
+  const { commits } = await import("./fixtures/backend");
+  const user = userEvent.setup({ document });
+  const actions: DeliveryAction[] = [];
+  const props = {
+    commit: commits[0],
+    head: commits[0].hash,
+    branch: "main",
+    disabled: false,
+    run: async (action: DeliveryAction) => {
+      actions.push(action);
+      return true;
+    },
+  };
+  const view = render(<HistoryControls {...props} />);
+  await user.click(
+    view.getByRole("button", { name: "Reset branch", exact: true }),
+  );
+  await user.click(view.getByRole("radio", { name: "hard", exact: true }));
+  expect(view.getByText(/Untracked paths obstructing/)).toBeTruthy();
+  view.rerender(<HistoryControls {...props} head={commits[1].hash} />);
+  await user.click(
+    view.getByRole("button", { name: "Discard changes and reset" }),
+  );
+  expect(actions).toEqual([
+    {
+      kind: "history",
+      expectedHead: commits[0].hash,
+      expectedBranch: "main",
+      action: { kind: "reset", revision: commits[0].hash, mode: "hard" },
+    },
+  ]);
+});
+
+test("reword requires a full message and preserves the dialog on failure", async () => {
+  const { HistoryControls } =
+    await import("../src/features/history/HistoryControls");
+  const { commits } = await import("./fixtures/backend");
+  const user = userEvent.setup({ document });
+  const view = render(
+    <HistoryControls
+      commit={commits[1]}
+      head={commits[0].hash}
+      branch="main"
+      disabled={false}
+      run={async () => false}
+    />,
+  );
+  expect(
+    (
+      view.getByRole("button", {
+        name: "Amend latest commit",
+      }) as HTMLButtonElement
+    ).disabled,
+  ).toBe(true);
+  await user.click(
+    view.getByRole("button", { name: "Reword commit", exact: true }),
+  );
+  const confirm = view
+    .getAllByRole("button", { name: "Reword commit", exact: true })
+    .at(-1) as HTMLButtonElement;
+  expect(confirm.disabled).toBe(true);
+  await user.type(
+    view.getByLabelText("New full commit message"),
+    "New summary\n\nBody",
+  );
+  await user.click(confirm);
+  await waitFor(() =>
+    expect(view.getByRole("alert").textContent).toContain(
+      "Git could not complete",
+    ),
+  );
+  expect(
+    (view.getByLabelText("New full commit message") as HTMLTextAreaElement)
+      .value,
+  ).toContain("Body");
+});
+
+test("history actions use the repository store guard and refresh conflicts before matching abort", async () => {
+  const store = createRepositoryStore(
+    { name: "history", path: "/history" },
+    () => {},
+  );
+  await store.getState().onRefresh();
+  const mutation = deferred<unknown>();
+  let stopped = false;
+  intercept = (command) => {
+    if (command === "execute_history_action") return mutation.promise;
+    if (command === "get_repository_status")
+      return fixture<import("../src/types/status").RepositoryStatus>(
+        command,
+      ).then((status) => ({
+        ...status,
+        operation: stopped ? "cherryPick" : "none",
+      }));
+    if (command === "abort_history_operation") {
+      stopped = false;
+      return Promise.resolve({ stdout: "aborted", stderr: "", exitCode: 0 });
+    }
+    return undefined;
+  };
+  const action: DeliveryAction = {
+    kind: "history",
+    expectedHead: "a".repeat(40),
+    expectedBranch: "main",
+    action: { kind: "cherryPick", revision: "b".repeat(40) },
+  };
+  const pending = store.getState().onDelivery(action);
+  expect(store.getState().operation.state).toBe("editingHistory");
+  expect(await store.getState().onDelivery(action)).toBe(false);
+  expect(
+    calls.find((call) => call.command === "execute_history_action")?.args,
+  ).toEqual({
+    path: "/history",
+    expectedHead: action.expectedHead,
+    expectedBranch: "main",
+    action: action.action,
+  });
+  stopped = true;
+  mutation.reject({ code: "commandFailed", message: "Cherry-pick conflicted" });
+  expect(await pending).toBe(false);
+  expect(store.getState().operation.state).toBe("idle");
+  expect(store.getState().conflictOperationError?.message).toBe(
+    "Cherry-pick conflicted",
+  );
+  const status = store.getState().statusState;
+  expect(status.state === "ready" && status.status.operation).toBe(
+    "cherryPick",
+  );
+  for (const command of [
+    "get_repository_status",
+    "get_branches",
+    "get_stashes",
+    "get_history",
+  ])
+    expect(calls.filter((call) => call.command === command)).toHaveLength(2);
+  store.getState().onAbortOperation("revert");
+  expect(calls.some((call) => call.command === "abort_history_operation")).toBe(
+    false,
+  );
+  store.getState().onAbortOperation("cherryPick");
+  await waitFor(() => expect(store.getState().operation.state).toBe("idle"));
+  expect(
+    calls.find((call) => call.command === "abort_history_operation")?.args,
+  ).toEqual({ path: "/history", kind: "cherryPick" });
+  const recovered = store.getState().statusState;
+  expect(recovered.state === "ready" && recovered.status.operation).toBe(
+    "none",
+  );
+  expect(store.getState().conflictOperationError).toBe(null);
+});
+
+test.each([
+  ["merge", "Merge", "abortingMerge"],
+  ["rebase", "Rebase", "abortingRebase"],
+  ["cherryPick", "Cherry-pick", "abortingHistory"],
+  ["revert", "Revert", "abortingHistory"],
+] as const)(
+  "abort controls display %s labels consistently",
+  async (kind, label, state) => {
+    const { ConflictBanner } = await import("../src/workspace/ConflictBanner");
+    const status = await fixture<
+      import("../src/types/status").RepositoryStatus
+    >("get_repository_status");
+    const props = {
+      status: { ...status, operation: kind },
+      operation: {
+        state: "idle",
+      } as import("../src/workspace/types").AppOperation,
+      operationError: null,
+      isRefreshing: false,
+      controlsDisabled: false,
+      onRefresh: () => {},
+      onAbort: () => {},
+    };
+    const view = render(<ConflictBanner {...props} />);
+    expect(
+      view.getByRole("button", { name: `Abort ${label}`, exact: true }),
+    ).toBeTruthy();
+    view.rerender(<ConflictBanner {...props} operation={{ state }} />);
+    expect(
+      (
+        view.getByRole("button", {
+          name: `Aborting ${label}…`,
+          exact: true,
+        }) as HTMLButtonElement
+      ).disabled,
+    ).toBe(true);
+  },
+);
+
+test("abort errors and notices never expose the cherryPick identifier", async () => {
+  const store = createRepositoryStore(
+    { name: "labels", path: "/labels" },
+    () => {},
+  );
+  await store.getState().onRefresh();
+  store.getState().onAbortOperation("cherryPick");
+  expect(store.getState().conflictOperationError?.message).toContain(
+    "active Cherry-pick to abort",
+  );
+  intercept = (command) => {
+    if (command === "get_repository_status")
+      return fixture<import("../src/types/status").RepositoryStatus>(
+        command,
+      ).then((status) => ({ ...status, operation: "cherryPick" }));
+    if (command === "abort_history_operation")
+      return Promise.resolve({ stdout: "", stderr: "", exitCode: 0 });
+    return undefined;
+  };
+  await store.getState().onRefresh();
+  store.getState().onAbortOperation("cherryPick");
+  await waitFor(() => expect(store.getState().operation.state).toBe("idle"));
+  expect(store.getState().operationNotice).toBe(
+    "Cherry-pick aborted successfully.",
+  );
+});
+
+test("diagnostics labels the PATH scan as a candidate", async () => {
+  const { DiagnosticsPanel } = await import("../src/features/DiagnosticsPanel");
+  const user = userEvent.setup({ document });
+  const view = render(<DiagnosticsPanel path="/diagnostics" />);
+  await user.click(view.getByRole("button", { name: "Diagnostics" }));
+  await waitFor(() =>
+    expect(view.getByText(/Git on PATH \(candidate\)/)).toBeTruthy(),
+  );
+  expect(view.getByText("/fixture/bin/git")).toBeTruthy();
+  expect(
+    view.getByText(/operating system may select a different executable/),
+  ).toBeTruthy();
+});

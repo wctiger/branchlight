@@ -20,6 +20,8 @@ export type AppOperation =
   | { state: "unstaging"; path: string }
   | { state: "discarding"; path: string }
   | { state: "committing" }
+  | { state: "editingHistory" }
+  | { state: "abortingHistory" }
   | { state: "switching"; branchName: string }
   | { state: "creating"; branchName: string }
   | { state: "renaming"; branchName: string }

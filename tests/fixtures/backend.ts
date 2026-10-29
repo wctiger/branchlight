@@ -58,6 +58,21 @@ export async function invoke<T>(
   }));
   let result: unknown;
   switch (command) {
+    case "get_diagnostics":
+      result = {
+        version: "git version 2.50.0 (fixture)",
+        pathCandidate: "/fixture/bin/git",
+        logs: [
+          {
+            command: "commit",
+            timestamp: 1792400000,
+            exitCode: 0,
+            durationMs: 42,
+          },
+        ],
+      };
+      break;
+
     case "get_git_version":
       result = {
         stdout: "git version 2.50.1 · UI fixture",

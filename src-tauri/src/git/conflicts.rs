@@ -17,6 +17,24 @@ pub(crate) fn get_repository_operation(repository: &Path) -> Result<RepositoryOp
         return Ok(RepositoryOperation::Merge);
     }
 
+    for (marker, operation) in [
+        ("CHERRY_PICK_HEAD", RepositoryOperation::CherryPick),
+        ("REVERT_HEAD", RepositoryOperation::Revert),
+    ] {
+        if resolve_git_path(repository, marker)?.exists() {
+            return Ok(operation);
+        }
+    }
+    // Multi-step sequencers can stop between commits without a *_HEAD file.
+    let todo = resolve_git_path(repository, "sequencer/todo")?;
+    if let Ok(contents) = std::fs::read_to_string(todo) {
+        if contents.starts_with("pick ") {
+            return Ok(RepositoryOperation::CherryPick);
+        }
+        if contents.starts_with("revert ") {
+            return Ok(RepositoryOperation::Revert);
+        }
+    }
     Ok(RepositoryOperation::None)
 }
 
@@ -59,6 +77,8 @@ fn require_operation(repository: &Path, expected: RepositoryOperation) -> Result
         let operation = match expected {
             RepositoryOperation::Merge => "merge",
             RepositoryOperation::Rebase => "rebase",
+            RepositoryOperation::CherryPick => "cherry-pick",
+            RepositoryOperation::Revert => "revert",
             RepositoryOperation::None => "repository operation",
         };
         Err(GitError::InvalidOperationInput {

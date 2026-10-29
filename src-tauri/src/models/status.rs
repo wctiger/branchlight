@@ -17,6 +17,8 @@ pub(crate) enum RepositoryOperation {
     None,
     Merge,
     Rebase,
+    CherryPick,
+    Revert,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
