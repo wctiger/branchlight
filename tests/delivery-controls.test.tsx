@@ -1,3 +1,5 @@
+import { createWorkspaceStore } from "@/stores/workspace-store";
+import { WorkspaceStoreContext } from "@/stores/workspace-context";
 import inspectionStyles from "@/features/inspection/InspectionPanel.module.css";
 import "./setup-dom";
 import { afterEach, expect, mock, test } from "bun:test";
@@ -7,12 +9,20 @@ import { invoke as fixture } from "./fixtures/backend";
 import type { CommitOptions, DeliveryAction } from "../src/types/delivery";
 
 const calls: { command: string; args: Record<string, unknown> }[] = [];
+let intercept:
+  | ((
+      command: string,
+      args: Record<string, unknown>,
+    ) => Promise<unknown> | undefined)
+  | undefined;
 let commitFailure = false;
 let pushFailure = false;
 let reviewOid = "b".repeat(40);
 mock.module("@tauri-apps/api/core", () => ({
   invoke: async (command: string, args: Record<string, unknown> = {}) => {
     calls.push({ command, args });
+    const intercepted = intercept?.(command, args);
+    if (intercepted) return intercepted;
     if (command === "compose_commit") {
       if (commitFailure)
         throw {
@@ -57,11 +67,13 @@ mock.module("@tauri-apps/api/core", () => ({
 }));
 const { CommitComposer, RemoteControls, BranchControls } =
   await import("../src/features/DeliveryControls");
+const { createRepositoryStore } = await import("@/stores/repository-store");
 const { RepositoryApp } = await import("../src/App");
 
 afterEach(() => {
   cleanup();
   calls.length = 0;
+  intercept = undefined;
   commitFailure = false;
   pushFailure = false;
   reviewOid = "b".repeat(40);
@@ -226,11 +238,11 @@ test("commit success with push failure clears the draft, refreshes the source an
   const user = userEvent.setup({ document });
   pushFailure = true;
   const view = render(
-    <RepositoryApp
-      initialRepository={{ name: "test", path: "/fixtures/test" }}
-      onOpen={() => {}}
-      onFeedback={() => {}}
-    />,
+    <WorkspaceStoreContext value={createWorkspaceStore()}>
+      <RepositoryApp
+        initialRepository={{ name: "test", path: "/fixtures/test" }}
+      />
+    </WorkspaceStoreContext>,
   );
   await waitFor(() => expect(view.getByLabelText("Summary")).not.toBeNull());
   await user.type(view.getByLabelText("Summary"), "Commit once");
@@ -326,7 +338,9 @@ test("selected diff follows staging and unstaging, preserves partial comparison,
   const count = diffs().length;
   view.rerender(<InspectionPanel {...props} status={emptyStatus} />);
   expect(diffs()).toHaveLength(count);
-  expect(view.container.querySelector(`.${inspectionStyles["text-diff"]}`)).toBeNull();
+  expect(
+    view.container.querySelector(`.${inspectionStyles["text-diff"]}`),
+  ).toBeNull();
 });
 
 test("conflict selection uses the supported unstaged comparison and refreshes from conflict status", async () => {
@@ -384,4 +398,105 @@ test("conflict selection uses the supported unstaged comparison and refreshes fr
         .kind,
     ).toBe("unstaged"),
   );
+});
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason: unknown) => void;
+  const promise = new Promise<T>((yes, no) => {
+    resolve = yes;
+    reject = no;
+  });
+  return { promise, resolve, reject };
+}
+
+test.each([true, false])(
+  "repository stores ignore old refreshes (late failure: %s) and retain the last good snapshot on failure",
+  async (lateFailure) => {
+    const store = createRepositoryStore(
+      { name: "one", path: "/one" },
+      () => {},
+    );
+    const old = deferred<unknown>();
+    let statusReads = 0;
+    intercept = (command) =>
+      command === "get_repository_status" && statusReads++ === 0
+        ? old.promise
+        : undefined;
+    const first = store.getState().onRefresh();
+    await store.getState().onRefresh();
+    const latest = store.getState().statusState;
+    expect(latest.state).toBe("ready");
+    if (lateFailure)
+      old.reject({ code: "commandFailed", message: "Late failure" });
+    else old.resolve(await fixture("get_repository_status", { path: "/one" }));
+    await first;
+    expect(store.getState().statusState).toBe(latest);
+    intercept = (command) =>
+      command === "get_repository_status"
+        ? Promise.reject({ code: "commandFailed", message: "Refresh failed" })
+        : undefined;
+    await store.getState().onRefresh();
+    const failed = store.getState().statusState;
+    expect(failed.state).toBe("ready");
+    if (failed.state === "ready" && latest.state === "ready") {
+      expect(failed.status).toBe(latest.status);
+      expect(failed.refreshError?.message).toBe("Refresh failed");
+      expect(failed.isRefreshing).toBe(false);
+    }
+  },
+);
+
+test("mutations stay guarded through refresh while another repository can progress", async () => {
+  const workspace = createWorkspaceStore();
+  const one = { name: "one", path: "/one" };
+  workspace.getState().addRepository(one);
+  const store = createRepositoryStore(one, () => {});
+  const other = createRepositoryStore({ name: "two", path: "/two" }, () => {});
+  const unsubscribe = store.subscribe((state) =>
+    workspace
+      .getState()
+      .feedback(one.path, state.operation.state !== "idle", false, false),
+  );
+  const mutation = deferred<unknown>();
+  const refresh = deferred<unknown>();
+  intercept = (command, args) =>
+    args.path === "/one"
+      ? command === "compose_commit"
+        ? mutation.promise
+        : command === "get_repository_status"
+          ? refresh.promise
+          : undefined
+      : undefined;
+  const options = {
+    summary: "Once",
+    body: "",
+    pushAfterCommit: false,
+    skipHooks: false,
+  };
+  const pending = store.getState().onCommit(options);
+  workspace.getState().close(workspace.getState().tabs[0]);
+  expect(workspace.getState().tabs).toHaveLength(1);
+  expect(await store.getState().onCommit(options)).toBe(false);
+  expect(await other.getState().onCommit(options)).toBe(true);
+  mutation.resolve({
+    output: { stdout: "ok", stderr: "", exitCode: 0 },
+    pushError: null,
+  });
+  await waitFor(() =>
+    expect(store.getState().statusState.state).toBe("loading"),
+  );
+  expect(store.getState().operation.state).toBe("committing");
+  expect(await store.getState().onCommit(options)).toBe(false);
+  refresh.resolve(await fixture("get_repository_status", { path: "/one" }));
+  expect(await pending).toBe(true);
+  expect(store.getState().operation.state).toBe("idle");
+  expect(
+    calls.filter(
+      (call) => call.command === "compose_commit" && call.args.path === "/one",
+    ),
+  ).toHaveLength(1);
+  workspace.getState().close(workspace.getState().tabs[0]);
+  expect(workspace.getState().tabs).toHaveLength(0);
+  unsubscribe();
 });

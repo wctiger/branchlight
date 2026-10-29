@@ -1,3 +1,5 @@
+import { useShallow } from "zustand/react/shallow";
+import { useWorkspaceStore } from "@/stores/workspace-context";
 import navigationStyles from "@/workspace/RepositorySidebar.module.css";
 import sharedStyles from "@/styles/shared.module.css";
 import { cn } from "@/lib/utils";
@@ -39,21 +41,24 @@ export type RepositoryTab = {
   error: boolean;
   dirty: boolean;
 };
-export function RepositoryTabs({
-  tabs,
-  active,
-  groups,
-  onSelect,
-  onClose,
-  onGroup,
-}: {
-  tabs: RepositoryTab[];
-  active: string;
-  groups: string[];
-  onSelect: (path: string) => void;
-  onClose: (tab: RepositoryTab) => void;
-  onGroup: (path: string, group: string) => void;
-}) {
+export function RepositoryTabs() {
+  const {
+    tabs,
+    active,
+    groups,
+    setActive: onSelect,
+    close: onClose,
+    assignGroup: onGroup,
+  } = useWorkspaceStore(
+    useShallow((state) => ({
+      tabs: state.tabs,
+      active: state.active,
+      groups: state.groups,
+      setActive: state.setActive,
+      close: state.close,
+      assignGroup: state.assignGroup,
+    })),
+  );
   const strip = useRef<HTMLDivElement>(null);
   useEffect(() => {
     strip.current
@@ -90,7 +95,8 @@ export function RepositoryTabs({
             key={tab.repository.path}
             className={cn(
               navigationStyles["repository-tab"],
-              active === tab.repository.path && navigationStyles["repository-tab--active"],
+              active === tab.repository.path &&
+                navigationStyles["repository-tab--active"],
             )}
           >
             <Tooltip>
@@ -210,19 +216,23 @@ export function RepositoryTabs({
                     active === tab.repository.path ? "true" : undefined
                   }
                 >
-                  {active === tab.repository.path && <Check aria-hidden="true" />}
+                  {active === tab.repository.path && (
+                    <Check aria-hidden="true" />
+                  )}
                   <span className={navigationStyles["overflow-repo-name"]}>
                     {tab.group && `${tab.group} / `}
                     {tab.repository.name}
                     <small>{tab.repository.path}</small>
                   </span>
-                  {tab.busy
-                    ? "Working…"
-                    : tab.error
-                      ? "Error"
-                      : tab.dirty
-                        ? <Dot aria-label="Uncommitted changes" role="img" />
-                        : ""}
+                  {tab.busy ? (
+                    "Working…"
+                  ) : tab.error ? (
+                    "Error"
+                  ) : tab.dirty ? (
+                    <Dot aria-label="Uncommitted changes" role="img" />
+                  ) : (
+                    ""
+                  )}
                 </DropdownMenuItem>
               ))}
             </DropdownMenuGroup>
