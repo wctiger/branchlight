@@ -18,7 +18,7 @@ const contrast = (a: string, b: string) => {
 test("both Orange modes preserve readable foreground pairs and focus on all declared surfaces", () => {
   for (const values of Object.values(tokens.schemes[0].modes)) {
     const colors = values as Record<string, string>;
-    expect(colors["action.primary"]).toBe("#ff7518");
+    expect(colors["action.primary"]).toBe("#F37021");
     for (const surface of [
       "surface.canvas",
       "surface.panel",
@@ -72,5 +72,5 @@ test("token CSS resolves both modes and shared density/font variables before app
   expect(css).toContain('--font-mono:"Cascadia Code"');
   expect(css).toContain(".dark{");
   expect(css).toContain("color-scheme:dark");
-  expect(css.match(/--action-primary:#ff7518;/g)?.length).toBe(2);
+  expect(css.match(/--action-primary:#F37021;/g)?.length).toBe(2);
 });
