@@ -1,3 +1,4 @@
+import { LoaderCircle } from "lucide-react";
 import { OperationDialog } from "@/components/operation-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -109,7 +110,11 @@ function BranchItem({
           <span>{trackingLabel}</span>
         </span>
         {isBusy ? (
-          <span className="small-spinner" aria-hidden="true" />
+          <LoaderCircle
+            className="small-spinner"
+            aria-hidden="true"
+            data-icon="inline-start"
+          />
         ) : branch.isCurrent ? (
           <span className="branch-current-label">Current</span>
         ) : (
@@ -341,7 +346,7 @@ export function BranchPanel({
   if (state.state === "idle" || state.state === "loading") {
     return (
       <aside className="branch-panel branch-panel--loading" aria-live="polite">
-        <span className="workspace-spinner" aria-hidden="true" />
+        <LoaderCircle className="workspace-spinner" aria-hidden="true" />
         <strong>Reading branches…</strong>
       </aside>
     );

@@ -1,9 +1,9 @@
+import { Plus, Minus, RefreshCw, LoaderCircle } from "lucide-react";
 import { useId } from "react";
 import { Button } from "@/components/ui/button";
 import { CommitComposer } from "@/features/DeliveryControls";
 import { StashPanel, type StashesState } from "@/features/stashes/StashPanel";
 import { ErrorNotice } from "@/workspace/ErrorNotice";
-import { RefreshIcon, StageIcon } from "@/workspace/icons";
 import type { RepositoryStatusState, AppOperation } from "@/workspace/types";
 import type { CommitOptions } from "@/types/delivery";
 import type { GitError } from "@/types/git";
@@ -109,9 +109,15 @@ function ChangeSection({
                   onClick={() => action.onClick(change.path)}
                 >
                   {busyPath === change.path ? (
-                    <span className="small-spinner" aria-hidden="true" />
+                    <LoaderCircle
+                      className="small-spinner"
+                      aria-hidden="true"
+                      data-icon="inline-start"
+                    />
+                  ) : action.direction === "stage" ? (
+                    <Plus aria-hidden="true" data-icon="inline-start" />
                   ) : (
-                    <StageIcon direction={action.direction} />
+                    <Minus aria-hidden="true" data-icon="inline-start" />
                   )}
                   {busyPath === change.path ? action.busyLabel : action.label}
                 </Button>
@@ -166,7 +172,7 @@ export function ChangesPanel({
   if (state.state === "idle" || state.state === "loading") {
     return (
       <section className="status-loading" aria-live="polite">
-        <span className="workspace-spinner" aria-hidden="true" />
+        <LoaderCircle className="workspace-spinner" aria-hidden="true" />
         <strong>Reading repository status…</strong>
         <p>Asking system Git for the latest working-tree state.</p>
       </section>
@@ -187,7 +193,7 @@ export function ChangesPanel({
           disabled={controlsDisabled}
           onClick={onRefresh}
         >
-          <RefreshIcon />
+          <RefreshCw aria-hidden="true" data-icon="inline-start" />
           Try again
         </Button>
       </section>
@@ -250,7 +256,7 @@ export function ChangesPanel({
               disabled={state.isRefreshing || isMutating}
               onClick={onRefresh}
             >
-              <RefreshIcon />
+              <RefreshCw aria-hidden="true" data-icon="inline-start" />
               Try again
             </Button>
           )}

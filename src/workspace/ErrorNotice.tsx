@@ -1,3 +1,4 @@
+import { CircleAlert } from "lucide-react";
 import { Alert } from "@/components/ui/alert";
 import type { GitError } from "@/types/git";
 
@@ -14,9 +15,7 @@ export function ErrorNotice({
 
   return (
     <Alert variant="destructive" className="error-notice">
-      <span className="error-notice__icon" aria-hidden="true">
-        !
-      </span>
+      <CircleAlert aria-hidden="true" />
       <div>
         <strong>{title}</strong>
         <p>{error.message}</p>

@@ -1,7 +1,8 @@
+import { FolderOpen, RefreshCw, LoaderCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { RemoteControls } from "@/features/DeliveryControls";
 import { BranchSummary } from "@/workspace/BranchSummary";
-import { BranchlightMark, FolderIcon, RefreshIcon } from "@/workspace/icons";
+import { BranchlightMark } from "@/workspace/icons";
 import type { OpenState, RepositoryStatusState } from "@/workspace/types";
 import type { RunDelivery } from "@/types/delivery";
 import type { Repository } from "@/types/repository";
@@ -94,7 +95,15 @@ export function RepositoryToolbar({
           aria-busy={isRefreshing}
           onClick={onRefresh}
         >
-          {isRefreshing ? <span className="small-spinner" /> : <RefreshIcon />}
+          {isRefreshing ? (
+            <LoaderCircle
+              className="small-spinner"
+              aria-hidden="true"
+              data-icon="inline-start"
+            />
+          ) : (
+            <RefreshCw aria-hidden="true" data-icon="inline-start" />
+          )}
           {isRefreshing ? "Refreshing…" : "Refresh"}
         </Button>
         <Button
@@ -105,7 +114,7 @@ export function RepositoryToolbar({
           aria-busy={openState !== "idle"}
           onClick={onOpenRepository}
         >
-          <FolderIcon />
+          <FolderOpen aria-hidden="true" data-icon="inline-start" />
           {openState === "idle" ? "Open another" : "Opening…"}
         </Button>
       </div>

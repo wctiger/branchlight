@@ -1,3 +1,4 @@
+import { ArrowDown, ArrowUp, GitBranch } from "lucide-react";
 import type { BranchStatus } from "@/types/status";
 
 /** Summarizes the checked-out branch and its upstream divergence. */
@@ -11,19 +12,15 @@ export function BranchSummary({ branch }: { branch: BranchStatus }) {
 
   return (
     <div className="branch-summary">
-      <span className="branch-symbol" aria-hidden="true">
-        <span />
-        <span />
-        <span />
-      </span>
+      <GitBranch className="branch-symbol" aria-hidden="true" />
       <div className="branch-summary__identity">
         <strong>{branchLabel}</strong>
         <span>{trackingLabel}</span>
       </div>
       {branch.upstream && (
         <div className="branch-counts" aria-label="Upstream divergence">
-          <span title="Commits ahead of upstream">↑ {branch.ahead ?? 0}</span>
-          <span title="Commits behind upstream">↓ {branch.behind ?? 0}</span>
+          <span title="Commits ahead of upstream"><ArrowUp aria-hidden="true" /> {branch.ahead ?? 0}</span>
+          <span title="Commits behind upstream"><ArrowDown aria-hidden="true" /> {branch.behind ?? 0}</span>
         </div>
       )}
     </div>

@@ -1,7 +1,7 @@
+import { TriangleAlert, RefreshCw, LoaderCircle } from "lucide-react";
 import { useId } from "react";
 import { Button } from "@/components/ui/button";
 import { ErrorNotice } from "@/workspace/ErrorNotice";
-import { RefreshIcon } from "@/workspace/icons";
 import type { AppOperation } from "@/workspace/types";
 import type { GitError } from "@/types/git";
 import type { RepositoryStatus } from "@/types/status";
@@ -54,9 +54,7 @@ export function ConflictBanner({
       aria-live="polite"
     >
       <div className="conflict-banner__heading">
-        <span className="conflict-banner__icon" aria-hidden="true">
-          !
-        </span>
+        <TriangleAlert className="conflict-banner__icon" aria-hidden="true" />
         <div>
           <p className="eyebrow">Git operation</p>
           <h2 id={headingId}>
@@ -104,9 +102,13 @@ export function ConflictBanner({
             onClick={onRefresh}
           >
             {isRefreshing ? (
-              <span className="small-spinner" />
+              <LoaderCircle
+                className="small-spinner"
+                aria-hidden="true"
+                data-icon="inline-start"
+              />
             ) : (
-              <RefreshIcon />
+              <RefreshCw aria-hidden="true" data-icon="inline-start" />
             )}
             {isRefreshing ? "Refreshing…" : "Refresh status"}
           </Button>
@@ -120,7 +122,11 @@ export function ConflictBanner({
               onClick={() => onAbort(activeOperation)}
             >
               {isAborting && (
-                <span className="small-spinner" aria-hidden="true" />
+                <LoaderCircle
+                  className="small-spinner"
+                  aria-hidden="true"
+                  data-icon="inline-start"
+                />
               )}
               {isAborting
                 ? `Aborting ${activeOperation}…`

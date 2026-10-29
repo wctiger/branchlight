@@ -1,5 +1,14 @@
 import { useEffect, useRef, type KeyboardEvent } from "react";
-import { ChevronDown, Ellipsis, FolderGit2, X } from "lucide-react";
+import {
+  Check,
+  ChevronDown,
+  CircleAlert,
+  Dot,
+  Ellipsis,
+  FolderGit2,
+  LoaderCircle,
+  X,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -90,7 +99,7 @@ export function RepositoryTabs({
                   />
                 }
               >
-                <FolderGit2 aria-hidden="true" />
+                <FolderGit2 aria-hidden="true" data-icon="inline-start" />
                 <span className="repository-row-name">
                   {tab.group && <small>{tab.group} / </small>}
                   {tab.repository.name}
@@ -106,7 +115,13 @@ export function RepositoryTabs({
                     className={tab.error ? "tab-error" : "tab-status"}
                     aria-hidden="true"
                   >
-                    {tab.busy ? "↻" : tab.error ? "!" : "●"}
+                    {tab.busy ? (
+                      <LoaderCircle className="small-spinner" />
+                    ) : tab.error ? (
+                      <CircleAlert />
+                    ) : (
+                      <Dot />
+                    )}
                   </span>
                 )}
               </TooltipTrigger>
@@ -183,8 +198,8 @@ export function RepositoryTabs({
                     active === tab.repository.path ? "true" : undefined
                   }
                 >
+                  {active === tab.repository.path && <Check aria-hidden="true" />}
                   <span className="overflow-repo-name">
-                    {active === tab.repository.path ? "✓ " : ""}
                     {tab.group && `${tab.group} / `}
                     {tab.repository.name}
                     <small>{tab.repository.path}</small>
@@ -194,7 +209,7 @@ export function RepositoryTabs({
                     : tab.error
                       ? "Error"
                       : tab.dirty
-                        ? "●"
+                        ? <Dot aria-label="Uncommitted changes" role="img" />
                         : ""}
                 </DropdownMenuItem>
               ))}

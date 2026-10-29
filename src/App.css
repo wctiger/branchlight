@@ -291,6 +291,18 @@ p {
   flex: 1;
   min-width: 0;
 }
+.branch-symbol,
+.conflict-banner__icon,
+.repository-notice > svg,
+.branch-counts svg {
+  width: var(--size-icon);
+  height: var(--size-icon);
+}
+.branch-counts span {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
 .branch-summary {
   display: flex;
   gap: 8px;
@@ -667,9 +679,6 @@ p {
   color: var(--text-secondary);
   font-size: var(--type-meta);
 }
-.stage-icon {
-  display: none;
-}
 .commit-panel {
   margin-top: 10px;
   display: grid;
@@ -962,9 +971,6 @@ p {
   max-height: 120px;
   overflow: auto;
 }
-.error-notice__icon {
-  display: none;
-}
 .branch-notice,
 .repository-notice {
   background: var(--status-info-background);
@@ -1010,9 +1016,7 @@ p {
   display: inline-block;
   width: 12px;
   height: 12px;
-  border: 2px solid var(--border-subtle);
-  border-top-color: var(--text-accent);
-  border-radius: 50%;
+  color: var(--text-accent);
 }
 @media (prefers-reduced-motion: no-preference) {
   .small-spinner,

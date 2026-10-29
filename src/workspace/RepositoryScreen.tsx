@@ -1,3 +1,4 @@
+import { Check } from "lucide-react";
 import { ChangesInspector } from "@/workspace/ChangesInspector";
 import { RepositoryToolbar } from "@/workspace/RepositoryToolbar";
 import { RepositoryMainContent } from "@/workspace/RepositoryMainContent";
@@ -199,7 +200,7 @@ export function RepositoryScreen({
       >
         {operationNotice && (
           <div className="repository-notice">
-            <span aria-hidden="true">✓</span>
+            <Check aria-hidden="true" />
             <p>{operationNotice}</p>
           </div>
         )}

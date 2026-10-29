@@ -1,3 +1,4 @@
+import { LoaderCircle } from "lucide-react";
 import { OperationDialog } from "@/components/operation-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -137,7 +138,11 @@ export function StashPanel({
             aria-busy={isCreating}
           >
             {isCreating && (
-              <span className="small-spinner" aria-hidden="true" />
+              <LoaderCircle
+                className="small-spinner"
+                aria-hidden="true"
+                data-icon="inline-start"
+              />
             )}
             {isCreating ? "Stashing…" : "Create stash"}
           </Button>
@@ -161,7 +166,11 @@ export function StashPanel({
 
       {(state.state === "idle" || state.state === "loading") && (
         <div className="stash-panel__status" aria-live="polite">
-          <span className="small-spinner" aria-hidden="true" />
+          <LoaderCircle
+            className="small-spinner"
+            aria-hidden="true"
+            data-icon="inline-start"
+          />
           <span>Reading stashes…</span>
         </div>
       )}
