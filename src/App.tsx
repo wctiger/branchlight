@@ -1,8 +1,16 @@
+import {
+  CommitComposer,
+  RemoteControls,
+  BranchControls,
+} from "./features/DeliveryControls";
+import type {
+  CommitOptions,
+  RunDelivery,
+  DeliveryAction,
+} from "./types/delivery";
 import { Alert } from "./components/ui/alert";
 import { Button } from "./components/ui/button";
-import { Input } from "./components/ui/input";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
-import type { FormEvent } from "react";
 
 import "./App.css";
 import { InspectionPanel } from "./features/inspection/InspectionPanel";
@@ -10,7 +18,11 @@ import {
   abortMerge,
   abortRebase,
   applyStash,
-  commitChanges,
+  composeCommit,
+  createBranchAt,
+  checkoutRemoteBranch,
+  setBranchUpstream,
+  forcePush,
   createBranch,
   createStash,
   deleteBranch,
@@ -85,8 +97,6 @@ type AppOperation =
   | { state: "rebasing"; branchName: string }
   | { state: "abortingMerge" }
   | { state: "abortingRebase" };
-
-type RemoteOperation = "fetch" | "pull" | "push";
 
 type StashMutation =
   | { kind: "create"; message: string }
@@ -451,8 +461,6 @@ function RepositoryWorkspace({
   operation,
   operationError,
   stashOperationError,
-  commitMessage,
-  onCommitMessageChange,
   onStage,
   onUnstage,
   onCommit,
@@ -468,18 +476,15 @@ function RepositoryWorkspace({
   operation: AppOperation;
   operationError: GitError | null;
   stashOperationError: GitError | null;
-  commitMessage: string;
-  onCommitMessageChange: (message: string) => void;
   onStage: (path: string) => void;
   onUnstage: (path: string) => void;
-  onCommit: (event: FormEvent<HTMLFormElement>) => void;
+  onCommit: (options: CommitOptions) => Promise<boolean>;
   onCreateStash: (message: string) => Promise<boolean>;
   onApplyStash: (stash: Stash) => Promise<boolean>;
   onPopStash: (stash: Stash) => Promise<boolean>;
   onDropStash: (stash: Stash) => Promise<boolean>;
 }) {
   const changesTitleId = useId();
-  const commitMessageId = useId();
   if (state.state === "idle" || state.state === "loading") {
     return (
       <section className="status-loading" aria-live="polite">
@@ -516,19 +521,6 @@ function RepositoryWorkspace({
     status.staged.length + status.unstaged.length + status.conflicts.length;
   const isMutating = operation.state !== "idle" || status.operation !== "none";
   const actionsDisabled = controlsDisabled || isMutating || state.isRefreshing;
-  const canCommit =
-    status.staged.length > 0 &&
-    status.conflicts.length === 0 &&
-    commitMessage.trim().length > 0 &&
-    !actionsDisabled;
-  const commitHint =
-    status.conflicts.length > 0
-      ? "Resolve conflicts before committing."
-      : status.staged.length === 0
-        ? "Stage at least one file to create a commit."
-        : commitMessage.trim().length === 0
-          ? "Enter a message that describes this commit."
-          : `${status.staged.length} ${status.staged.length === 1 ? "file" : "files"} will be committed.`;
   const busyStashReference =
     operation.state === "applyingStash" ||
     operation.state === "poppingStash" ||
@@ -643,42 +635,11 @@ function RepositoryWorkspace({
         />
       </div>
 
-      <form className="commit-panel" onSubmit={onCommit}>
-        <div className="commit-panel__heading">
-          <div>
-            <p className="eyebrow">Next commit</p>
-            <h3>Commit staged changes</h3>
-          </div>
-          <span>{status.staged.length} staged</span>
-        </div>
-        <label htmlFor={commitMessageId}>Commit message</label>
-        <div className="commit-controls">
-          <Input
-            id={commitMessageId}
-            name="commitMessage"
-            type="text"
-            value={commitMessage}
-            maxLength={500}
-            disabled={actionsDisabled}
-            placeholder="Describe what changed"
-            autoComplete="off"
-            onChange={(event) => onCommitMessageChange(event.target.value)}
-          />
-          <Button
-            variant="default"
-            className="primary-button commit-button"
-            type="submit"
-            disabled={!canCommit}
-            aria-busy={operation.state === "committing"}
-          >
-            {operation.state === "committing" && (
-              <span className="button-spinner" aria-hidden="true" />
-            )}
-            {operation.state === "committing" ? "Committing…" : "Commit"}
-          </Button>
-        </div>
-        <p className="commit-hint">{commitHint}</p>
-      </form>
+      <CommitComposer
+        disabled={actionsDisabled || status.conflicts.length > 0}
+        staged={status.staged.length}
+        onCommit={onCommit}
+      />
     </section>
   );
 }
@@ -700,10 +661,8 @@ function RepositoryScreen({
   stashOperationError,
   conflictOperationError,
   operationNotice,
-  commitMessage,
   onOpenRepository,
   onRefresh,
-  onCommitMessageChange,
   onStage,
   onUnstage,
   onCommit,
@@ -714,7 +673,7 @@ function RepositoryScreen({
   onMergeBranch,
   onRebaseBranch,
   onAbortOperation,
-  onRemoteOperation,
+  onDelivery,
   onCreateStash,
   onApplyStash,
   onPopStash,
@@ -737,13 +696,11 @@ function RepositoryScreen({
   stashOperationError: GitError | null;
   conflictOperationError: GitError | null;
   operationNotice: string | null;
-  commitMessage: string;
   onOpenRepository: () => void;
   onRefresh: () => void;
-  onCommitMessageChange: (message: string) => void;
   onStage: (path: string) => void;
   onUnstage: (path: string) => void;
-  onCommit: (event: FormEvent<HTMLFormElement>) => void;
+  onCommit: (options: CommitOptions) => Promise<boolean>;
   onSwitchBranch: (branchName: string) => Promise<boolean>;
   onCreateBranch: (branchName: string) => Promise<boolean>;
   onRenameBranch: (oldName: string, newName: string) => Promise<boolean>;
@@ -751,7 +708,7 @@ function RepositoryScreen({
   onMergeBranch: (sourceBranch: string) => Promise<boolean>;
   onRebaseBranch: (sourceBranch: string) => Promise<boolean>;
   onAbortOperation: (kind: "merge" | "rebase") => void;
-  onRemoteOperation: (kind: RemoteOperation) => void;
+  onDelivery: RunDelivery;
   onCreateStash: (message: string) => Promise<boolean>;
   onApplyStash: (stash: Stash) => Promise<boolean>;
   onPopStash: (stash: Stash) => Promise<boolean>;
@@ -812,34 +769,16 @@ function RepositoryScreen({
         </div>
 
         <div className="repository-actions">
-          {(["fetch", "pull", "push"] as const).map((kind) => {
-            const operationState = `${kind}ing` as
-              "fetching" | "pulling" | "pushing";
-            const isRunning = operation.state === operationState;
-            const label = `${kind[0].toUpperCase()}${kind.slice(1)}`;
-
-            return (
-              <Button
-                variant="outline"
-                className="secondary-button remote-button"
-                type="button"
-                key={kind}
-                disabled={
-                  isRefreshing ||
-                  isMutating ||
-                  hasActiveRepositoryOperation ||
-                  openState !== "idle"
-                }
-                aria-busy={isRunning}
-                onClick={() => onRemoteOperation(kind)}
-              >
-                {isRunning && (
-                  <span className="small-spinner" aria-hidden="true" />
-                )}
-                {isRunning ? `${label}ing…` : label}
-              </Button>
-            );
-          })}
+          <RemoteControls
+            path={repository.path}
+            disabled={
+              isRefreshing ||
+              isMutating ||
+              hasActiveRepositoryOperation ||
+              openState !== "idle"
+            }
+            run={onDelivery}
+          />
           <Button
             variant="outline"
             className="secondary-button"
@@ -943,7 +882,18 @@ function RepositoryScreen({
           onDelete={onDeleteBranch}
           onMerge={onMergeBranch}
           onRebase={onRebaseBranch}
-        />
+        >
+          {branchesState.state === "ready" && (
+            <BranchControls
+              branches={branchesState.branches}
+              commit={inspectionCommit}
+              disabled={
+                controlsDisabled || isRefreshing || hasActiveRepositoryOperation
+              }
+              run={onDelivery}
+            />
+          )}
+        </BranchPanel>
         <RepositoryWorkspace
           state={statusState}
           stashesState={stashesState}
@@ -952,8 +902,6 @@ function RepositoryScreen({
           operation={operation}
           operationError={changeOperationError}
           stashOperationError={stashOperationError}
-          commitMessage={commitMessage}
-          onCommitMessageChange={onCommitMessageChange}
           onStage={onStage}
           onUnstage={onUnstage}
           onCommit={onCommit}
@@ -1026,7 +974,6 @@ export function RepositoryApp({
   const [conflictOperationError, setConflictOperationError] =
     useState<GitError | null>(null);
   const [operationNotice, setOperationNotice] = useState<string | null>(null);
-  const [commitMessage, setCommitMessage] = useState("");
   const statusRequestId = useRef(0);
   const branchesRequestId = useRef(0);
   const stashesRequestId = useRef(0);
@@ -1348,38 +1295,36 @@ export function RepositoryApp({
     ],
   );
 
-  /** Creates a commit only when valid and refreshes Git state after every attempt. */
   const handleCommit = useCallback(
-    async (event: FormEvent<HTMLFormElement>) => {
-      event.preventDefault();
-      if (
-        !repository ||
-        operation.state !== "idle" ||
-        commitMessage.trim().length === 0 ||
-        !beginRepositoryMutation()
-      ) {
-        return;
-      }
-
+    async (options: CommitOptions): Promise<boolean> => {
+      if (operation.state !== "idle" || !beginRepositoryMutation())
+        return false;
       clearOperationFeedback();
       setOperation({ state: "committing" });
-
+      let committed = false;
       try {
-        await commitChanges(repository.path, commitMessage);
-        setCommitMessage("");
-        setOperationNotice("Commit created successfully.");
+        const result = await composeCommit(repository.path, options);
+        committed = true;
+        setOperationNotice(
+          result.pushError
+            ? "Commit succeeded and remains local; push failed. Use Push after resolving the error."
+            : options.pushAfterCommit
+              ? "Commit created and pushed successfully."
+              : "Commit created successfully.",
+        );
+        if (result.pushError) setRemoteOperationError(result.pushError);
       } catch (error) {
         setChangeOperationError(normalizeGitError(error));
       }
       await finishRepositoryMutation(repository.path);
+      return committed;
     },
     [
+      operation.state,
       beginRepositoryMutation,
       clearOperationFeedback,
-      commitMessage,
+      repository.path,
       finishRepositoryMutation,
-      operation.state,
-      repository,
     ],
   );
 
@@ -1594,46 +1539,80 @@ export function RepositoryApp({
     ],
   );
 
-  /** Runs one configured remote operation and refreshes all Git-backed state. */
-  const handleRemoteOperation = useCallback(
-    async (kind: RemoteOperation) => {
-      if (
-        !repository ||
-        operation.state !== "idle" ||
-        !beginRepositoryMutation()
-      ) {
-        return;
-      }
-
+  const handleDelivery = useCallback(
+    async (action: DeliveryAction): Promise<boolean> => {
+      if (operation.state !== "idle" || !beginRepositoryMutation())
+        return false;
       clearOperationFeedback();
-      setOperation({ state: `${kind}ing` });
-
+      const branchAction =
+        action.kind === "createAt" ||
+        action.kind === "checkoutRemote" ||
+        action.kind === "upstream";
+      setOperation(
+        branchAction
+          ? { state: "creating", branchName: action.name }
+          : {
+              state:
+                action.kind === "fetch"
+                  ? "fetching"
+                  : action.kind === "pull"
+                    ? "pulling"
+                    : "pushing",
+            },
+      );
+      let succeeded = false;
       try {
-        if (kind === "fetch") {
-          await fetchRemote(repository.path);
-        } else if (kind === "pull") {
-          await pullRemote(repository.path);
-        } else {
-          await pushRemote(repository.path);
+        switch (action.kind) {
+          case "createAt":
+            await createBranchAt(
+              repository.path,
+              action.name,
+              action.revision,
+              action.checkout,
+            );
+            break;
+          case "checkoutRemote":
+            await checkoutRemoteBranch(
+              repository.path,
+              action.name,
+              action.reference,
+            );
+            break;
+          case "upstream":
+            await setBranchUpstream(
+              repository.path,
+              action.name,
+              action.reference,
+            );
+            break;
+          case "fetch":
+            await fetchRemote(repository.path, action.remote, action.prune);
+            break;
+          case "pull":
+            await pullRemote(repository.path, action.strategy);
+            break;
+          case "push":
+            await pushRemote(repository.path);
+            break;
+          case "force":
+            await forcePush(repository.path, action.review);
+            break;
         }
-        setOperationNotice(
-          kind === "fetch"
-            ? "Fetched remote refs successfully."
-            : kind === "pull"
-              ? "Pulled the current branch successfully."
-              : "Pushed the current branch successfully.",
-        );
+        setOperationNotice("Git operation completed successfully.");
+        succeeded = true;
       } catch (error) {
-        setRemoteOperationError(normalizeGitError(error));
+        if (branchAction) setBranchOperationError(normalizeGitError(error));
+        else setRemoteOperationError(normalizeGitError(error));
       }
       await finishRepositoryMutation(repository.path);
+      return succeeded;
     },
     [
+      operation.state,
       beginRepositoryMutation,
       clearOperationFeedback,
+      repository.path,
       finishRepositoryMutation,
-      operation.state,
-      repository,
     ],
   );
 
@@ -1715,16 +1694,14 @@ export function RepositoryApp({
         stashOperationError={stashOperationError}
         conflictOperationError={conflictOperationError}
         operationNotice={operationNotice}
-        commitMessage={commitMessage}
         onOpenRepository={() => void handleOpenRepository()}
         onRefresh={() => {
           clearOperationFeedback();
           void refreshRepositoryState(repository.path);
         }}
-        onCommitMessageChange={setCommitMessage}
         onStage={(path) => void handleFileOperation("stage", path)}
         onUnstage={(path) => void handleFileOperation("unstage", path)}
-        onCommit={(event) => void handleCommit(event)}
+        onCommit={handleCommit}
         onSwitchBranch={(branchName) =>
           handleBranchMutation({ kind: "switch", branchName })
         }
@@ -1744,7 +1721,7 @@ export function RepositoryApp({
           handleBranchIntegration("rebase", sourceBranch)
         }
         onAbortOperation={(kind) => void handleAbortOperation(kind)}
-        onRemoteOperation={(kind) => void handleRemoteOperation(kind)}
+        onDelivery={handleDelivery}
         onCreateStash={(message) =>
           handleStashMutation({ kind: "create", message })
         }

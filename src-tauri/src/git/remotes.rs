@@ -16,7 +16,7 @@ pub(crate) fn pull(repository: &Path) -> Result<GitOutput, GitError> {
 
 /// Pushes the current branch using its configured upstream.
 pub(crate) fn push(repository: &Path) -> Result<GitOutput, GitError> {
-    run_git(repository, &["push"])
+    super::delivery::push_normal(repository)
 }
 
 #[cfg(test)]
@@ -173,14 +173,14 @@ mod tests {
     }
 
     #[test]
-    fn reports_a_missing_remote_as_a_command_failure() {
+    fn reports_a_missing_upstream_with_setup_guidance() {
         let fixture = remote_fixture("missing-remote");
         run(Some(&fixture.client), &["remote", "remove", "origin"]);
 
         let error = push(&fixture.client).expect_err("push without a remote should fail");
         assert!(matches!(
             error,
-            GitError::CommandFailed { output, .. } if !output.stderr.trim().is_empty()
+            GitError::InvalidOperationInput { message } if message.contains("upstream")
         ));
     }
 }
