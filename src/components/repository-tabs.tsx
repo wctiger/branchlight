@@ -12,12 +12,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { Repository } from "@/types/repository";
 
 export type RepositoryTab = {
   repository: Repository;
   group: string;
+  branch?: string;
   busy: boolean;
   error: boolean;
   dirty: boolean;
@@ -45,8 +50,9 @@ export function RepositoryTabs({
   }, [active, tabs.length]);
   const move = (event: KeyboardEvent, index: number) => {
     let next: number;
-    if (event.key === "ArrowRight") next = (index + 1) % tabs.length;
-    else if (event.key === "ArrowLeft")
+    if (event.key === "ArrowRight" || event.key === "ArrowDown")
+      next = (index + 1) % tabs.length;
+    else if (event.key === "ArrowLeft" || event.key === "ArrowUp")
       next = (index - 1 + tabs.length) % tabs.length;
     else if (event.key === "Home") next = 0;
     else if (event.key === "End") next = tabs.length - 1;
@@ -85,9 +91,15 @@ export function RepositoryTabs({
                 }
               >
                 <FolderGit2 aria-hidden="true" />
-                <span>
+                <span className="repository-row-name">
                   {tab.group && <small>{tab.group} / </small>}
                   {tab.repository.name}
+                </span>
+                <span className="repository-row-path">
+                  {tab.repository.path}
+                </span>
+                <span className="repository-row-branch">
+                  {tab.branch ?? "…"}
                 </span>
                 {(tab.busy || tab.error || tab.dirty) && (
                   <span
@@ -99,7 +111,7 @@ export function RepositoryTabs({
                 )}
               </TooltipTrigger>
               <TooltipContent>
-                {tab.repository.path}
+                {tab.repository.name} · {tab.repository.path}
                 {tab.group && ` · ${tab.group}`}
               </TooltipContent>
             </Tooltip>

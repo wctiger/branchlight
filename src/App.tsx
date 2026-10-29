@@ -365,7 +365,9 @@ function ChangeSection({
   action,
   busyPath,
   actionsDisabled,
+  onSelect,
 }: {
+  onSelect?: (change: FileChange) => void;
   title: string;
   description: string;
   emptyMessage: string;
@@ -407,14 +409,19 @@ function ChangeSection({
               >
                 {fileStatusSymbols[change.status]}
               </span>
-              <div className="change-path">
+              <button
+                type="button"
+                className="change-path"
+                onClick={() => onSelect?.(change)}
+                title={change.path}
+              >
                 <code title={change.path}>{change.path}</code>
                 {change.originalPath && (
                   <span title={change.originalPath}>
                     from <code>{change.originalPath}</code>
                   </span>
                 )}
-              </div>
+              </button>
               {action ? (
                 <Button
                   variant="outline"
@@ -446,6 +453,7 @@ function ChangeSection({
 
 /** Renders repository changes and coordinates the daily commit workflow. */
 function RepositoryWorkspace({
+  onSelectFile,
   state,
   stashesState,
   controlsDisabled,
@@ -461,6 +469,7 @@ function RepositoryWorkspace({
   onPopStash,
   onDropStash,
 }: {
+  onSelectFile: (change: FileChange, kind: string) => void;
   state: RepositoryStatusState;
   stashesState: StashesState;
   controlsDisabled: boolean;
@@ -571,20 +580,22 @@ function RepositoryWorkspace({
         </div>
       )}
 
-      <StashPanel
-        state={stashesState}
-        operationError={stashOperationError}
-        actionsDisabled={actionsDisabled}
-        isCreating={operation.state === "stashing"}
-        busyReference={busyStashReference}
-        busyOperation={busyStashOperation}
-        onRefresh={onRefresh}
-        onCreate={onCreateStash}
-        onApply={onApplyStash}
-        onPop={onPopStash}
-        onDrop={onDropStash}
-      />
-
+      <details className="stash-disclosure">
+        <summary>Stashes</summary>
+        <StashPanel
+          state={stashesState}
+          operationError={stashOperationError}
+          actionsDisabled={actionsDisabled}
+          isCreating={operation.state === "stashing"}
+          busyReference={busyStashReference}
+          busyOperation={busyStashOperation}
+          onRefresh={onRefresh}
+          onCreate={onCreateStash}
+          onApply={onApplyStash}
+          onPop={onPopStash}
+          onDrop={onDropStash}
+        />
+      </details>
       <div className="changes-grid">
         <ChangeSection
           title="Conflicts"
@@ -592,6 +603,7 @@ function RepositoryWorkspace({
           emptyMessage="No conflicted files"
           changes={status.conflicts}
           tone="conflict"
+          onSelect={(change) => onSelectFile(change, "conflict")}
         />
         <ChangeSection
           title="Unstaged"
@@ -599,6 +611,7 @@ function RepositoryWorkspace({
           emptyMessage="No unstaged changes"
           changes={status.unstaged}
           tone="unstaged"
+          onSelect={(change) => onSelectFile(change, "unstaged")}
           action={{
             label: "Stage",
             busyLabel: "Staging…",
@@ -614,6 +627,7 @@ function RepositoryWorkspace({
           emptyMessage="No staged changes"
           changes={status.staged}
           tone="staged"
+          onSelect={(change) => onSelectFile(change, "staged")}
           action={{
             label: "Unstage",
             busyLabel: "Unstaging…",
@@ -706,6 +720,33 @@ function RepositoryScreen({
   onPopStash: (stash: Stash) => Promise<boolean>;
   onDropStash: (stash: Stash) => Promise<boolean>;
 }) {
+  const [mode, setMode] = useState<"history" | "diff">("history");
+  const [inspectorOpen, setInspectorOpen] = useState(true);
+  const [selectedFile, setSelectedFile] = useState<{
+    change: FileChange;
+    kind: string;
+  } | null>(null);
+  const [inspectorWidth, setInspectorWidth] = useState(310);
+  const screen = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const escape = (event: KeyboardEvent) => {
+      if (
+        event.key !== "Escape" ||
+        screen.current?.closest("[hidden]") ||
+        document.querySelector('[role="dialog"]')
+      )
+        return;
+      const target = event.target;
+      if (
+        target instanceof HTMLElement &&
+        target.closest('input, textarea, select, [contenteditable="true"]')
+      )
+        return;
+      setMode("history");
+    };
+    window.addEventListener("keydown", escape);
+    return () => window.removeEventListener("keydown", escape);
+  }, []);
   const [inspectionCommit, setInspectionCommit] = useState<string | null>(null);
   const status = statusState.state === "ready" ? statusState.status : null;
   const isRefreshing =
@@ -732,7 +773,7 @@ function RepositoryScreen({
       : null;
 
   return (
-    <main className="repository-screen">
+    <main ref={screen} className="repository-screen">
       <header className="repository-bar">
         <div className="repository-brand">
           <BranchlightMark />
@@ -782,12 +823,19 @@ function RepositoryScreen({
               hasActiveRepositoryOperation ||
               openState !== "idle"
             }
-            onClick={(event) =>
-              event.currentTarget
-                .closest("main")
-                ?.querySelector<HTMLInputElement>('[name="stashMessage"]')
-                ?.focus()
-            }
+            onClick={() => {
+              setInspectorOpen(true);
+              requestAnimationFrame(() => {
+                const details =
+                  screen.current?.querySelector<HTMLDetailsElement>(
+                    ".stash-disclosure",
+                  );
+                if (details) details.open = true;
+                screen.current
+                  ?.querySelector<HTMLInputElement>('[name="stashMessage"]')
+                  ?.focus();
+              });
+            }}
           >
             Stash
           </Button>
@@ -860,7 +908,12 @@ function RepositoryScreen({
         />
       )}
 
-      <div className="repository-body">
+      <div
+        className={`repository-body${inspectorOpen ? "" : " repository-body--inspector-hidden"}`}
+        style={
+          { "--inspector-width": `${inspectorWidth}px` } as React.CSSProperties
+        }
+      >
         <BranchPanel
           state={branchesState}
           operationError={branchOperationError}
@@ -886,36 +939,99 @@ function RepositoryScreen({
             />
           )}
         </BranchPanel>
-        <RepositoryWorkspace
-          state={statusState}
-          stashesState={stashesState}
-          controlsDisabled={controlsDisabled}
-          onRefresh={onRefresh}
-          operation={operation}
-          operationError={changeOperationError}
-          stashOperationError={stashOperationError}
-          onStage={onStage}
-          onUnstage={onUnstage}
-          onCommit={onCommit}
-          onCreateStash={onCreateStash}
-          onApplyStash={onApplyStash}
-          onPopStash={onPopStash}
-          onDropStash={onDropStash}
-        />
-        <HistoryPanel
-          onSelectCommit={setInspectionCommit}
-          state={historyState}
-          controlsDisabled={controlsDisabled}
-          onRefresh={onRefresh}
-        />
+        <div className="main-column">
+          <div className="main-view-toolbar">
+            <Button
+              variant="ghost"
+              aria-pressed={mode === "history"}
+              onClick={() => setMode("history")}
+            >
+              History
+            </Button>
+            <Button
+              variant="ghost"
+              aria-pressed={mode === "diff"}
+              onClick={() => setMode("diff")}
+            >
+              Diff
+            </Button>
+            <span
+              className="selected-file-path"
+              title={selectedFile?.change.path}
+            >
+              {mode === "diff"
+                ? (selectedFile?.change.path ?? "Compare revisions")
+                : "Commit history"}
+            </span>
+            <Button
+              variant="outline"
+              aria-expanded={inspectorOpen}
+              onClick={() => setInspectorOpen(!inspectorOpen)}
+            >
+              {inspectorOpen ? "Hide changes" : "Show changes"}
+            </Button>
+          </div>
+
+          <div className="main-mode" hidden={mode !== "history"}>
+            <HistoryPanel
+              onSelectCommit={(hash) => {
+                setSelectedFile(null);
+                setInspectionCommit(hash);
+              }}
+              state={historyState}
+              controlsDisabled={controlsDisabled}
+              onRefresh={onRefresh}
+            />
+          </div>
+          <div className="main-mode" hidden={mode !== "diff"}>
+            <InspectionPanel
+              path={repository.path}
+              status={status}
+              commit={inspectionCommit}
+              selectedFile={selectedFile}
+              disabled={controlsDisabled}
+              onDiscard={onDiscard}
+            />
+          </div>
+        </div>
+        <aside
+          className="changes-inspector"
+          hidden={!inspectorOpen}
+          aria-label="Changes inspector"
+        >
+          <RepositoryWorkspace
+            onSelectFile={(change, kind) => {
+              setSelectedFile({ change, kind });
+              setMode("diff");
+            }}
+            state={statusState}
+            stashesState={stashesState}
+            controlsDisabled={controlsDisabled}
+            onRefresh={onRefresh}
+            operation={operation}
+            operationError={changeOperationError}
+            stashOperationError={stashOperationError}
+            onStage={onStage}
+            onUnstage={onUnstage}
+            onCommit={onCommit}
+            onCreateStash={onCreateStash}
+            onApplyStash={onApplyStash}
+            onPopStash={onPopStash}
+            onDropStash={onDropStash}
+          />
+
+          <input
+            className="sidebar-width"
+            type="range"
+            min="300"
+            max="420"
+            step="10"
+            value={inspectorWidth}
+            onChange={(event) => setInspectorWidth(Number(event.target.value))}
+            aria-label="Changes inspector width"
+          />
+        </aside>
       </div>
-      <InspectionPanel
-        path={repository.path}
-        status={status}
-        commit={inspectionCommit}
-        disabled={controlsDisabled}
-        onDiscard={onDiscard}
-      />
     </main>
   );
 }
@@ -933,6 +1049,7 @@ export function RepositoryApp({
     busy: boolean,
     error: boolean,
     dirty: boolean,
+    branch?: string,
   ) => void;
 }) {
   const repository = initialRepository;
@@ -1152,6 +1269,9 @@ export function RepositoryApp({
           repositoryStatus.status.unstaged.length ||
           repositoryStatus.status.conflicts.length,
         ),
+      repositoryStatus.state === "ready"
+        ? (repositoryStatus.status.branch.name ?? "Detached HEAD")
+        : undefined,
     );
     return true;
   }, [onFeedback, repository.path, repositoryStatus]);
@@ -1213,6 +1333,9 @@ export function RepositoryApp({
           repositoryStatus.status.unstaged.length ||
           repositoryStatus.status.conflicts.length,
         ),
+      repositoryStatus.state === "ready"
+        ? (repositoryStatus.status.branch.name ?? "Detached HEAD")
+        : undefined,
     );
   }, [
     repository.path,

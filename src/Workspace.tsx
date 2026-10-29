@@ -24,7 +24,35 @@ import {
 } from "@/components/ui/dialog";
 
 type Tab = RepositoryTab;
+function readSidebarPreference() {
+  try {
+    return JSON.parse(
+      localStorage.getItem("branchlight.repositorySidebar") ?? "null",
+    );
+  } catch {
+    return null;
+  }
+}
 export default function Workspace() {
+  const [compact, setCompact] = useState(
+    () => readSidebarPreference()?.compact === true,
+  );
+  const [sidebarWidth, setSidebarWidth] = useState(() => {
+    const width = readSidebarPreference()?.width;
+    return typeof width === "number" && Number.isFinite(width)
+      ? Math.min(420, Math.max(300, width))
+      : 310;
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        "branchlight.repositorySidebar",
+        JSON.stringify({ compact, width: sidebarWidth }),
+      );
+    } catch {
+      /* Storage may be unavailable. */
+    }
+  }, [compact, sidebarWidth]);
   const [gitReady, setGitReady] = useState(false);
   const [gitMessage, setGitMessage] = useState("Checking system Git…");
   const checkGit = useCallback(async () => {
@@ -64,7 +92,13 @@ export default function Workspace() {
   const openingRef = useRef(false);
   const busyPaths = useRef(new Set<string>());
   const feedback = useCallback(
-    (path: string, busy: boolean, error: boolean, dirty: boolean) => {
+    (
+      path: string,
+      busy: boolean,
+      error: boolean,
+      dirty: boolean,
+      branch?: string,
+    ) => {
       if (busy) busyPaths.current.add(path);
       else busyPaths.current.delete(path);
       setTabs((tabs) => {
@@ -73,11 +107,14 @@ export default function Workspace() {
           !current ||
           (current.busy === busy &&
             current.error === error &&
-            current.dirty === dirty)
+            current.dirty === dirty &&
+            (branch === undefined || current.branch === branch))
         )
           return tabs;
         return tabs.map((tab) =>
-          tab === current ? { ...tab, busy, error, dirty } : tab,
+          tab === current
+            ? { ...tab, busy, error, dirty, branch: branch ?? tab.branch }
+            : tab,
         );
       });
     },
@@ -186,7 +223,14 @@ export default function Workspace() {
     );
   }
   return (
-    <>
+    <div
+      className="workspace-shell"
+      style={
+        {
+          "--repository-sidebar-width": `${compact ? 160 : sidebarWidth}px`,
+        } as React.CSSProperties
+      }
+    >
       <Dialog open={manageGroups} onOpenChange={setManageGroups}>
         <header className="workspace-chrome">
           <div className="workspace-tools">
@@ -205,20 +249,6 @@ export default function Workspace() {
             </DialogTrigger>
             <ThemeSelect />
           </div>
-          <RepositoryTabs
-            tabs={tabs}
-            active={active}
-            groups={groups}
-            onSelect={setActive}
-            onClose={close}
-            onGroup={(path, group) =>
-              setTabs((tabs) =>
-                tabs.map((tab) =>
-                  tab.repository.path === path ? { ...tab, group } : tab,
-                ),
-              )
-            }
-          />
         </header>
         <DialogContent finalFocus={() => (editingGroup ? false : true)}>
           <DialogHeader>
@@ -280,135 +310,183 @@ export default function Workspace() {
           {!groups.length && <p>No groups yet.</p>}
         </DialogContent>
       </Dialog>
-      <p className="system-git-status" role="status">
-        {gitMessage}{" "}
-        {!gitReady && (
-          <Button variant="outline" onClick={() => void checkGit()}>
-            Check again
+      <aside
+        className={`repository-sidebar${compact ? " repository-sidebar--compact" : ""}`}
+        aria-label="Repositories"
+      >
+        <header className="sidebar-heading">
+          <strong>Repositories</strong>
+          <Button
+            variant="ghost"
+            aria-label={
+              compact
+                ? "Expand repository sidebar"
+                : "Collapse repository sidebar"
+            }
+            aria-expanded={!compact}
+            onClick={() => setCompact(!compact)}
+          >
+            {compact ? "»" : "«"}
           </Button>
-        )}
-      </p>
-      {editingGroup && (
-        <form
-          className="repository-create"
-          onSubmit={(event) => {
-            event.preventDefault();
-            renameGroup(editingGroup.original, editingGroup.name);
-          }}
-        >
+        </header>
+        <RepositoryTabs
+          tabs={tabs}
+          active={active}
+          groups={groups}
+          onSelect={setActive}
+          onClose={close}
+          onGroup={(path, group) =>
+            setTabs((tabs) =>
+              tabs.map((tab) =>
+                tab.repository.path === path ? { ...tab, group } : tab,
+              ),
+            )
+          }
+        />
+        <p className="system-git-status" role="status">
+          {gitMessage}{" "}
+          {!gitReady && (
+            <Button variant="outline" onClick={() => void checkGit()}>
+              Check again
+            </Button>
+          )}
+        </p>
+        <details className="repository-create">
+          <summary>Initialize or clone a repository</summary>
+          <p>
+            Choose a new directory inside an existing parent. Existing
+            destinations are never overwritten. Partial results are retained on
+            failure.
+          </p>
           <label>
-            Rename {editingGroup.original}{" "}
+            New destination directory{" "}
             <Input
-              autoFocus
-              value={editingGroup.name}
-              onChange={(event) =>
-                setEditingGroup({ ...editingGroup, name: event.target.value })
-              }
+              value={destination}
+              onChange={(event) => setDestination(event.target.value)}
+              placeholder="Absolute path to a new directory"
             />
           </label>
-          <Button type="submit" variant="outline">
-            Save group name
+          <Button
+            variant="outline"
+            disabled={!!creation?.busy}
+            onClick={() => {
+              void chooseRepositoryFolder()
+                .then((parent) => {
+                  if (parent) setDestination(`${parent}/new-repository`);
+                })
+                .catch((error) => setError(normalizeGitError(error).message));
+            }}
+          >
+            Choose parent folder
+          </Button>
+          <label>
+            Clone source URL or local path{" "}
+            <Input
+              value={source}
+              onChange={(event) => setSource(event.target.value)}
+            />
+          </label>
+          <Button
+            variant="outline"
+            disabled={!!creation?.busy || !destination || !gitReady}
+            onClick={() => void create(false)}
+          >
+            Initialize
           </Button>
           <Button
             variant="outline"
-            type="button"
-            onClick={() => setEditingGroup(null)}
+            disabled={!!creation?.busy || !destination || !source || !gitReady}
+            onClick={() => void create(true)}
           >
-            Cancel
+            Clone
           </Button>
-        </form>
-      )}
-      <details className="repository-create">
-        <summary>Initialize or clone a repository</summary>
-        <p>
-          Choose a new directory inside an existing parent. Existing
-          destinations are never overwritten. Partial results are retained on
-          failure.
-        </p>
-        <label>
-          New destination directory{" "}
-          <Input
-            value={destination}
-            onChange={(event) => setDestination(event.target.value)}
-            placeholder="Absolute path to a new directory"
-          />
-        </label>
-        <Button
-          variant="outline"
-          disabled={!!creation?.busy}
-          onClick={() => {
-            void chooseRepositoryFolder()
-              .then((parent) => {
-                if (parent) setDestination(`${parent}/new-repository`);
-              })
-              .catch((error) => setError(normalizeGitError(error).message));
-          }}
-        >
-          Choose parent folder
-        </Button>
-        <label>
-          Clone source URL or local path{" "}
-          <Input
-            value={source}
-            onChange={(event) => setSource(event.target.value)}
-          />
-        </label>
-        <Button
-          variant="outline"
-          disabled={!!creation?.busy || !destination || !gitReady}
-          onClick={() => void create(false)}
-        >
-          Initialize
-        </Button>
-        <Button
-          variant="outline"
-          disabled={!!creation?.busy || !destination || !source || !gitReady}
-          onClick={() => void create(true)}
-        >
-          Clone
-        </Button>
-        {creation && (
-          <p role="status" aria-busy={creation.busy}>
-            <code>{creation.destination}</code>: {creation.message}
-          </p>
-        )}
-      </details>
-      {error && (
-        <p role="alert" className="workspace-error">
-          {error}
-        </p>
-      )}
-      {!tabs.length && (
-        <main className="landing-screen">
-          <section className="landing-card">
-            <h1>Branchlight</h1>
-            <p>
-              Open repositories in independent tabs. Each uses your installed
-              Git and local configuration.
+          {creation && (
+            <p role="status" aria-busy={creation.busy}>
+              <code>{creation.destination}</code>: {creation.message}
             </p>
+          )}
+        </details>
+        {!compact && (
+          <input
+            className="sidebar-width"
+            type="range"
+            min="300"
+            max="420"
+            step="10"
+            value={sidebarWidth}
+            onChange={(event) => setSidebarWidth(Number(event.target.value))}
+            aria-label="Repository sidebar width"
+          />
+        )}
+      </aside>
+      <div className="workspace-content">
+        {editingGroup && (
+          <form
+            className="repository-create"
+            onSubmit={(event) => {
+              event.preventDefault();
+              renameGroup(editingGroup.original, editingGroup.name);
+            }}
+          >
+            <label>
+              Rename {editingGroup.original}{" "}
+              <Input
+                autoFocus
+                value={editingGroup.name}
+                onChange={(event) =>
+                  setEditingGroup({ ...editingGroup, name: event.target.value })
+                }
+              />
+            </label>
+            <Button type="submit" variant="outline">
+              Save group name
+            </Button>
             <Button
               variant="outline"
-              onClick={() => void open()}
-              disabled={opening || !gitReady}
+              type="button"
+              onClick={() => setEditingGroup(null)}
             >
-              Open repository
+              Cancel
             </Button>
-          </section>
-        </main>
-      )}
-      {tabs.map((tab) => (
-        <div
-          className="repository-view"
-          key={tab.repository.path}
-          hidden={active !== tab.repository.path}
-        >
-          <RepositoryApp
-            initialRepository={tab.repository}
-            onOpen={() => void open()}
-            onFeedback={feedback}
-          />
-        </div>
-      ))}
-    </>
+          </form>
+        )}
+        {error && (
+          <p role="alert" className="workspace-error">
+            {error}
+          </p>
+        )}
+        {!tabs.length && (
+          <main className="landing-screen">
+            <section className="landing-card">
+              <h1>Branchlight</h1>
+              <p>
+                Switch repositories from the sidebar. Each uses your installed
+                Git and local configuration.
+              </p>
+              <Button
+                variant="outline"
+                onClick={() => void open()}
+                disabled={opening || !gitReady}
+              >
+                Open repository
+              </Button>
+            </section>
+          </main>
+        )}
+        {tabs.map((tab) => (
+          <div
+            className="repository-view"
+            key={tab.repository.path}
+            hidden={active !== tab.repository.path}
+          >
+            <RepositoryApp
+              initialRepository={tab.repository}
+              onOpen={() => void open()}
+              onFeedback={feedback}
+            />
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }

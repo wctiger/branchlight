@@ -1,3 +1,4 @@
+import { diffLines } from "@/features/inspection/diff-lines";
 import { OperationDialog } from "@/components/operation-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,7 +46,9 @@ export function InspectionPanel({
   commit,
   disabled,
   onDiscard,
+  selectedFile,
 }: {
+  selectedFile?: { change: FileChange; kind: string } | null;
   path: string;
   status: RepositoryStatus | null;
   commit: string | null;
@@ -66,6 +69,16 @@ export function InspectionPanel({
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const request = useRef(0);
+  const diffElement = useRef<HTMLPreElement>(null);
+  const hunkIndex = useRef(-1);
+  function navigateHunk(direction: number) {
+    const hunks =
+      diffElement.current?.querySelectorAll<HTMLElement>("[data-hunk]");
+    if (!hunks?.length) return;
+    hunkIndex.current =
+      (hunkIndex.current + direction + hunks.length) % hunks.length;
+    hunks[hunkIndex.current].scrollIntoView({ block: "center" });
+  }
   function invalidate() {
     request.current++;
     setLoading(false);
@@ -87,6 +100,7 @@ export function InspectionPanel({
   }, [status]);
   async function load<T>(action: () => Promise<T>, apply: (value: T) => void) {
     const id = ++request.current;
+    hunkIndex.current = -1;
     setLoading(true);
     setError("");
     setDiff(null);
@@ -128,6 +142,10 @@ export function InspectionPanel({
     }
     void load(() => getTextDiff(path, kind, change.path), setDiff);
   }
+  useEffect(() => {
+    if (selectedFile) showChange(selectedFile.change, selectedFile.kind);
+    // Reload the selected comparison after status refreshes, including staging.
+  }, [selectedFile, status, path]);
   const unsupportedPaths = new Set(
     [...(status?.staged ?? []), ...(status?.unstaged ?? [])]
       .filter((change) =>
@@ -139,7 +157,7 @@ export function InspectionPanel({
     unsupportedPaths.has(change.path) || change.path.endsWith("/");
   return (
     <section className="inspection-panel" aria-label="Change inspection">
-      <h2>Inspect changes</h2>
+      <h2>{file || "Inspect changes"}</h2>
       <p>
         Read-only text comparisons. Diffs are limited to 512 KiB. Binary content
         has no text preview.
@@ -175,209 +193,212 @@ export function InspectionPanel({
           </Button>
         </OperationDialog>
       )}
-      <div className="inspection-columns">
-        {[
-          {
-            label: "Unstaged · index → worktree",
-            kind: "unstaged",
-            files: status?.unstaged ?? [],
-          },
-          {
-            label: "Staged · HEAD → index",
-            kind: "staged",
-            files: status?.staged ?? [],
-          },
-        ].map((section) => (
-          <section key={section.kind}>
-            <h3>{section.label}</h3>
-            {!section.files.length && <p>No changes</p>}
+      <details className="inspection-tools">
+        <summary>Compare revisions, file history and discard</summary>
+        <div className="inspection-columns">
+          {[
+            {
+              label: "Unstaged · index → worktree",
+              kind: "unstaged",
+              files: status?.unstaged ?? [],
+            },
+            {
+              label: "Staged · HEAD → index",
+              kind: "staged",
+              files: status?.staged ?? [],
+            },
+          ].map((section) => (
+            <section key={section.kind}>
+              <h3>{section.label}</h3>
+              {!section.files.length && <p>No changes</p>}
+              <ul>
+                {section.files.map((change) => (
+                  <li key={change.path}>
+                    <Button
+                      variant="outline"
+                      disabled={disabled}
+                      onClick={() => showChange(change, section.kind)}
+                    >
+                      {change.status}: {change.path}
+                    </Button>
+                    {change.originalPath && (
+                      <span> from {change.originalPath}</span>
+                    )}
+                    <Button
+                      variant="outline"
+                      disabled={
+                        disabled ||
+                        unavailable(change) ||
+                        status?.operation !== "none" ||
+                        !!status?.conflicts.length
+                      }
+                      title={
+                        unavailable(change)
+                          ? "Discard unavailable for additions, copies, renames, conflicts and directories"
+                          : "Discard both staged and unstaged changes for this path"
+                      }
+                      onClick={() => setDiscardSelection(change)}
+                    >
+                      Discard
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
+        </div>
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            compare(base, target);
+          }}
+        >
+          <h3>Compare revisions</h3>
+          <p>
+            Compare base tree → target tree. A selected commit uses its first
+            parent; a root commit uses the empty tree.
+          </p>
+          <label>
+            Base{" "}
+            <Input
+              value={base}
+              onChange={(event) => {
+                invalidate();
+                setComparison(null);
+                setBase(event.target.value);
+              }}
+            />
+          </label>
+          <label>
+            Target{" "}
+            <Input
+              value={target}
+              onChange={(event) => {
+                invalidate();
+                setComparison(null);
+                setTarget(event.target.value);
+              }}
+            />
+          </label>
+          <Button
+            type="submit"
+            variant="outline"
+            disabled={disabled || !base || !target}
+          >
+            Compare
+          </Button>
+          <Button
+            variant="outline"
+            type="button"
+            disabled={disabled || base === "@parent"}
+            onClick={() => {
+              setBase(target);
+              setTarget(base);
+              compare(target, base);
+            }}
+          >
+            Reverse
+          </Button>
+        </form>
+        {comparison && (
+          <section>
+            <p>
+              <code>{comparison.base}</code> → <code>{comparison.target}</code>
+            </p>
+            {!comparison.files.length && (
+              <p>No changed paths between these revisions.</p>
+            )}
             <ul>
-              {section.files.map((change) => (
+              {comparison.files.map((change) => (
                 <li key={change.path}>
                   <Button
                     variant="outline"
                     disabled={disabled}
-                    onClick={() => showChange(change, section.kind)}
+                    onClick={() => {
+                      setFile(change.path);
+                      void load(
+                        () =>
+                          getTextDiff(
+                            path,
+                            "revisions",
+                            change.path,
+                            comparison.base,
+                            comparison.target,
+                          ),
+                        setDiff,
+                      );
+                    }}
                   >
-                    {change.status}: {change.path}
-                  </Button>
-                  {change.originalPath && (
-                    <span> from {change.originalPath}</span>
-                  )}
-                  <Button
-                    variant="outline"
-                    disabled={
-                      disabled ||
-                      unavailable(change) ||
-                      status?.operation !== "none" ||
-                      !!status?.conflicts.length
-                    }
-                    title={
-                      unavailable(change)
-                        ? "Discard unavailable for additions, copies, renames, conflicts and directories"
-                        : "Discard both staged and unstaged changes for this path"
-                    }
-                    onClick={() => setDiscardSelection(change)}
-                  >
-                    Discard
+                    {change.status}{" "}
+                    {change.originalPath ? `${change.originalPath} → ` : ""}
+                    {change.path}
                   </Button>
                 </li>
               ))}
             </ul>
           </section>
-        ))}
-      </div>
-      <form
-        onSubmit={(event) => {
-          event.preventDefault();
-          compare(base, target);
-        }}
-      >
-        <h3>Compare revisions</h3>
-        <p>
-          Compare base tree → target tree. A selected commit uses its first
-          parent; a root commit uses the empty tree.
-        </p>
-        <label>
-          Base{" "}
-          <Input
-            value={base}
-            onChange={(event) => {
-              invalidate();
-              setComparison(null);
-              setBase(event.target.value);
-            }}
-          />
-        </label>
-        <label>
-          Target{" "}
-          <Input
-            value={target}
-            onChange={(event) => {
-              invalidate();
-              setComparison(null);
-              setTarget(event.target.value);
-            }}
-          />
-        </label>
-        <Button
-          type="submit"
-          variant="outline"
-          disabled={disabled || !base || !target}
-        >
-          Compare
-        </Button>
-        <Button
-          variant="outline"
-          type="button"
-          disabled={disabled || base === "@parent"}
-          onClick={() => {
-            setBase(target);
-            setTarget(base);
-            compare(target, base);
-          }}
-        >
-          Reverse
-        </Button>
-      </form>
-      {comparison && (
-        <section>
-          <p>
-            <code>{comparison.base}</code> → <code>{comparison.target}</code>
-          </p>
-          {!comparison.files.length && (
-            <p>No changed paths between these revisions.</p>
-          )}
-          <ul>
-            {comparison.files.map((change) => (
-              <li key={change.path}>
-                <Button
-                  variant="outline"
-                  disabled={disabled}
-                  onClick={() => {
-                    setFile(change.path);
-                    void load(
-                      () =>
-                        getTextDiff(
-                          path,
-                          "revisions",
-                          change.path,
-                          comparison.base,
-                          comparison.target,
-                        ),
-                      setDiff,
-                    );
-                  }}
-                >
-                  {change.status}{" "}
-                  {change.originalPath ? `${change.originalPath} → ` : ""}
-                  {change.path}
-                </Button>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-      <form
-        onSubmit={(event) => {
-          event.preventDefault();
-          setComparison(null);
-          void load(() => getFileHistory(path, file, revision), setHistory);
-        }}
-      >
-        <h3>File history and blame</h3>
-        <p>
-          Up to 100 commits at the exact path and revision. Rename tracing is
-          not included. Deleted paths may have history; blame requires a file
-          present at the selected commit. Uncommitted contents are not
-          attributed.
-        </p>
-        <label>
-          Path{" "}
-          <Input
-            value={file}
-            onChange={(event) => {
-              invalidate();
-              setFile(event.target.value);
-            }}
-            placeholder="src/App.tsx"
-          />
-        </label>
-        <label>
-          Revision{" "}
-          <Input
-            value={revision}
-            onChange={(event) => {
-              invalidate();
-              setRevision(event.target.value);
-            }}
-          />
-        </label>
-        <Button
-          type="submit"
-          variant="outline"
-          disabled={disabled || !file || !revision}
-        >
-          File history
-        </Button>
-        <Button
-          variant="outline"
-          type="button"
-          disabled={disabled || !file || !revision}
-          onClick={() => {
+        )}
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
             setComparison(null);
-            void load(
-              () => getFileBlame(path, file, revision),
-              (value) => {
-                setDiff(value);
-                setBlame(parseBlame(value.text));
-              },
-            );
+            void load(() => getFileHistory(path, file, revision), setHistory);
           }}
         >
-          Blame
-        </Button>
-      </form>
+          <h3>File history and blame</h3>
+          <p>
+            Up to 100 commits at the exact path and revision. Rename tracing is
+            not included. Deleted paths may have history; blame requires a file
+            present at the selected commit. Uncommitted contents are not
+            attributed.
+          </p>
+          <label>
+            Path{" "}
+            <Input
+              value={file}
+              onChange={(event) => {
+                invalidate();
+                setFile(event.target.value);
+              }}
+              placeholder="src/App.tsx"
+            />
+          </label>
+          <label>
+            Revision{" "}
+            <Input
+              value={revision}
+              onChange={(event) => {
+                invalidate();
+                setRevision(event.target.value);
+              }}
+            />
+          </label>
+          <Button
+            type="submit"
+            variant="outline"
+            disabled={disabled || !file || !revision}
+          >
+            File history
+          </Button>
+          <Button
+            variant="outline"
+            type="button"
+            disabled={disabled || !file || !revision}
+            onClick={() => {
+              setComparison(null);
+              void load(
+                () => getFileBlame(path, file, revision),
+                (value) => {
+                  setDiff(value);
+                  setBlame(parseBlame(value.text));
+                },
+              );
+            }}
+          >
+            Blame
+          </Button>
+        </form>
+      </details>
       {loading && <p role="status">Loading inspection…</p>}
       {error && <p role="alert">{error}</p>}
       {history && (
@@ -440,18 +461,31 @@ export function InspectionPanel({
               ))}
             </div>
           ) : (
-            <pre className="text-diff">
-              {(diff.text || "No text changes in this comparison.")
-                .split("\n")
-                .map((line, index) => (
+            <>
+              <div className="diff-navigation" aria-label="Diff navigation">
+                <Button variant="outline" onClick={() => navigateHunk(-1)}>
+                  Previous hunk
+                </Button>
+                <Button variant="outline" onClick={() => navigateHunk(1)}>
+                  Next hunk
+                </Button>
+              </div>
+              <pre ref={diffElement} className="text-diff">
+                {diffLines(
+                  diff.text || "No text changes in this comparison.",
+                ).map(({ text: line, old, next, hunk }, index) => (
                   <span
                     key={index}
+                    data-hunk={hunk ? "true" : undefined}
                     className={`diff-line${line.startsWith("@@") || line.startsWith("+++") || line.startsWith("---") ? " diff-line--hunk" : line.startsWith("+") ? " diff-line--add" : line.startsWith("-") ? " diff-line--delete" : ""}`}
                   >
-                    {line || " "}
+                    <span className="diff-line-number">{old}</span>
+                    <span className="diff-line-number">{next}</span>
+                    <span>{line || " "}</span>
                   </span>
                 ))}
-            </pre>
+              </pre>
+            </>
           )}
         </section>
       )}

@@ -1142,3 +1142,414 @@ p {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
+
+/* Dense workspace geometry from issue #72; colors remain semantic theme tokens. */
+.workspace-shell {
+  display: grid;
+  grid-template-columns: var(--repository-sidebar-width) minmax(0, 1fr);
+  grid-template-rows: 36px minmax(0, 1fr);
+  height: 100dvh;
+  overflow: hidden;
+}
+.workspace-chrome {
+  grid-column: 1 / -1;
+}
+.workspace-tools {
+  height: 36px;
+  padding: 3px 10px;
+}
+.repository-sidebar {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  background: var(--surface-panel);
+  border-right: 1px solid var(--border-subtle);
+}
+.sidebar-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 36px;
+  padding: 0 8px;
+}
+.repository-sidebar .repository-tabs-container {
+  flex-direction: column;
+  align-items: stretch;
+  flex: 1;
+  min-height: 0;
+  padding: 0 4px;
+}
+.repository-sidebar .repository-tab-strip {
+  flex-direction: column;
+  overflow: auto;
+  gap: 0;
+}
+.repository-sidebar .repository-tab {
+  width: 100%;
+  max-width: none;
+  height: 30px;
+  border: 0;
+  border-radius: 3px;
+}
+.repository-sidebar .repository-tab--active {
+  box-shadow: inset 2px 0 var(--text-accent);
+}
+.repository-sidebar .repository-tab-select {
+  min-width: 0;
+  max-width: none;
+  height: 30px;
+  padding-inline: 6px;
+}
+.repository-row-name {
+  flex: 0 1 auto;
+  min-width: 40px;
+}
+.repository-row-path {
+  flex: 1 1 30px;
+  min-width: 0;
+  color: var(--text-secondary);
+  font-size: var(--type-meta);
+}
+.repository-row-branch {
+  flex: 0 1 65px;
+  color: var(--text-accent);
+  font-size: var(--type-meta);
+}
+.repository-sidebar .tab-icon {
+  width: 20px;
+}
+.repository-sidebar--compact .repository-row-path,
+.repository-sidebar--compact .repository-row-branch,
+.repository-sidebar--compact .tab-status,
+.repository-sidebar--compact .tab-error,
+.repository-sidebar--compact .repository-row-name small {
+  display: none;
+}
+.repository-sidebar--compact .repository-tab > .tab-icon {
+  display: none;
+}
+.repository-sidebar--compact .repository-tab:focus-within > .tab-icon {
+  display: inline-flex;
+}
+.repository-sidebar--compact .repository-row-name {
+  min-width: 0;
+}
+.sidebar-width {
+  width: calc(100% - 24px);
+  margin: 8px 12px;
+  height: 12px;
+  flex-shrink: 0;
+  accent-color: var(--text-accent);
+}
+.workspace-content {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+}
+.system-git-status {
+  height: 22px;
+  flex-shrink: 0;
+}
+.repository-create {
+  flex-shrink: 0;
+}
+.repository-view {
+  flex: 1;
+  min-height: 0;
+}
+.repository-screen {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.repository-bar {
+  min-height: 36px;
+  padding: 3px 8px;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+.repository-identity > span,
+.repository-brand .brand-mark {
+  display: none;
+}
+.repository-brand {
+  max-width: 140px;
+}
+.branch-summary__identity span {
+  display: none;
+}
+.repository-actions {
+  flex: 0 1 auto;
+  flex-wrap: nowrap;
+  gap: 4px;
+}
+.repository-actions > button:last-child {
+  display: none;
+}
+.main-view-toolbar {
+  min-height: 36px;
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  padding: 3px 8px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--surface-panel);
+}
+.main-view-toolbar [aria-pressed="true"] {
+  background: var(--selection-background);
+  color: var(--selection-text);
+}
+.selected-file-path {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-secondary);
+}
+.repository-body {
+  flex: 1;
+  min-height: 0;
+  height: auto;
+  grid-template-columns: 230px minmax(480px, 1fr) var(--inspector-width);
+  overflow: auto;
+}
+.repository-body--inspector-hidden {
+  grid-template-columns: 230px minmax(480px, 1fr);
+}
+.branch-panel {
+  max-height: none;
+  padding: 6px;
+  gap: 4px;
+}
+.branch-item[data-slot="button"] {
+  height: 30px;
+}
+.branch-item__identity {
+  flex-direction: row;
+  align-items: center;
+}
+.branch-item__identity span {
+  display: none;
+}
+.main-column,
+.main-mode {
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+}
+.main-mode {
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+}
+.main-mode > .history-panel {
+  flex: 1;
+  height: 100%;
+  grid-column: auto;
+  border: 0;
+}
+.history-item {
+  grid-template-columns: 62px minmax(100px, 1fr) minmax(45px, 90px) 85px 75px;
+  gap: 6px;
+}
+.history-selection {
+  flex-shrink: 0;
+}
+.changes-inspector {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--border-subtle);
+  background: var(--surface-panel);
+}
+.changes-inspector .repository-workspace {
+  flex: 1;
+  max-height: none;
+  overflow: auto;
+  padding: 8px;
+  border: 0;
+}
+.workspace-heading .eyebrow,
+.workspace-heading p,
+.workspace-facts,
+.commit-panel .eyebrow {
+  display: none;
+}
+.workspace-heading {
+  min-height: 28px;
+  padding: 0;
+}
+.workspace-heading h2 {
+  font-size: var(--type-body);
+}
+.stash-disclosure {
+  margin: 6px 0;
+  color: var(--text-secondary);
+}
+.changes-grid {
+  display: flex;
+  flex-direction: column;
+}
+.change-section--staged {
+  order: 0;
+}
+.change-section--unstaged {
+  order: 1;
+}
+.change-section--conflict {
+  order: 2;
+}
+.change-list li {
+  min-height: 30px;
+  padding-block: 0;
+}
+button.change-path {
+  display: block;
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  text-align: left;
+  color: var(--text-primary);
+  background: transparent;
+  border: 0;
+}
+.change-path > span {
+  display: none;
+}
+.commit-controls {
+  flex-direction: column;
+  gap: 6px;
+}
+.inspection-panel {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 8px;
+}
+.inspection-panel h2 {
+  overflow-wrap: anywhere;
+}
+.inspection-tools {
+  margin-block: 8px;
+}
+.inspection-tools > summary {
+  color: var(--text-secondary);
+  font-size: var(--type-label);
+}
+.text-diff {
+  max-height: none;
+  min-height: 240px;
+  margin: 0;
+}
+@media (max-width: 1100px) {
+  .repository-body {
+    grid-template-columns: 220px minmax(480px, 1fr) var(--inspector-width);
+  }
+  .repository-body--inspector-hidden {
+    grid-template-columns: 220px minmax(480px, 1fr);
+  }
+  .repository-bar {
+    overflow-x: auto;
+    flex-shrink: 0;
+  }
+  .repository-actions {
+    flex: 0 0 auto;
+  }
+  .workspace-tools {
+    flex-wrap: nowrap;
+  }
+}
+.repository-sidebar .system-git-status {
+  height: auto;
+  font-size: var(--type-meta);
+  padding: 4px 8px;
+}
+.repository-sidebar .repository-create {
+  padding: 4px 8px;
+  max-height: 50vh;
+  overflow: auto;
+}
+.repository-sidebar .repository-create label {
+  width: 100%;
+  margin: 6px 0;
+}
+.main-column {
+  display: flex;
+  flex-direction: column;
+}
+.main-mode {
+  flex: 1;
+  height: auto;
+}
+.main-view-toolbar {
+  flex-shrink: 0;
+}
+.changes-inspector .repository-workspace {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.changes-inspector .changes-grid {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+.changes-inspector .commit-panel {
+  flex-shrink: 0;
+}
+.changes-inspector .stash-disclosure[open] {
+  max-height: 40%;
+  overflow: auto;
+  flex-shrink: 0;
+}
+.repository-sidebar:not(.repository-sidebar--compact)
+  .repository-tab
+  > .tab-icon {
+  display: none;
+}
+.repository-sidebar:not(.repository-sidebar--compact)
+  .repository-tab:hover
+  > .tab-icon,
+.repository-sidebar:not(.repository-sidebar--compact)
+  .repository-tab:focus-within
+  > .tab-icon {
+  display: inline-flex;
+}
+.diff-navigation {
+  display: flex;
+  gap: 6px;
+  padding-block: 6px;
+  position: sticky;
+  top: 0;
+  background: var(--surface-panel);
+}
+.diff-line {
+  display: flex;
+  width: max-content;
+  min-width: 100%;
+}
+.diff-line-number {
+  display: inline-block;
+  width: 44px;
+  flex-shrink: 0;
+  padding-right: 12px;
+  text-align: right;
+  user-select: none;
+  color: var(--text-secondary);
+}
+.changes-inspector .change-section {
+  flex-shrink: 0;
+}
+.branch-item > code {
+  display: none;
+}
+
+.changes-inspector .commit-panel {
+  max-height: 55%;
+  overflow: auto;
+}
