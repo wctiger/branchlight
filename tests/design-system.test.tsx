@@ -1,3 +1,5 @@
+import { createWorkspaceStore } from "@/stores/workspace-store";
+import { WorkspaceStoreContext } from "@/stores/workspace-context";
 import branchStyles from "@/features/branches/BranchPanel.module.css";
 import historyStyles from "@/features/history/HistoryPanel.module.css";
 import "./setup-dom";
@@ -36,7 +38,6 @@ Object.defineProperty(globalThis, "localStorage", {
 
 describe("dense repository navigation", () => {
   test("reaches all twelve tabs with arrows and End, while a busy repository cannot close", async () => {
-    const closed: string[] = [];
     const tabs: RepositoryTab[] = Array.from({ length: 12 }, (_, i) => ({
       repository: { name: `repo-${i}`, path: `/repo-${i}` },
       group: "",
@@ -44,19 +45,15 @@ describe("dense repository navigation", () => {
       error: false,
       dirty: true,
     }));
+    const store = createWorkspaceStore();
+    store.setState({ tabs, active: "/repo-0" });
     function Harness() {
-      const [active, setActive] = useState("/repo-0");
       return (
-        <TooltipProvider>
-          <RepositoryTabs
-            tabs={tabs}
-            groups={[]}
-            active={active}
-            onSelect={setActive}
-            onGroup={() => {}}
-            onClose={(tab) => closed.push(tab.repository.path)}
-          />
-        </TooltipProvider>
+        <WorkspaceStoreContext value={store}>
+          <TooltipProvider>
+            <RepositoryTabs />
+          </TooltipProvider>
+        </WorkspaceStoreContext>
       );
     }
     const view = render(<Harness />);
@@ -75,7 +72,7 @@ describe("dense repository navigation", () => {
         .disabled,
     ).toBe(true);
     fireEvent.click(view.getByRole("button", { name: "Close repo-11" }));
-    expect(closed).toEqual([]);
+    expect(store.getState().tabs).toHaveLength(12);
     fireEvent.keyDown(last, { key: "ArrowRight" });
     expect(document.activeElement).toBe(first);
     const user = userEvent.setup({ document });
@@ -102,10 +99,12 @@ describe("virtualized commit history", () => {
       />,
     );
     expect(
-      view.container.querySelectorAll(`.${historyStyles["history-item"]}`).length,
+      view.container.querySelectorAll(`.${historyStyles["history-item"]}`)
+        .length,
     ).toBeLessThan(40);
-    const first =
-      view.container.querySelector<HTMLButtonElement>(`.${historyStyles["history-item"]}`)!;
+    const first = view.container.querySelector<HTMLButtonElement>(
+      `.${historyStyles["history-item"]}`,
+    )!;
     fireEvent.keyDown(first, { key: "End" });
     await waitFor(() =>
       expect(document.activeElement?.getAttribute("data-hash")).toBe(
@@ -132,7 +131,8 @@ describe("virtualized commit history", () => {
         ?.getAttribute("data-hash"),
     ).toBe(commits[299].hash);
     expect(
-      view.container.querySelectorAll(`.${historyStyles["history-item"]}`).length,
+      view.container.querySelectorAll(`.${historyStyles["history-item"]}`)
+        .length,
     ).toBeLessThan(40);
     // Mouse scrolling must not leave focus on a row that is about to be unmounted.
     scroll.scrollTop = 0;
@@ -230,7 +230,9 @@ test("merge/rebase chooser opens from the selected branch and starts on Cancel",
     />,
   );
   await user.click(
-    view.container.querySelectorAll<HTMLButtonElement>(`.${branchStyles["branch-item"]}`)[1],
+    view.container.querySelectorAll<HTMLButtonElement>(
+      `.${branchStyles["branch-item"]}`,
+    )[1],
   );
   await user.click(view.getByRole("button", { name: "Merge / rebase…" }));
   expect(view.getByRole("dialog")).not.toBeNull();
