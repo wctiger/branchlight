@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { DialogTrigger } from "@/components/ui/dialog";
 import { ThemeSelect } from "@/components/theme-select";
+import { BranchlightMark } from "@/workspace/icons";
 
 export function WorkspaceHeader({
   opening,
@@ -15,6 +16,7 @@ export function WorkspaceHeader({
     <header className="workspace-chrome">
       <div className="workspace-tools">
         <strong className="app-wordmark">
+          <BranchlightMark />
           Branchlight<span> / Workspace</span>
         </strong>
         <Button

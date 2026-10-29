@@ -91,6 +91,9 @@ p {
   align-items: center;
 }
 .app-wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-weight: 650;
   margin-right: 12px;
   letter-spacing: -0.2px;
@@ -266,26 +269,11 @@ p {
   white-space: nowrap;
 }
 .brand-mark {
-  display: inline-flex;
+  display: inline-block;
   height: 28px;
   width: 28px;
-  align-items: end;
-  justify-content: center;
-  gap: 3px;
-  background: var(--action-primary);
-  padding: 7px;
-  border-radius: 6px;
-}
-.brand-mark span {
-  width: 3px;
-  background: var(--action-onPrimary);
-  height: 10px;
-}
-.brand-mark span:nth-child(2) {
-  height: 15px;
-}
-.brand-mark span:last-child {
-  height: 7px;
+  flex-shrink: 0;
+  object-fit: contain;
 }
 .repository-branch {
   flex: 1;
@@ -1044,8 +1032,15 @@ p {
   background: var(--surface-panel);
 }
 .landing-card h1 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   font-size: 28px;
   margin-bottom: 12px;
+}
+.landing-card .brand-mark {
+  width: 48px;
+  height: 48px;
 }
 .landing-card p {
   color: var(--text-secondary);

@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { BranchlightMark } from "@/workspace/icons";
 import type { CSSProperties, ReactNode } from "react";
 import "@/App.css";
 
@@ -37,7 +38,10 @@ export function WorkspaceLanding({
   return (
     <main className="landing-screen">
       <section className="landing-card">
-        <h1>Branchlight</h1>
+        <h1>
+          <BranchlightMark />
+          Branchlight
+        </h1>
         <p>
           Switch repositories from the sidebar. Each uses your installed Git and
           local configuration.
