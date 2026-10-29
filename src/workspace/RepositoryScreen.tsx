@@ -1,3 +1,5 @@
+import type { FileChange } from "@/types/status";
+import { useRepositoryStore } from "@/stores/repository-context";
 import styles from "@/workspace/RepositoryScreen.module.css";
 import changesStyles from "@/workspace/ChangesPanel.module.css";
 import { cn } from "@/lib/utils";
@@ -8,102 +10,50 @@ import { RepositoryMainContent } from "@/workspace/RepositoryMainContent";
 import { useEffect, useRef, useState } from "react";
 import { HistoryControls } from "@/features/history/HistoryControls";
 import { BranchControls } from "@/features/DeliveryControls";
-import {
-  BranchPanel,
-  type BranchesState,
-} from "@/features/branches/BranchPanel";
-import type { StashesState } from "@/features/stashes/StashPanel";
-import {
-  HistoryPanel,
-  type HistoryState,
-} from "@/features/history/HistoryPanel";
+import { BranchPanel } from "@/features/branches/BranchPanel";
+import { HistoryPanel } from "@/features/history/HistoryPanel";
 import { InspectionPanel } from "@/features/inspection/InspectionPanel";
 import { ChangesPanel } from "@/workspace/ChangesPanel";
 import { ConflictBanner } from "@/workspace/ConflictBanner";
 import { ErrorNotice } from "@/workspace/ErrorNotice";
-import type {
-  AppOperation,
-  OpenState,
-  RepositoryStatusState,
-} from "@/workspace/types";
-import type { CommitOptions, RunDelivery } from "@/types/delivery";
-import type { Repository } from "@/types/repository";
-import type { GitError } from "@/types/git";
-import type { Stash } from "@/types/stash";
-import type { FileChange } from "@/types/status";
 
 /** Frames the active repository status and repository-level actions. */
-export function RepositoryScreen({
-  repository,
-  repositoryError,
-  openState,
-  statusState,
-  branchesState,
-  stashesState,
-  historyState,
-  operation,
-  changeOperationError,
-  branchOperationError,
-  branchOperationNotice,
-  remoteOperationError,
-  stashOperationError,
-  conflictOperationError,
-  operationNotice,
-  onOpenRepository,
-  onRefresh,
-  onStage,
-  onUnstage,
-  onCommit,
-  onSwitchBranch,
-  onCreateBranch,
-  onRenameBranch,
-  onDeleteBranch,
-  onMergeBranch,
-  onRebaseBranch,
-  onAbortOperation,
-  onDelivery,
-  onCreateStash,
-  onApplyStash,
-  onPopStash,
-  onDropStash,
-  onDiscard,
-}: {
-  onDiscard: (change: FileChange) => void;
-  repository: Repository;
-  repositoryError: GitError | null;
-  openState: OpenState;
-  statusState: RepositoryStatusState;
-  branchesState: BranchesState;
-  stashesState: StashesState;
-  historyState: HistoryState;
-  operation: AppOperation;
-  changeOperationError: GitError | null;
-  branchOperationError: GitError | null;
-  branchOperationNotice: string | null;
-  remoteOperationError: GitError | null;
-  stashOperationError: GitError | null;
-  conflictOperationError: GitError | null;
-  operationNotice: string | null;
-  onOpenRepository: () => void;
-  onRefresh: () => void;
-  onStage: (path: string) => void;
-  onUnstage: (path: string) => void;
-  onCommit: (options: CommitOptions) => Promise<boolean>;
-  onSwitchBranch: (branchName: string) => Promise<boolean>;
-  onCreateBranch: (branchName: string) => Promise<boolean>;
-  onRenameBranch: (oldName: string, newName: string) => Promise<boolean>;
-  onDeleteBranch: (branchName: string) => Promise<boolean>;
-  onMergeBranch: (sourceBranch: string) => Promise<boolean>;
-  onRebaseBranch: (sourceBranch: string) => Promise<boolean>;
-  onAbortOperation: (
-    kind: "merge" | "rebase" | "cherryPick" | "revert",
-  ) => void;
-  onDelivery: RunDelivery;
-  onCreateStash: (message: string) => Promise<boolean>;
-  onApplyStash: (stash: Stash) => Promise<boolean>;
-  onPopStash: (stash: Stash) => Promise<boolean>;
-  onDropStash: (stash: Stash) => Promise<boolean>;
-}) {
+export function RepositoryScreen() {
+  const {
+    repository,
+    repositoryError,
+    openState,
+    statusState,
+    branchesState,
+    stashesState,
+    historyState,
+    operation,
+    changeOperationError,
+    branchOperationError,
+    branchOperationNotice,
+    remoteOperationError,
+    stashOperationError,
+    conflictOperationError,
+    operationNotice,
+    onOpenRepository,
+    onRefresh,
+    onStage,
+    onUnstage,
+    onCommit,
+    onSwitchBranch,
+    onCreateBranch,
+    onRenameBranch,
+    onDeleteBranch,
+    onMergeBranch,
+    onRebaseBranch,
+    onAbortOperation,
+    onDelivery,
+    onCreateStash,
+    onApplyStash,
+    onPopStash,
+    onDropStash,
+    onDiscard,
+  } = useRepositoryStore((state) => state);
   const [mode, setMode] = useState<"history" | "diff">("history");
   const [inspectorOpen, setInspectorOpen] = useState(true);
   const [selectedFile, setSelectedFile] = useState<{

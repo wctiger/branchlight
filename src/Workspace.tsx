@@ -1,17 +1,16 @@
+import { createWorkspaceStore } from "@/stores/workspace-store";
+import {
+  WorkspaceStoreContext,
+  useWorkspaceStore,
+} from "@/stores/workspace-context";
 import navigationStyles from "@/workspace/RepositorySidebar.module.css";
 import sharedStyles from "@/styles/shared.module.css";
 import layoutStyles from "@/workspace/WorkspaceLayout.module.css";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { RepositoryApp } from "@/App";
-import {
-  chooseRepositoryFolder,
-  getGitVersion,
-  normalizeGitError,
-  openRepository,
-} from "@/lib/tauri";
-import { RepositoryTabs, type RepositoryTab } from "@/workspace/RepositoryTabs";
+import { RepositoryTabs } from "@/workspace/RepositoryTabs";
 import { WorkspaceLayout, WorkspaceLanding } from "@/workspace/WorkspaceLayout";
 import { WorkspaceHeader } from "@/workspace/WorkspaceHeader";
 import { WorkspaceGroups, GroupRenameForm } from "@/workspace/WorkspaceGroups";
@@ -19,124 +18,43 @@ import { RepositorySidebar } from "@/workspace/RepositorySidebar";
 import { RepositoryCreation } from "@/workspace/RepositoryCreation";
 import { useRepositorySidebar } from "@/workspace/useRepositorySidebar";
 
-type Tab = RepositoryTab;
 export default function Workspace() {
+  const [store] = useState(createWorkspaceStore);
+  return (
+    <WorkspaceStoreContext value={store}>
+      <WorkspaceContent />
+    </WorkspaceStoreContext>
+  );
+}
+
+function WorkspaceContent() {
   const { compact, setCompact, sidebarWidth, setSidebarWidth } =
     useRepositorySidebar();
-  const [gitReady, setGitReady] = useState(false);
-  const [gitMessage, setGitMessage] = useState("Checking system Git…");
-  const checkGit = useCallback(async () => {
-    setGitReady(false);
-    try {
-      const output = await getGitVersion();
-      setGitReady(true);
-      setGitMessage(output.stdout.trim());
-    } catch (error) {
-      setGitMessage(
-        `System Git is unavailable: ${normalizeGitError(error).message}. Install Git or check PATH, then try again.`,
-      );
-    }
-  }, []);
+  const {
+    gitReady,
+    gitMessage,
+    checkGit,
+    tabs,
+    active,
+    groups,
+    editingGroup,
+    manageGroups,
+    groupName,
+    error,
+    opening,
+    open,
+    setManageGroups,
+    setGroupName,
+    setEditingGroup,
+    setError,
+    createGroup,
+    renameGroup,
+    removeGroup,
+    addRepository,
+  } = useWorkspaceStore((state) => state);
   useEffect(() => {
     void checkGit();
   }, [checkGit]);
-  const [tabs, setTabs] = useState<Tab[]>([]);
-  const [active, setActive] = useState("");
-  const [groups, setGroups] = useState<string[]>([]);
-  const [editingGroup, setEditingGroup] = useState<{
-    original: string;
-    name: string;
-  } | null>(null);
-  const [manageGroups, setManageGroups] = useState(false);
-  const [groupName, setGroupName] = useState("");
-  const [error, setError] = useState("");
-  const [opening, setOpening] = useState(false);
-  const openingRef = useRef(false);
-  const busyPaths = useRef(new Set<string>());
-  const feedback = useCallback(
-    (
-      path: string,
-      busy: boolean,
-      error: boolean,
-      dirty: boolean,
-      branch?: string,
-    ) => {
-      if (busy) busyPaths.current.add(path);
-      else busyPaths.current.delete(path);
-      setTabs((tabs) => {
-        const current = tabs.find((tab) => tab.repository.path === path);
-        if (
-          !current ||
-          (current.busy === busy &&
-            current.error === error &&
-            current.dirty === dirty &&
-            (branch === undefined || current.branch === branch))
-        )
-          return tabs;
-        return tabs.map((tab) =>
-          tab === current
-            ? { ...tab, busy, error, dirty, branch: branch ?? tab.branch }
-            : tab,
-        );
-      });
-    },
-    [],
-  );
-  const open = useCallback(async () => {
-    if (openingRef.current) return;
-    openingRef.current = true;
-    setOpening(true);
-    setError("");
-    try {
-      const path = await chooseRepositoryFolder();
-      if (!path) return;
-      const repository = await openRepository(path);
-      setTabs((tabs) =>
-        tabs.some((tab) => tab.repository.path === repository.path)
-          ? tabs
-          : [
-              ...tabs,
-              {
-                repository,
-                group: "",
-                busy: false,
-                error: false,
-                dirty: false,
-              },
-            ],
-      );
-      setActive(repository.path);
-    } catch (error) {
-      setError(normalizeGitError(error).message);
-    } finally {
-      openingRef.current = false;
-      setOpening(false);
-    }
-  }, []);
-  function close(tab: Tab) {
-    if (busyPaths.current.has(tab.repository.path)) {
-      setError(
-        "Wait for this repository's operation and refresh to finish before closing its tab.",
-      );
-      return;
-    }
-    setTabs((tabs) => tabs.filter((item) => item !== tab));
-    if (active === tab.repository.path)
-      setActive(tabs.find((item) => item !== tab)?.repository.path ?? "");
-  }
-  function renameGroup(group: string, value: string) {
-    const name = value.trim();
-    if (!name || name === group) return;
-    if (groups.includes(name)) {
-      setError("A group with that name already exists.");
-      return;
-    }
-    setEditingGroup(null);
-    setGroups(groups.map((item) => (item === group ? name : item)));
-    setTabs((tabs) =>
-      tabs.map((tab) => (tab.group === group ? { ...tab, group: name } : tab)),
-    );
-  }
   return (
     <WorkspaceLayout
       width={compact ? 160 : sidebarWidth}
@@ -152,23 +70,12 @@ export default function Workspace() {
             editingGroup={editingGroup}
             groupName={groupName}
             onGroupNameChange={setGroupName}
-            onCreate={() => {
-              const name = groupName.trim();
-              if (name && !groups.includes(name)) setGroups([...groups, name]);
-              setGroupName("");
-            }}
+            onCreate={createGroup}
             onRename={(group) => {
               setEditingGroup({ original: group, name: group });
               setManageGroups(false);
             }}
-            onRemove={(group) => {
-              setGroups(groups.filter((item) => item !== group));
-              setTabs((tabs) =>
-                tabs.map((tab) =>
-                  tab.group === group ? { ...tab, group: "" } : tab,
-                ),
-              );
-            }}
+            onRemove={removeGroup}
           />
         </Dialog>
       }
@@ -179,20 +86,7 @@ export default function Workspace() {
           onCompactChange={setCompact}
           onWidthChange={setSidebarWidth}
         >
-          <RepositoryTabs
-            tabs={tabs}
-            active={active}
-            groups={groups}
-            onSelect={setActive}
-            onClose={close}
-            onGroup={(path, group) =>
-              setTabs((tabs) =>
-                tabs.map((tab) =>
-                  tab.repository.path === path ? { ...tab, group } : tab,
-                ),
-              )
-            }
-          />
+          <RepositoryTabs />
           <p className={navigationStyles["system-git-status"]} role="status">
             {gitMessage}{" "}
             {!gitReady && (
@@ -204,23 +98,7 @@ export default function Workspace() {
           <RepositoryCreation
             gitReady={gitReady}
             onError={setError}
-            onCreated={(repository) => {
-              setTabs((tabs) =>
-                tabs.some((tab) => tab.repository.path === repository.path)
-                  ? tabs
-                  : [
-                      ...tabs,
-                      {
-                        repository,
-                        group: "",
-                        busy: false,
-                        error: false,
-                        dirty: false,
-                      },
-                    ],
-              );
-              setActive(repository.path);
-            }}
+            onCreated={addRepository}
           />
         </RepositorySidebar>
       }
@@ -251,11 +129,7 @@ export default function Workspace() {
           key={tab.repository.path}
           hidden={active !== tab.repository.path}
         >
-          <RepositoryApp
-            initialRepository={tab.repository}
-            onOpen={() => void open()}
-            onFeedback={feedback}
-          />
+          <RepositoryApp initialRepository={tab.repository} />
         </div>
       ))}
     </WorkspaceLayout>
