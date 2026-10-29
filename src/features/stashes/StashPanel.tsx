@@ -1,3 +1,5 @@
+import styles from "@/features/stashes/StashPanel.module.css";
+import sharedStyles from "@/styles/shared.module.css";
 import { LoaderCircle } from "lucide-react";
 import { OperationDialog } from "@/components/operation-dialog";
 import { Button } from "@/components/ui/button";
@@ -41,7 +43,7 @@ function StashError({ title, error }: { title: string; error: GitError }) {
     error.output?.stderr.trim() || error.output?.stdout.trim() || undefined;
 
   return (
-    <div className="stash-error" role="alert">
+    <div className={styles["stash-error"]} role="alert">
       <strong>{title}</strong>
       <p>{details ?? error.message}</p>
     </div>
@@ -104,17 +106,17 @@ export function StashPanel({
   };
 
   return (
-    <section className="stash-panel" aria-labelledby={titleId}>
-      <header className="stash-panel__header">
+    <section className={styles["stash-panel"]} aria-labelledby={titleId}>
+      <header className={styles["stash-panel__header"]}>
         <div>
-          <p className="eyebrow">Saved work</p>
+          <p data-slot="eyebrow" className={sharedStyles["eyebrow"]}>Saved work</p>
           <h3 id={titleId}>Stashes</h3>
         </div>
         <span>{stashes.length}</span>
       </header>
 
       <form
-        className="stash-create"
+        className={styles["stash-create"]}
         onSubmit={(event) => void submitStash(event)}
       >
         <label htmlFor={messageId}>Optional stash message</label>
@@ -132,14 +134,13 @@ export function StashPanel({
           />
           <Button
             variant="outline"
-            className="secondary-button"
             type="submit"
             disabled={controlsDisabled}
             aria-busy={isCreating}
           >
             {isCreating && (
               <LoaderCircle
-                className="small-spinner"
+                className={sharedStyles["small-spinner"]}
                 aria-hidden="true"
                 data-icon="inline-start"
               />
@@ -165,9 +166,9 @@ export function StashPanel({
       )}
 
       {(state.state === "idle" || state.state === "loading") && (
-        <div className="stash-panel__status" aria-live="polite">
+        <div className={styles["stash-panel__status"]} aria-live="polite">
           <LoaderCircle
-            className="small-spinner"
+            className={sharedStyles["small-spinner"]}
             aria-hidden="true"
             data-icon="inline-start"
           />
@@ -176,11 +177,10 @@ export function StashPanel({
       )}
 
       {state.state === "error" && (
-        <div className="stash-panel__status">
+        <div className={styles["stash-panel__status"]}>
           <StashError title="Git couldn’t load stashes." error={state.error} />
           <Button
             variant="outline"
-            className="secondary-button"
             type="button"
             disabled={actionsDisabled}
             onClick={onRefresh}
@@ -191,18 +191,18 @@ export function StashPanel({
       )}
 
       {state.state === "ready" && stashes.length === 0 && (
-        <p className="stash-panel__empty">No saved work yet.</p>
+        <p className={styles["stash-panel__empty"]}>No saved work yet.</p>
       )}
 
       {state.state === "ready" && stashes.length > 0 && (
-        <ul className="stash-list">
+        <ul className={styles["stash-list"]}>
           {stashes.map((stash) => {
             const isBusy = stash.reference === busyReference;
             const isConfirmingDrop = pendingDropRef === stash.reference;
 
             return (
-              <li key={stash.reference} className="stash-item">
-                <div className="stash-item__identity">
+              <li key={stash.reference} className={styles["stash-item"]}>
+                <div className={styles["stash-item__identity"]}>
                   <div>
                     <code>{stash.reference}</code>
                     <code>{stash.commit.slice(0, 8)}</code>
@@ -220,7 +220,7 @@ export function StashPanel({
                     <div>
                       <Button
                         variant="destructive"
-                        className="stash-button--danger"
+                        className={styles["stash-button--danger"]}
                         type="button"
                         disabled={controlsDisabled}
                         aria-busy={isBusy && busyOperation === "drop"}
@@ -241,7 +241,7 @@ export function StashPanel({
                     </div>
                   </OperationDialog>
                 )}
-                <div className="stash-item__actions" hidden={isConfirmingDrop}>
+                <div className={styles["stash-item__actions"]} hidden={isConfirmingDrop}>
                   <Button
                     variant="outline"
                     type="button"
@@ -264,7 +264,7 @@ export function StashPanel({
                   </Button>
                   <Button
                     variant="destructive"
-                    className="stash-button--danger"
+                    className={styles["stash-button--danger"]}
                     type="button"
                     disabled={controlsDisabled}
                     onClick={() => setPendingDropRef(stash.reference)}

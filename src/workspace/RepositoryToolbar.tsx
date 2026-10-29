@@ -1,3 +1,6 @@
+import styles from "@/workspace/RepositoryToolbar.module.css";
+import summaryStyles from "@/workspace/BranchSummary.module.css";
+import sharedStyles from "@/styles/shared.module.css";
 import { FolderOpen, RefreshCw, LoaderCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { RemoteControls } from "@/features/DeliveryControls";
@@ -34,22 +37,22 @@ export function RepositoryToolbar({
   onOpenRepository: () => void;
 }) {
   return (
-    <header className="repository-bar">
-      <div className="repository-brand">
+    <header className={styles["repository-bar"]}>
+      <div className={styles["repository-brand"]}>
         <BranchlightMark />
-        <div className="repository-identity">
+        <div className={styles["repository-identity"]}>
           <h1>{repository.name}</h1>
           <span title={repository.path}>{repository.path}</span>
         </div>
       </div>
 
-      <div className="repository-branch" aria-live="polite">
+      <div className={styles["repository-branch"]} aria-live="polite">
         {status ? (
           <BranchSummary branch={status.branch} />
         ) : (
-          <div className="branch-summary branch-summary--loading">
-            <span className="status-dot status-dot--checking" />
-            <div className="branch-summary__identity">
+          <div className={summaryStyles["branch-summary"]}>
+            <span />
+            <div className={summaryStyles["branch-summary__identity"]}>
               <strong>
                 {statusState.state === "error"
                   ? "Status unavailable"
@@ -61,7 +64,7 @@ export function RepositoryToolbar({
         )}
       </div>
 
-      <div className="repository-actions">
+      <div className={styles["repository-actions"]}>
         <RemoteControls
           path={repository.path}
           disabled={
@@ -74,7 +77,6 @@ export function RepositoryToolbar({
         />
         <Button
           variant="outline"
-          className="secondary-button"
           type="button"
           disabled={
             !status ||
@@ -89,7 +91,6 @@ export function RepositoryToolbar({
         </Button>
         <Button
           variant="outline"
-          className="secondary-button"
           type="button"
           disabled={isRefreshing || isMutating || openState !== "idle"}
           aria-busy={isRefreshing}
@@ -97,7 +98,7 @@ export function RepositoryToolbar({
         >
           {isRefreshing ? (
             <LoaderCircle
-              className="small-spinner"
+              className={sharedStyles["small-spinner"]}
               aria-hidden="true"
               data-icon="inline-start"
             />
@@ -108,7 +109,6 @@ export function RepositoryToolbar({
         </Button>
         <Button
           variant="outline"
-          className="secondary-button"
           type="button"
           disabled={isMutating || openState !== "idle"}
           aria-busy={openState !== "idle"}

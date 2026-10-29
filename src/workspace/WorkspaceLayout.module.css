@@ -1,0 +1,46 @@
+.landing-screen {
+  display: grid;
+  place-items: center;
+  min-height: 65dvh;
+  padding: 24px;
+}
+.landing-card {
+  width: min(480px, 100%);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-panel);
+  padding: 32px;
+  background: var(--surface-panel);
+}
+.landing-card h1 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 28px;
+  margin-bottom: 12px;
+}
+.landing-card img {
+  width: 36px;
+  height: 36px;
+}
+.landing-card p {
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+}
+.workspace-shell {
+  display: grid;
+  grid-template-columns: var(--repository-sidebar-width) minmax(0, 1fr);
+  grid-template-rows: 36px minmax(0, 1fr);
+  height: 100dvh;
+  overflow: hidden;
+}
+.workspace-content {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+}
+.repository-view {
+  flex: 1;
+  min-height: 0;
+}

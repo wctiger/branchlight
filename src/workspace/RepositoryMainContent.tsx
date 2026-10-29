@@ -1,3 +1,4 @@
+import styles from "@/workspace/RepositoryMainContent.module.css";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 
@@ -20,8 +21,8 @@ export function RepositoryMainContent({
   diff: ReactNode;
 }) {
   return (
-    <div className="main-column">
-      <div className="main-view-toolbar">
+    <div className={styles["main-column"]}>
+      <div className={styles["main-view-toolbar"]}>
         <Button
           variant="ghost"
           aria-pressed={mode === "history"}
@@ -36,7 +37,7 @@ export function RepositoryMainContent({
         >
           Diff
         </Button>
-        <span className="selected-file-path" title={filePath}>
+        <span className={styles["selected-file-path"]} title={filePath}>
           {mode === "diff"
             ? (filePath ?? "Compare revisions")
             : "Commit history"}
@@ -50,10 +51,10 @@ export function RepositoryMainContent({
         </Button>
       </div>
 
-      <div className="main-mode" hidden={mode !== "history"}>
+      <div className={styles["main-mode"]} hidden={mode !== "history"}>
         {history}
       </div>
-      <div className="main-mode" hidden={mode !== "diff"}>
+      <div className={styles["main-mode"]} hidden={mode !== "diff"}>
         {diff}
       </div>
     </div>

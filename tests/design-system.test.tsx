@@ -1,3 +1,5 @@
+import branchStyles from "@/features/branches/BranchPanel.module.css";
+import historyStyles from "@/features/history/HistoryPanel.module.css";
 import "./setup-dom";
 import { afterEach, describe, expect, test } from "bun:test";
 import { useState } from "react";
@@ -100,10 +102,10 @@ describe("virtualized commit history", () => {
       />,
     );
     expect(
-      view.container.querySelectorAll(".history-item").length,
+      view.container.querySelectorAll(`.${historyStyles["history-item"]}`).length,
     ).toBeLessThan(40);
     const first =
-      view.container.querySelector<HTMLButtonElement>(".history-item")!;
+      view.container.querySelector<HTMLButtonElement>(`.${historyStyles["history-item"]}`)!;
     fireEvent.keyDown(first, { key: "End" });
     await waitFor(() =>
       expect(document.activeElement?.getAttribute("data-hash")).toBe(
@@ -130,7 +132,7 @@ describe("virtualized commit history", () => {
         ?.getAttribute("data-hash"),
     ).toBe(commits[299].hash);
     expect(
-      view.container.querySelectorAll(".history-item").length,
+      view.container.querySelectorAll(`.${historyStyles["history-item"]}`).length,
     ).toBeLessThan(40);
     // Mouse scrolling must not leave focus on a row that is about to be unmounted.
     scroll.scrollTop = 0;
@@ -228,7 +230,7 @@ test("merge/rebase chooser opens from the selected branch and starts on Cancel",
     />,
   );
   await user.click(
-    view.container.querySelectorAll<HTMLButtonElement>(".branch-item")[1],
+    view.container.querySelectorAll<HTMLButtonElement>(`.${branchStyles["branch-item"]}`)[1],
   );
   await user.click(view.getByRole("button", { name: "Merge / rebase…" }));
   expect(view.getByRole("dialog")).not.toBeNull();

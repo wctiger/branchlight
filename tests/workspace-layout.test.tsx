@@ -1,3 +1,4 @@
+import mainStyles from "@/workspace/RepositoryMainContent.module.css";
 import "./setup-dom";
 import { afterEach, expect, test } from "bun:test";
 import { useState } from "react";
@@ -39,10 +40,10 @@ test("main mode and inspector toggles preserve both modes and the commit draft",
   const draft = view.getByLabelText("Commit draft");
   for (const mode of ["Diff", "History", "Diff", "History"]) {
     fireEvent.click(view.getByRole("button", { name: mode, exact: true }));
-    expect(history.closest<HTMLElement>(".main-mode")!.hidden).toBe(
+    expect(history.closest<HTMLElement>(`.${mainStyles["main-mode"]}`)!.hidden).toBe(
       mode !== "History",
     );
-    expect(diff.closest<HTMLElement>(".main-mode")!.hidden).toBe(
+    expect(diff.closest<HTMLElement>(`.${mainStyles["main-mode"]}`)!.hidden).toBe(
       mode !== "Diff",
     );
     fireEvent.click(view.getByRole("button", { name: "Hide changes" }));

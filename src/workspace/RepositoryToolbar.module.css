@@ -1,0 +1,83 @@
+.repository-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 12px;
+  background: var(--surface-panel);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.repository-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.repository-identity {
+  min-width: 0;
+}
+.repository-identity h1 {
+  font-size: var(--type-body);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.repository-identity > span {
+  display: block;
+  color: var(--text-secondary);
+  font-size: var(--type-label);
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.repository-branch {
+  flex: 1;
+  min-width: 0;
+}
+.repository-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.repository-actions svg {
+  height: var(--size-icon);
+  width: var(--size-icon);
+}
+@media (max-width: 1100px) {
+  .repository-bar {
+    flex-wrap: wrap;
+  }
+  .repository-actions {
+    flex: 1 1 100%;
+  }
+}
+.repository-bar {
+  min-height: 36px;
+  padding: 3px 8px;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+.repository-identity > span,
+.repository-brand img {
+  display: none;
+}
+.repository-brand {
+  max-width: 140px;
+}
+.repository-actions {
+  flex: 0 1 auto;
+  flex-wrap: nowrap;
+  gap: 4px;
+}
+.repository-actions > button:last-child {
+  display: none;
+}
+@media (max-width: 1100px) {
+  .repository-bar {
+    overflow-x: auto;
+    flex-shrink: 0;
+  }
+  .repository-actions {
+    flex: 0 0 auto;
+  }
+}

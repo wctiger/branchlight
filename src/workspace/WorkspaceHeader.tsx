@@ -1,3 +1,4 @@
+import styles from "@/workspace/WorkspaceHeader.module.css";
 import { Button } from "@/components/ui/button";
 import { DialogTrigger } from "@/components/ui/dialog";
 import { ThemeSelect } from "@/components/theme-select";
@@ -13,9 +14,9 @@ export function WorkspaceHeader({
   onOpen: () => void;
 }) {
   return (
-    <header className="workspace-chrome">
-      <div className="workspace-tools">
-        <strong className="app-wordmark">
+    <header className={styles["workspace-chrome"]}>
+      <div className={styles["workspace-tools"]}>
+        <strong className={styles["app-wordmark"]}>
           <BranchlightMark />
           Branchlight<span> / Workspace</span>
         </strong>

@@ -1,3 +1,6 @@
+import navigationStyles from "@/workspace/RepositorySidebar.module.css";
+import sharedStyles from "@/styles/shared.module.css";
+import { cn } from "@/lib/utils";
 import { useEffect, useRef, type KeyboardEvent } from "react";
 import {
   Check,
@@ -69,28 +72,33 @@ export function RepositoryTabs({
     event.preventDefault();
     onSelect(tabs[next].repository.path);
     strip.current
-      ?.querySelectorAll<HTMLButtonElement>(".repository-tab-select")
+      ?.querySelectorAll<HTMLButtonElement>(
+        `.${navigationStyles["repository-tab-select"]}`,
+      )
       [next]?.focus();
   };
   return (
-    <div className="repository-tabs-container">
+    <div className={navigationStyles["repository-tabs-container"]}>
       <div
         ref={strip}
-        className="repository-tab-strip"
+        className={navigationStyles["repository-tab-strip"]}
         role="group"
         aria-label="Open repositories; use arrow keys to switch"
       >
         {tabs.map((tab, index) => (
           <div
             key={tab.repository.path}
-            className={`repository-tab${active === tab.repository.path ? " repository-tab--active" : ""}`}
+            className={cn(
+              navigationStyles["repository-tab"],
+              active === tab.repository.path && navigationStyles["repository-tab--active"],
+            )}
           >
             <Tooltip>
               <TooltipTrigger
                 render={
                   <Button
                     variant="ghost"
-                    className="repository-tab-select"
+                    className={navigationStyles["repository-tab-select"]}
                     aria-label={`${tab.repository.name}${tab.dirty ? ", uncommitted changes" : ""}${tab.busy ? ", working" : tab.error ? ", error" : ""}`}
                     aria-pressed={active === tab.repository.path}
                     tabIndex={active === tab.repository.path ? 0 : -1}
@@ -100,23 +108,27 @@ export function RepositoryTabs({
                 }
               >
                 <FolderGit2 aria-hidden="true" data-icon="inline-start" />
-                <span className="repository-row-name">
+                <span className={navigationStyles["repository-row-name"]}>
                   {tab.group && <small>{tab.group} / </small>}
                   {tab.repository.name}
                 </span>
-                <span className="repository-row-path">
+                <span className={navigationStyles["repository-row-path"]}>
                   {tab.repository.path}
                 </span>
-                <span className="repository-row-branch">
+                <span className={navigationStyles["repository-row-branch"]}>
                   {tab.branch ?? "…"}
                 </span>
                 {(tab.busy || tab.error || tab.dirty) && (
                   <span
-                    className={tab.error ? "tab-error" : "tab-status"}
+                    className={
+                      tab.error
+                        ? navigationStyles["tab-error"]
+                        : navigationStyles["tab-status"]
+                    }
                     aria-hidden="true"
                   >
                     {tab.busy ? (
-                      <LoaderCircle className="small-spinner" />
+                      <LoaderCircle className={sharedStyles["small-spinner"]} />
                     ) : tab.error ? (
                       <CircleAlert />
                     ) : (
@@ -135,7 +147,7 @@ export function RepositoryTabs({
                 render={
                   <Button
                     variant="ghost"
-                    className="tab-icon"
+                    className={navigationStyles["tab-icon"]}
                     aria-label={`Options for ${tab.repository.name}`}
                   />
                 }
@@ -162,7 +174,7 @@ export function RepositoryTabs({
             </DropdownMenu>
             <Button
               variant="ghost"
-              className="tab-icon"
+              className={navigationStyles["tab-icon"]}
               aria-label={`Close ${tab.repository.name}`}
               disabled={tab.busy}
               onClick={() => onClose(tab)}
@@ -178,7 +190,7 @@ export function RepositoryTabs({
             render={
               <Button
                 variant="outline"
-                className="repository-overflow"
+                className={navigationStyles["repository-overflow"]}
                 aria-label={`All ${tabs.length} repositories`}
               />
             }
@@ -199,7 +211,7 @@ export function RepositoryTabs({
                   }
                 >
                   {active === tab.repository.path && <Check aria-hidden="true" />}
-                  <span className="overflow-repo-name">
+                  <span className={navigationStyles["overflow-repo-name"]}>
                     {tab.group && `${tab.group} / `}
                     {tab.repository.name}
                     <small>{tab.repository.path}</small>

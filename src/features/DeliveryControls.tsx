@@ -1,3 +1,4 @@
+import styles from "@/features/DeliveryControls.module.css";
 import { useEffect, useState } from "react";
 import { OperationDialog } from "../components/operation-dialog";
 import { Button } from "../components/ui/button";
@@ -26,7 +27,7 @@ export function CommitComposer({
   const [pushAfterCommit, setPushAfterCommit] = useState(false);
   return (
     <form
-      className="commit-panel"
+      data-slot="commit-panel" className={styles["commit-panel"]}
       onSubmit={async (event) => {
         event.preventDefault();
         if (disabled || !staged || !summary.trim()) return;
@@ -50,7 +51,7 @@ export function CommitComposer({
       <label>
         Body (optional)
         <textarea
-          className="delivery-body"
+          className={styles["delivery-body"]}
           value={body}
           disabled={disabled}
           onChange={(event) => setBody(event.target.value)}
@@ -65,7 +66,7 @@ export function CommitComposer({
         />{" "}
         Skip pre-commit and commit-msg hooks for this commit
       </label>
-      <p className="commit-hint">
+      <p className={styles["commit-hint"]}>
         Prepare-commit-msg and post-commit hooks still run. Push hooks are
         unaffected. Your configured Git identity and hooks directory are used.
       </p>
@@ -250,7 +251,7 @@ export function RemoteControls({
             </label>
           )}
           {mode === "force" && review && (
-            <div className="push-review">
+            <div className={styles["push-review"]}>
               <p>
                 Local branch: <code>{review.branch}</code>
               </p>
@@ -318,7 +319,7 @@ export function BranchControls({
     (branch) => branch.fullRef === reference,
   );
   return (
-    <details className="delivery-branch-controls">
+    <details className={styles["delivery-branch-controls"]}>
       <summary>Branch start point and upstream</summary>
       <form
         onSubmit={async (event) => {

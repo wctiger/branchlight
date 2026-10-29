@@ -1,0 +1,76 @@
+.commit-panel [data-slot="eyebrow"] {
+  display: none;
+}
+.commit-panel {
+  margin-top: 10px;
+  display: grid;
+  gap: 6px;
+  padding: 8px;
+  background: var(--surface-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-control);
+}
+.commit-panel__heading {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--type-label);
+}
+.commit-panel__heading h3 {
+  font-size: var(--type-label);
+}
+.commit-panel__heading > span {
+  color: var(--text-secondary);
+}
+.commit-panel label,
+.commit-hint {
+  font-size: var(--type-label);
+  color: var(--text-secondary);
+}
+.commit-controls {
+  display: flex;
+  gap: 4px;
+}
+.delivery-branch-controls {
+  padding: 8px;
+  overflow-wrap: anywhere;
+}
+.delivery-branch-controls form,
+.delivery-branch-controls label {
+  display: grid;
+  gap: 6px;
+  margin-block: 8px;
+}
+.delivery-branch-controls select {
+  width: 100%;
+  min-width: 0;
+}
+.push-review code {
+  overflow-wrap: anywhere;
+}
+.commit-panel label {
+  display: block;
+  margin-block: 4px;
+}
+.delivery-body {
+  display: block;
+  width: 100%;
+  min-height: 64px;
+  padding: 6px 8px;
+  resize: vertical;
+  border: 1px solid var(--border-control);
+  border-radius: 6px;
+  background: var(--surface-panel);
+  color: var(--text-primary);
+  font: inherit;
+}
+.delivery-body:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+.commit-panel [data-slot="eyebrow"] {
+  display: none;
+}
+.commit-controls {
+  flex-direction: column;
+  gap: 6px;
+}

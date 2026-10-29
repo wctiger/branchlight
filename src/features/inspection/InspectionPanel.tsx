@@ -1,3 +1,5 @@
+import styles from "@/features/inspection/InspectionPanel.module.css";
+import { cn } from "@/lib/utils";
 import { diffLines } from "@/features/inspection/diff-lines";
 import { OperationDialog } from "@/components/operation-dialog";
 import { Button } from "@/components/ui/button";
@@ -174,7 +176,7 @@ export function InspectionPanel({
   const unavailable = (change: FileChange) =>
     unsupportedPaths.has(change.path) || change.path.endsWith("/");
   return (
-    <section className="inspection-panel" aria-label="Change inspection">
+    <section className={styles["inspection-panel"]} aria-label="Change inspection">
       <h2>{file || "Inspect changes"}</h2>
       <p>
         Read-only text comparisons. Diffs are limited to 512 KiB. Binary content
@@ -211,9 +213,9 @@ export function InspectionPanel({
           </Button>
         </OperationDialog>
       )}
-      <details className="inspection-tools">
+      <details className={styles["inspection-tools"]}>
         <summary>Compare revisions, file history and discard</summary>
-        <div className="inspection-columns">
+        <div className={styles["inspection-columns"]}>
           {[
             {
               label: "Unstaged · index → worktree",
@@ -459,7 +461,7 @@ export function InspectionPanel({
           {diff.binary ? (
             <p>Binary content: text preview unavailable.</p>
           ) : blame ? (
-            <div className="blame-lines">
+            <div className={styles["blame-lines"]}>
               {blame.map((line, index) => (
                 <div key={index}>
                   <Button
@@ -480,7 +482,7 @@ export function InspectionPanel({
             </div>
           ) : (
             <>
-              <div className="diff-navigation" aria-label="Diff navigation">
+              <div className={styles["diff-navigation"]} aria-label="Diff navigation">
                 <Button variant="outline" onClick={() => navigateHunk(-1)}>
                   Previous hunk
                 </Button>
@@ -488,17 +490,26 @@ export function InspectionPanel({
                   Next hunk
                 </Button>
               </div>
-              <pre ref={diffElement} className="text-diff">
+              <pre ref={diffElement} className={styles["text-diff"]}>
                 {diffLines(
                   diff.text || "No text changes in this comparison.",
                 ).map(({ text: line, old, next, hunk }, index) => (
                   <span
                     key={index}
                     data-hunk={hunk ? "true" : undefined}
-                    className={`diff-line${line.startsWith("@@") || line.startsWith("+++") || line.startsWith("---") ? " diff-line--hunk" : line.startsWith("+") ? " diff-line--add" : line.startsWith("-") ? " diff-line--delete" : ""}`}
+                    className={cn(
+                      styles["diff-line"],
+                      line.startsWith("@@") || line.startsWith("+++") || line.startsWith("---")
+                        ? styles["diff-line--hunk"]
+                        : line.startsWith("+")
+                          ? styles["diff-line--add"]
+                          : line.startsWith("-")
+                            ? styles["diff-line--delete"]
+                            : undefined,
+                    )}
                   >
-                    <span className="diff-line-number">{old}</span>
-                    <span className="diff-line-number">{next}</span>
+                    <span className={styles["diff-line-number"]}>{old}</span>
+                    <span className={styles["diff-line-number"]}>{next}</span>
                     <span>{line || " "}</span>
                   </span>
                 ))}

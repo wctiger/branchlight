@@ -1,0 +1,223 @@
+.repository-workspace {
+  min-height: 0;
+  min-width: 0;
+}
+.repository-workspace {
+  padding: 10px;
+  background: var(--surface-canvas);
+  border-right: 1px solid var(--border-subtle);
+  overflow: auto;
+}
+.workspace-heading {
+  margin-bottom: 10px;
+}
+.workspace-heading [data-slot="eyebrow"] {
+  display: none;
+}
+.workspace-heading h2 {
+  font-size: var(--type-body);
+}
+.workspace-heading p {
+  font-size: var(--type-label);
+  color: var(--text-secondary);
+}
+.workspace-facts {
+  display: flex;
+  gap: 6px;
+  font-size: var(--type-label);
+  color: var(--text-secondary);
+  margin-top: 3px;
+}
+.change-count {
+  font-size: var(--type-label);
+  color: var(--text-secondary);
+}
+.changes-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.change-section {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-control);
+  overflow: hidden;
+  background: var(--surface-panel);
+}
+.change-section__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+  padding: 6px 8px;
+  background: var(--surface-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.change-section__header h3 {
+  font-size: var(--type-label);
+}
+.change-section__header p {
+  display: none;
+}
+.change-section__empty {
+  padding: 6px 8px;
+  color: var(--text-secondary);
+  font-size: var(--type-label);
+}
+.change-list {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+.change-list li {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  min-height: 30px;
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.change-list li:last-child {
+  border: 0;
+}
+.change-symbol {
+  width: 18px;
+  flex: 0 0 18px;
+  text-align: center;
+  color: var(--status-info-text);
+  font-size: var(--type-label);
+}
+.change-symbol--added,
+.change-symbol--renamed {
+  color: var(--git-add-text);
+}
+.change-symbol--deleted,
+.change-symbol--conflicted {
+  color: var(--git-delete-text);
+}
+.change-symbol--untracked {
+  color: var(--status-warning-text);
+}
+.change-path {
+  min-width: 0;
+  flex: 1;
+  font-size: var(--type-meta);
+}
+.change-path code {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.change-path > span {
+  color: var(--text-secondary);
+  font-size: var(--type-meta);
+}
+.change-action {
+  height: 24px !important;
+  font-size: var(--type-meta) !important;
+  padding: 2px 5px !important;
+}
+.change-kind {
+  color: var(--text-secondary);
+  font-size: var(--type-meta);
+}
+.status-error {
+  background: var(--status-error-background);
+  color: var(--status-error-text);
+  padding: 8px 12px;
+  font-size: var(--type-label);
+  overflow-wrap: anywhere;
+}
+.status-loading,
+.status-error {
+  padding: 12px;
+}
+@media (max-width: 800px) {
+  .repository-workspace {
+    max-height: 480px;
+  }
+}
+.changes-inspector {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--border-subtle);
+  background: var(--surface-panel);
+}
+.changes-inspector .repository-workspace {
+  flex: 1;
+  max-height: none;
+  overflow: auto;
+  padding: 8px;
+  border: 0;
+}
+.workspace-heading [data-slot="eyebrow"],
+.workspace-heading p,
+.workspace-facts {
+  display: none;
+}
+.workspace-heading {
+  min-height: 28px;
+  padding: 0;
+}
+.workspace-heading h2 {
+  font-size: var(--type-body);
+}
+.stash-disclosure {
+  margin: 6px 0;
+  color: var(--text-secondary);
+}
+.changes-grid {
+  display: flex;
+  flex-direction: column;
+}
+.change-section--staged {
+  order: 0;
+}
+.change-section--unstaged {
+  order: 1;
+}
+.change-section--conflict {
+  order: 2;
+}
+.change-list li {
+  min-height: 30px;
+  padding-block: 0;
+}
+button.change-path {
+  display: block;
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  text-align: left;
+  color: var(--text-primary);
+  background: transparent;
+  border: 0;
+}
+.change-path > span {
+  display: none;
+}
+.changes-inspector .repository-workspace {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.changes-inspector .changes-grid {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+.changes-inspector [data-slot="commit-panel"] {
+  flex-shrink: 0;
+}
+.changes-inspector .stash-disclosure[open] {
+  max-height: 40%;
+  overflow: auto;
+  flex-shrink: 0;
+}
+.changes-inspector .change-section {
+  flex-shrink: 0;
+}
+.changes-inspector [data-slot="commit-panel"] {
+  max-height: 55%;
+  overflow: auto;
+}

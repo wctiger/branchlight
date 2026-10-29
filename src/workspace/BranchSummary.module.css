@@ -1,0 +1,35 @@
+.branch-symbol,
+.branch-counts svg {
+  width: var(--size-icon);
+  height: var(--size-icon);
+}
+.branch-counts span {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.branch-summary {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: var(--type-label);
+}
+.branch-summary__identity strong {
+  display: block;
+}
+.branch-summary__identity span {
+  color: var(--text-secondary);
+}
+.branch-counts {
+  display: flex;
+  gap: 6px;
+}
+.branch-counts span {
+  color: var(--status-info-text);
+  background: var(--status-info-background);
+  border-radius: 3px;
+  padding: 1px 4px;
+}
+.branch-summary__identity span {
+  display: none;
+}

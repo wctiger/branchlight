@@ -1,3 +1,4 @@
+import styles from "@/features/history/HistoryPanel.module.css";
 import {
   useEffect,
   useId,
@@ -139,20 +140,20 @@ export function HistoryPanel({
         ? state.refreshError
         : null;
   return (
-    <aside className="history-panel" aria-labelledby={titleId}>
-      <header className="history-panel__header">
+    <aside data-slot="history-panel" className={styles["history-panel"]} aria-labelledby={titleId}>
+      <header className={styles["history-panel__header"]}>
         <h2 id={titleId}>History</h2>
         <Badge variant="secondary">{commits.length} loaded</Badge>
         {state.state === "ready" && state.isRefreshing && (
           <span role="status">Refreshing…</span>
         )}
       </header>
-      <p className="history-bound">
+      <p className={styles["history-bound"]}>
         Read-only · latest 200 commits from Git
         {commits.length > 200 ? " · synthetic fixture" : ""}
       </p>
       {failure && (
-        <div role="alert" className="history-error">
+        <div role="alert" className={styles["history-error"]}>
           <strong>History unavailable</strong>
           <p>{failure.message}</p>
           {failure.output && (
@@ -171,13 +172,13 @@ export function HistoryPanel({
         <p role="status">Reading commits…</p>
       )}
       {state.state === "ready" && !commits.length && (
-        <p className="history-panel__empty">
+        <p className={styles["history-panel__empty"]}>
           No commits yet. Refresh after the first commit.
         </p>
       )}
       <div
         ref={viewport}
-        className="history-timeline"
+        className={styles["history-timeline"]}
         tabIndex={0}
         role="region"
         aria-label="Scrollable commit history"
@@ -198,7 +199,7 @@ export function HistoryPanel({
           const element = event.currentTarget;
           const focused = document.activeElement as HTMLElement | null;
           if (
-            focused?.classList.contains("history-item") &&
+            focused?.classList.contains(styles["history-item"]) &&
             element.contains(focused)
           ) {
             const row = commits.findIndex(
@@ -215,11 +216,11 @@ export function HistoryPanel({
         }}
       >
         <div
-          className="history-canvas"
+          className={styles["history-canvas"]}
           style={{ height: totalHeight, minWidth: graphWidth + 560 }}
         >
           <svg
-            className="history-graph"
+            className={styles["history-graph"]}
             width={graphWidth}
             height={totalHeight}
             aria-label="Commit parent relationships"
@@ -243,14 +244,14 @@ export function HistoryPanel({
               >
                 <circle
                   r={node.hash === selectedHash ? 7 : 5}
-                  className="history-graph__node-ring"
+                  className={styles["history-graph__node-ring"]}
                 />
                 <circle r="3" fill={graphColor(node.lane)} />
               </g>
             ))}
           </svg>
           <ul
-            className="history-list"
+            className={styles["history-list"]}
             aria-label="Recent commits; use Up, Down, Home and End"
             style={{ marginLeft: graphWidth, height: totalHeight }}
           >
@@ -268,7 +269,7 @@ export function HistoryPanel({
                   }}
                 >
                   <button
-                    className="history-item"
+                    className={styles["history-item"]}
                     data-hash={commit.hash}
                     type="button"
                     title={full}
@@ -281,7 +282,7 @@ export function HistoryPanel({
                     <code>{commit.hash.slice(0, 8)}</code>
                     <strong>{commit.subject || "(no subject)"}</strong>
                     <span
-                      className="history-item__refs"
+                      className={styles["history-item__refs"]}
                       title={commit.refs.join(", ")}
                     >
                       <span>{commit.refs[0]}</span>
@@ -289,7 +290,7 @@ export function HistoryPanel({
                         <b>+{commit.refs.length - 1}</b>
                       )}
                     </span>
-                    <span className="history-item__author">
+                    <span className={styles["history-item__author"]}>
                       {commit.author || "Unknown author"}
                     </span>
                     <time>{dateText(commit.timestamp)}</time>
@@ -301,7 +302,7 @@ export function HistoryPanel({
         </div>
       </div>
       {selected && (
-        <footer className="history-selection">
+        <footer className={styles["history-selection"]}>
           <code>{selected.hash.slice(0, 12)}</code>
           <strong>{selected.subject || "(no subject)"}</strong>
           <span>

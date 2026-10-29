@@ -1,3 +1,4 @@
+import navigationStyles from "@/workspace/RepositorySidebar.module.css";
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -59,7 +60,7 @@ export function RepositoryCreation({
     }
   }
   return (
-    <details className="repository-create">
+    <details className={navigationStyles["repository-create"]}>
       <summary>Initialize or clone a repository</summary>
       <p>
         Choose a new directory inside an existing parent. Existing destinations

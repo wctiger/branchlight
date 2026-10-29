@@ -1,3 +1,5 @@
+import navigationStyles from "@/workspace/RepositorySidebar.module.css";
+import styles from "@/workspace/WorkspaceGroups.module.css";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -34,7 +36,7 @@ export function WorkspaceGroups({
         </DialogDescription>
       </DialogHeader>
       <form
-        className="group-create"
+        className={styles["group-create"]}
         onSubmit={(event) => {
           event.preventDefault();
           onCreate();
@@ -51,7 +53,7 @@ export function WorkspaceGroups({
         </Button>
       </form>
       {groups.map((group) => (
-        <div className="group-manager-row" key={group}>
+        <div className={styles["group-manager-row"]} key={group}>
           <strong>{group}</strong>
           <Button
             variant="outline"
@@ -89,7 +91,7 @@ export function GroupRenameForm({
 }) {
   return (
     <form
-      className="repository-create"
+      className={navigationStyles["repository-create"]}
       onSubmit={(event) => {
         event.preventDefault();
         onSave();

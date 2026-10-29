@@ -1,3 +1,6 @@
+import styles from "@/features/branches/BranchPanel.module.css";
+import sharedStyles from "@/styles/shared.module.css";
+import { cn } from "@/lib/utils";
 import { LoaderCircle } from "lucide-react";
 import { OperationDialog } from "@/components/operation-dialog";
 import { Button } from "@/components/ui/button";
@@ -79,7 +82,11 @@ function BranchItem({
     <li>
       <Button
         variant="outline"
-        className={`branch-item${isSelected ? " branch-item--selected" : ""}${isDropTarget ? " branch-item--drop-target" : ""}`}
+        className={cn(
+          styles["branch-item"],
+          isSelected && styles["branch-item--selected"],
+          isDropTarget && styles["branch-item--drop-target"],
+        )}
         type="button"
         title={
           isRemote
@@ -102,21 +109,24 @@ function BranchItem({
         onDrop={onDrop}
       >
         <span
-          className={`branch-dot${branch.isCurrent ? " branch-dot--current" : ""}`}
+          className={cn(
+            styles["branch-dot"],
+            branch.isCurrent && styles["branch-dot--current"],
+          )}
           aria-hidden="true"
         />
-        <span className="branch-item__identity">
+        <span className={styles["branch-item__identity"]}>
           <strong>{branch.name}</strong>
           <span>{trackingLabel}</span>
         </span>
         {isBusy ? (
           <LoaderCircle
-            className="small-spinner"
+            className={sharedStyles["small-spinner"]}
             aria-hidden="true"
             data-icon="inline-start"
           />
         ) : branch.isCurrent ? (
-          <span className="branch-current-label">Current</span>
+          <span className={styles["branch-current-label"]}>Current</span>
         ) : (
           <code>{commitLabel}</code>
         )}
@@ -131,7 +141,7 @@ function BranchError({ title, error }: { title: string; error: GitError }) {
     error.output?.stderr.trim() || error.output?.stdout.trim() || undefined;
 
   return (
-    <div className="branch-error" role="alert">
+    <div className={styles["branch-error"]} role="alert">
       <strong>{title}</strong>
       <p>{details ?? error.message}</p>
     </div>
@@ -345,8 +355,8 @@ export function BranchPanel({
 
   if (state.state === "idle" || state.state === "loading") {
     return (
-      <aside className="branch-panel branch-panel--loading" aria-live="polite">
-        <LoaderCircle className="workspace-spinner" aria-hidden="true" />
+      <aside className={cn(styles["branch-panel"], styles["branch-panel--loading"])} aria-live="polite">
+        <LoaderCircle className={sharedStyles["workspace-spinner"]} aria-hidden="true" />
         <strong>Reading branches…</strong>
       </aside>
     );
@@ -354,11 +364,10 @@ export function BranchPanel({
 
   if (state.state === "error") {
     return (
-      <aside className="branch-panel branch-panel--error">
+      <aside className={styles["branch-panel"]}>
         <BranchError title="Git couldn’t load branches." error={state.error} />
         <Button
           variant="outline"
-          className="branch-text-button"
           type="button"
           disabled={actionsDisabled}
           onClick={onRefresh}
@@ -374,15 +383,15 @@ export function BranchPanel({
   }
 
   return (
-    <aside className="branch-panel" aria-labelledby={titleId}>
-      <header className="branch-panel__header">
+    <aside className={styles["branch-panel"]} aria-labelledby={titleId}>
+      <header className={styles["branch-panel__header"]}>
         <div>
-          <p className="eyebrow">Repository refs</p>
+          <p data-slot="eyebrow" className={sharedStyles["eyebrow"]}>Repository refs</p>
           <h2 id={titleId}>Branches</h2>
         </div>
         <Button
           variant="outline"
-          className="branch-add-button"
+          className={styles["branch-add-button"]}
           type="button"
           title="Create a local branch"
           aria-label="Create a local branch"
@@ -408,19 +417,19 @@ export function BranchPanel({
       )}
 
       {!operationError && operationNotice && (
-        <div className="branch-notice" role="status">
+        <div className={styles["branch-notice"]} role="status">
           {operationNotice}
         </div>
       )}
 
-      <div className="branch-groups">
-        <section className="branch-group" aria-labelledby={localId}>
-          <div className="branch-group__heading">
+      <div>
+        <section className={styles["branch-group"]} aria-labelledby={localId}>
+          <div className={styles["branch-group__heading"]}>
             <h3 id={localId}>Local</h3>
             <span>{branches.local.length}</span>
           </div>
           {branches.local.length === 0 ? (
-            <p className="branch-group__empty">No local branches</p>
+            <p className={styles["branch-group__empty"]}>No local branches</p>
           ) : (
             <ul>
               {branches.local.map((branch) => (
@@ -444,13 +453,13 @@ export function BranchPanel({
           )}
         </section>
 
-        <section className="branch-group" aria-labelledby={remoteId}>
-          <div className="branch-group__heading">
+        <section className={styles["branch-group"]} aria-labelledby={remoteId}>
+          <div className={styles["branch-group__heading"]}>
             <h3 id={remoteId}>Remote</h3>
             <span>{branches.remote.length}</span>
           </div>
           {branches.remote.length === 0 ? (
-            <p className="branch-group__empty">No remote branches</p>
+            <p className={styles["branch-group__empty"]}>No remote branches</p>
           ) : (
             <ul>
               {branches.remote.map((branch) => (
@@ -472,14 +481,14 @@ export function BranchPanel({
               ))}
             </ul>
           )}
-          <p className="branch-group__note">Use the tracking controls below to check out a remote ref locally.</p>
+          <p className={styles["branch-group__note"]}>Use the tracking controls below to check out a remote ref locally.</p>
           {children}
         </section>
       </div>
 
       {selectedLocalBranch && editor.mode === "closed" && (
         <div
-          className="branch-actions"
+          className={styles["branch-actions"]}
           aria-label="Selected local branch actions"
         >
           <Button
@@ -513,7 +522,7 @@ export function BranchPanel({
           </Button>
           <Button
             variant="destructive"
-            className="branch-action--danger"
+            className={styles["branch-action--danger"]}
             type="button"
             title={
               selectedLocalBranch.isCurrent
@@ -534,7 +543,7 @@ export function BranchPanel({
 
       {(editor.mode === "create" || editor.mode === "rename") && (
         <form
-          className="branch-editor"
+          className={styles["branch-editor"]}
           onSubmit={(event) => void submitName(event)}
         >
           <label htmlFor={nameId}>
@@ -555,7 +564,6 @@ export function BranchPanel({
           <div>
             <Button
               variant="default"
-              className="branch-editor__primary"
               type="submit"
               disabled={!draftName.trim() || actionsDisabled}
             >
@@ -583,7 +591,6 @@ export function BranchPanel({
           <div>
             <Button
               variant="destructive"
-              className="branch-editor__danger"
               type="button"
               disabled={actionsDisabled}
               onClick={() => void confirmDelete()}
@@ -609,10 +616,9 @@ export function BranchPanel({
           busy={actionsDisabled}
           onClose={closeIntegration}
         >
-          <div className="branch-integrate-actions">
+          <div>
             <Button
               variant="default"
-              className="branch-editor__primary"
               type="button"
               disabled={actionsDisabled}
               onClick={() => void integrateBranch("merge")}
@@ -640,7 +646,7 @@ export function BranchPanel({
       )}
 
       {selectedBranch && !selectedLocalBranch && (
-        <div className="branch-selection-note">
+        <div className={styles["branch-selection-note"]}>
           <strong>{selectedBranch.name}</strong>
           <span>Remote reference · read-only</span>
         </div>
