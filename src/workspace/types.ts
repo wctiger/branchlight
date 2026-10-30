@@ -39,4 +39,5 @@ export type AppOperation =
   | { state: "abortingRebase" }
   | { state: "recoveringRebase" }
   | { state: "resolvingConflict"; path: string }
-  | { state: "tagging" };
+  | { state: "tagging" }
+  | { state: "launchingTool" };

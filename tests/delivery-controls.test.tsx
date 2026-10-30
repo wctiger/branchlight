@@ -924,3 +924,57 @@ test("commit search communicates limits, empty matches and hash lookup errors", 
   await waitFor(() => expect(view.getByRole("alert").textContent).toContain("unambiguous"));
   expect(view.queryByText(/No matching commits/)).toBeNull();
 });
+
+test("external tools capture file context, use structured local settings and offer explicit refresh", async () => {
+  const { ExternalTools } = await import("../src/features/ExternalTools");
+  const { saveToolPreferences, toolStorageKey } = await import("../src/lib/external-tools");
+  const config = {executable: "/editor with spaces", args: ["--wait", "{target}", "$(literal)"]};
+  saveToolPreferences({editor: config, terminal: {executable: "", args: ["{repository}"]}});
+  const requests: import("../src/types/external-tools").ToolRequest[] = [];
+  let refreshed = 0;
+  const view = render(<ExternalTools path="/repo with spaces" file="file [x].txt" kind="staged" conflicted={false} disabled={false}
+    launch={async request => {requests.push(request);return {jobId: null, message: "Started"};}} refresh={async () => {refreshed++;}} />);
+  try {
+    const user = userEvent.setup({document});
+    await user.click(view.getByRole("button", {name: "External tools…"}));
+    expect((view.getByRole("button", {name: "Open Git merge tool", exact: true}) as HTMLButtonElement).disabled).toBe(true);
+    await user.click(view.getByRole("button", {name: "Open editor", exact: true}));
+    expect(requests[0]).toEqual({tool: "editor", filePath: "file [x].txt", staged: true, config});
+    await user.click(view.getByRole("button", {name: "Open terminal", exact: true}));
+    expect(requests[1]).toEqual({tool: "terminal", filePath: null, staged: true, config: null});
+    await user.click(view.getByRole("button", {name: "Refresh after external changes"}));
+    expect(refreshed).toBe(1);
+  } finally {window.localStorage.removeItem(toolStorageKey);}
+});
+
+test("external tool settings reject shell-like argument strings instead of persisting them as arrays", async () => {
+  const { ExternalTools } = await import("../src/features/ExternalTools");
+  const { toolStorageKey } = await import("../src/lib/external-tools");
+  window.localStorage.removeItem(toolStorageKey);
+  const view = render(<ExternalTools path="/repo" file={null} kind={null} conflicted={false} disabled={false} launch={async () => null} refresh={async () => {}} />);
+  const user = userEvent.setup({document});
+  await user.click(view.getByRole("button", {name: "External tools…"}));
+  await user.click(view.getByRole("button", {name: "Configure editor and terminal…"}));
+  const args = view.getByLabelText("Editor arguments");
+  await user.clear(args);await user.type(args, "--wait; unsafe()");
+  await user.click(view.getByRole("button", {name: "Save tool settings", exact: true}));
+  expect(view.getByRole("alert")).toBeTruthy();
+  expect(window.localStorage.getItem(toolStorageKey)).toBeNull();
+});
+
+test("external tool failures refresh repository state and release the mutation guard", async () => {
+  const store = createRepositoryStore({name: "tools", path: "/tool-repo"}, () => {});
+  await store.getState().onRefresh();
+  const pending = deferred<unknown>();
+  intercept = command => command === "launch_external_tool" ? pending.promise : undefined;
+  const before = calls.filter(call => call.command === "get_repository_status").length;
+  const request = {tool: "merge" as const, filePath: "conflict.txt", staged: false, config: null};
+  const launched = store.getState().onLaunchExternalTool(request);
+  expect(store.getState().operation.state).toBe("launchingTool");
+  expect(await store.getState().onLaunchExternalTool(request)).toBeNull();
+  pending.reject({code: "commandFailed", message: "Merge tool failed after writing output"});
+  expect(await launched).toBeNull();
+  expect(calls.filter(call => call.command === "get_repository_status").length).toBeGreaterThan(before);
+  expect(store.getState().operation.state).toBe("idle");
+  expect(store.getState().conflictOperationError?.message).toContain("Merge tool failed");
+});

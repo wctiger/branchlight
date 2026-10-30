@@ -11,6 +11,7 @@ import type { OpenState, RepositoryStatusState } from "@/workspace/types";
 import type { RunDelivery } from "@/types/delivery";
 import type { Repository } from "@/types/repository";
 import type { RepositoryStatus } from "@/types/status";
+import type { ReactNode } from "react";
 
 export function RepositoryToolbar({
   repository,
@@ -24,6 +25,7 @@ export function RepositoryToolbar({
   onStash,
   onRefresh,
   onOpenRepository,
+  externalTools,
 }: {
   repository: Repository;
   status: RepositoryStatus | null;
@@ -36,6 +38,7 @@ export function RepositoryToolbar({
   onStash: () => void;
   onRefresh: () => void;
   onOpenRepository: () => void;
+  externalTools?: ReactNode;
 }) {
   return (
     <header className={styles["repository-bar"]}>
@@ -67,6 +70,7 @@ export function RepositoryToolbar({
 
       <div className={styles["repository-actions"]}>
         <DiagnosticsPanel path={repository.path} />
+        {externalTools}
         <RemoteControls
           path={repository.path}
           disabled={

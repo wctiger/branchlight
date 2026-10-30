@@ -420,3 +420,10 @@ export interface HistorySearchResult { commits: Commit[]; limit: number; hasMore
 export function searchHistory(path: string, query: string, mode: "message" | "hash"): Promise<HistorySearchResult> {
   return invoke("search_history", {path, query, mode});
 }
+
+export function launchExternalTool(path: string, request: import("@/types/external-tools").ToolRequest): Promise<import("@/types/external-tools").ToolLaunch> {
+  return invoke("launch_external_tool", {path, request});
+}
+export function getLauncherStatus(jobId: number): Promise<import("@/types/external-tools").LauncherStatus> {
+  return invoke("get_launcher_status", {jobId});
+}

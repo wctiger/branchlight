@@ -18,6 +18,7 @@ import { InspectionPanel } from "@/features/inspection/InspectionPanel";
 import { ChangesPanel } from "@/workspace/ChangesPanel";
 import { ConflictBanner } from "@/workspace/ConflictBanner";
 import { ErrorNotice } from "@/workspace/ErrorNotice";
+import { ExternalTools } from "@/features/ExternalTools";
 
 /** Frames the active repository status and repository-level actions. */
 export function RepositoryScreen() {
@@ -57,6 +58,7 @@ export function RepositoryScreen() {
     onDropStash,
     onDiscard,
     onSaveConflict,
+    onLaunchExternalTool,
   } = useRepositoryStore((state) => state);
   const [mode, setMode] = useState<"history" | "diff">("history");
   const [inspectorOpen, setInspectorOpen] = useState(true);
@@ -87,6 +89,12 @@ export function RepositoryScreen() {
   }, []);
   const [inspectionCommit, setInspectionCommit] = useState<string | null>(null);
   const status = statusState.state === "ready" ? statusState.status : null;
+  const externalSelection = selectedFile && status ? [
+    {kind: "unstaged", files: status.conflicts},
+    {kind: "unstaged", files: status.unstaged},
+    {kind: "staged", files: status.staged},
+  ].flatMap(group => group.files.filter(file => file.path === selectedFile.change.path).map(file => ({kind: group.kind, file}))) : [];
+  const externalFile = externalSelection.find(selection => selection.kind === selectedFile?.kind) ?? externalSelection[0];
   const isRefreshing =
     statusState.state === "loading" ||
     (statusState.state === "ready" && statusState.isRefreshing) ||
@@ -113,6 +121,9 @@ export function RepositoryScreen() {
   return (
     <main ref={screen} className={styles["repository-screen"]}>
       <RepositoryToolbar
+        externalTools={<ExternalTools path={repository.path} file={externalFile?.file.path ?? null}
+          kind={externalFile?.kind ?? null} conflicted={!!externalFile && !!status?.conflicts.some(file => file.path === externalFile.file.path)}
+          disabled={controlsDisabled || isRefreshing} launch={onLaunchExternalTool} refresh={onRefresh} />}
         repository={repository}
         status={status}
         statusState={statusState}

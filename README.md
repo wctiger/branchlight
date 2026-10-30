@@ -78,6 +78,10 @@ The application implements the following workflows:
 - Search full commit messages across local refs using case-insensitive literal
   text (up to 200 matching commits), or inspect an unambiguous local commit hash.
   Search results open the existing commit inspection view.
+- Launch an external editor, terminal, file manager, or Git-configured diff/merge
+  tool in the current repository/file context. Editor and terminal preferences
+  use an executable plus structured arguments; refresh after external changes.
+  Git tool completion refreshes repository views even after a failure.
 - List and inspect local tags, create unsigned lightweight or annotated tags at
   a selected commit, and confirm deletion of the exact reviewed local tag.
   Tag creation never overwrites an existing name; remote tag administration is

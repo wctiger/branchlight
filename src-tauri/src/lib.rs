@@ -40,6 +40,8 @@ pub fn run() {
             commands::tags::inspect_local_tag,
             commands::tags::create_local_tag,
             commands::tags::delete_local_tag,
+            commands::external_tools::launch_external_tool,
+            commands::external_tools::get_launcher_status,
             commands::history::get_history,
             commands::history::search_history,
             commands::history_operations::execute_history_action,

@@ -36,6 +36,7 @@ export function OperationDialog({
       }}
     >
       <DialogContent
+        className="max-h-[calc(100dvh-2rem)] overflow-y-auto"
         showCloseButton={false}
         ref={contentRef}
         initialFocus={() => {

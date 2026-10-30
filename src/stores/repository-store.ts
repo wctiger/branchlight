@@ -14,6 +14,7 @@ import {
   saveConflictFile,
   createLocalTag,
   deleteLocalTag,
+  launchExternalTool,
   applyStash,
   composeCommit,
   createBranchAt,
@@ -118,6 +119,7 @@ export type RepositoryState = {
   onDelivery: RunDelivery;
   onRecoverRebase: (action: "continue" | "skip") => Promise<boolean>;
   onSaveConflict: (snapshot: import("@/lib/tauri").ConflictFile, output: string, markResolved: boolean) => Promise<boolean>;
+  onLaunchExternalTool: (request: import("@/types/external-tools").ToolRequest) => Promise<import("@/types/external-tools").ToolLaunch | null>;
   onCreateStash: (message: string) => Promise<boolean>;
   onApplyStash: (stash: Stash) => Promise<boolean>;
   onPopStash: (stash: Stash) => Promise<boolean>;
@@ -917,6 +919,18 @@ export function createRepositoryStore(
       onAbortOperation: (kind) => void handleAbortOperation(kind),
       onDelivery: handleDelivery,
       onRecoverRebase: handleRecoverRebase,
+      onLaunchExternalTool: async (request) => {
+        if (get().operation.state !== "idle" || !beginRepositoryMutation()) return null;
+        clearOperationFeedback();
+        set({ operation: { state: "launchingTool" } });
+        let result = null;
+        try {
+          result = await launchExternalTool(repository.path, request);
+          set({ operationNotice: result.message });
+        } catch (error) { set({ conflictOperationError: normalizeGitError(error) }); }
+        await finishRepositoryMutation(repository.path);
+        return result;
+      },
       onSaveConflict: async (snapshot, output, markResolved) => {
         const state = get();
         if (state.operation.state !== "idle" || state.statusState.state !== "ready" ||
