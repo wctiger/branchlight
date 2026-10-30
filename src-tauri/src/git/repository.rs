@@ -85,7 +85,7 @@ pub(crate) fn create_repository(
     open_repository(destination)
 }
 
-fn validate_clone_source(source: &str) -> Result<(), GitError> {
+pub(super) fn validate_clone_source(source: &str) -> Result<(), GitError> {
     if source.trim().is_empty() || source.starts_with('-') || source.contains('\0') {
         return Err(super::inspection::invalid(
             "Enter a repository URL or absolute local source path.",

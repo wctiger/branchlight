@@ -66,7 +66,7 @@ function LfsManager({
   const [loading, setLoading] = useState(false);
   const [review, setReview] = useState<Review | null>(null);
   useEffect(() => {
-    if (review && !busy)
+    if (!busy)
       [...(body.current?.querySelectorAll<HTMLButtonElement>("button") ?? [])]
         .find((button) => button.textContent === "Cancel")
         ?.focus();

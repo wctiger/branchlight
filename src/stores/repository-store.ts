@@ -1,3 +1,4 @@
+import { notifyRepositoryMutation } from "@/stores/repository-refresh";
 import { createStore } from "zustand/vanilla";
 import type {
   OpenState,
@@ -10,6 +11,7 @@ import {
   abortHistoryOperation,
   executeHistoryAction,
   executeLfsAction,
+  executeSubmoduleAction,
   abortRebase,
   recoverRebase,
   saveConflictFile,
@@ -105,6 +107,7 @@ export type RepositoryState = {
   operationNotice: string | null;
   onOpenRepository: () => void;
   onRefresh: () => Promise<void>;
+  onRelatedRefresh: () => Promise<void>;
   onStage: (path: string) => void;
   onUnstage: (path: string) => void;
   onCommit: (options: CommitOptions) => Promise<boolean>;
@@ -370,6 +373,7 @@ export function createRepositoryStore(
         await refreshRepositoryState(repositoryPath);
       } finally {
         repositoryMutationInFlight = false;
+        notifyRepositoryMutation(repositoryPath);
         set({
           operation: {
             state: "idle",
@@ -708,6 +712,7 @@ export function createRepositoryStore(
         action.kind === "upstream";
       set({
         operation:
+          action.kind === "submodule" ? { state: "submodule" } :
           action.kind === "lfs" ? { state: "lfs" } :
           action.kind === "createTag" || action.kind === "deleteTag"
             ? { state: "tagging" }
@@ -730,6 +735,9 @@ export function createRepositoryStore(
       let succeeded = false;
       try {
         switch (action.kind) {
+          case "submodule":
+            await executeSubmoduleAction(repository.path, action.review.action, action.review.token);
+            break;
           case "lfs":
             await executeLfsAction(repository.path, action.action);
             break;
@@ -787,7 +795,7 @@ export function createRepositoryStore(
         });
         succeeded = true;
       } catch (error) {
-        if (action.kind === "history" || action.kind === "lfs")
+        if (action.kind === "history" || action.kind === "lfs" || action.kind === "submodule")
           set({ conflictOperationError: normalizeGitError(error) });
         else if (branchAction)
           set({
@@ -889,10 +897,12 @@ export function createRepositoryStore(
       conflictOperationError: null,
       operationNotice: null,
       onOpenRepository: () => void onOpen(),
-      onRefresh: () => {
+      onRefresh: async () => {
         clearOperationFeedback();
-        return refreshRepositoryState(repository.path);
+        await refreshRepositoryState(repository.path);
+        notifyRepositoryMutation(repository.path);
       },
+      onRelatedRefresh: () => refreshRepositoryState(repository.path),
       onStage: (path) => void handleFileOperation("stage", path),
       onUnstage: (path) => void handleFileOperation("unstage", path),
       onCommit: handleCommit,

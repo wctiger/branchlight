@@ -440,3 +440,16 @@ export function reviewLfsPrune(path: string): Promise<import("@/types/lfs").LfsP
 export function executeLfsAction(path: string, action: import("@/types/lfs").LfsAction): Promise<GitOutput> {
   return invoke("execute_lfs_action", {path, action});
 }
+
+export function getSubmodules(path: string): Promise<import("@/types/submodules").Submodule[]> {
+  return invoke("get_submodules", {path});
+}
+export function openSubmodule(path: string, submodulePath: string): Promise<Repository> {
+  return invoke("open_submodule", {path, submodulePath});
+}
+export function reviewSubmoduleAction(path: string, action: import("@/types/submodules").SubmoduleAction): Promise<import("@/types/submodules").SubmoduleReview> {
+  return invoke("review_submodule_action", {path, action});
+}
+export function executeSubmoduleAction(path: string, action: import("@/types/submodules").SubmoduleAction, token: string): Promise<GitOutput> {
+  return invoke("execute_submodule_action", {path, action, token});
+}

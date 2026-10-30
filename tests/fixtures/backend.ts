@@ -125,6 +125,18 @@ export async function invoke<T>(
         ],
       };
       break;
+    case "get_submodules":
+      result = [{name:"vendor/toolkit",path:"vendor/toolkit",url:"ssh://git@example.invalid/team/toolkit.git",branch:"main",expectedOid:commits[0].hash,currentOid:commits[1].hash,initialized:true,dirty:true,error:null,commonDirectory:`${path}/.git/modules/vendor/toolkit`}];
+      break;
+    case "open_submodule":
+      result = {name:"toolkit",path:`${path}/${args.submodulePath}`};
+      break;
+    case "review_submodule_action":
+      result = {action:args.action,token:"fixture-submodule",path:(args.action as {path:string}).path,parentHead:commits[0].hash,expectedOid:commits[0].hash,currentOid:commits[1].hash,effects:"Review this submodule's path and expected revision. Reset discards tracked child changes, preserves unrelated untracked files and local branch references, and does not recursively change nested submodules."};
+      break;
+    case "execute_submodule_action":
+      result = {stdout:"Submodule fixture operation completed",stderr:"",exitCode:0};
+      break;
     case "get_lfs_state":
       result = {
         available: true, version: "git-lfs/3.8.1 (browser fixture)", filterConfigured: true,

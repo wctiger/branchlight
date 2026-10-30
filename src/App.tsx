@@ -1,3 +1,4 @@
+import { subscribeRelatedRepositoryRefresh } from "@/stores/repository-refresh";
 import { useWorkspaceStore } from "@/stores/workspace-context";
 import { useEffect, useState } from "react";
 import { RepositoryScreen } from "@/workspace/RepositoryScreen";
@@ -52,8 +53,11 @@ export function RepositoryApp({
       );
     };
     const unsubscribe = store.subscribe(report);
+    const unsubscribeRelated = subscribeRelatedRepositoryRefresh(initialRepository.path, () => {
+      void store.getState().onRelatedRefresh();
+    });
     store.getState().onRefresh();
-    return unsubscribe;
+    return () => {unsubscribe(); unsubscribeRelated();};
   }, [store, initialRepository.path, onFeedback]);
   return (
     <RepositoryStoreContext value={store}>

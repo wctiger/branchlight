@@ -18,10 +18,13 @@ import { InspectionPanel } from "@/features/inspection/InspectionPanel";
 import { ChangesPanel } from "@/workspace/ChangesPanel";
 import { ConflictBanner } from "@/workspace/ConflictBanner";
 import { ErrorNotice } from "@/workspace/ErrorNotice";
+import { SubmodulesPanel } from "@/features/SubmodulesPanel";
+import { useWorkspaceStore } from "@/stores/workspace-context";
 import { ExternalTools } from "@/features/ExternalTools";
 
 /** Frames the active repository status and repository-level actions. */
 export function RepositoryScreen() {
+  const addRepository = useWorkspaceStore(state => state.addRepository);
   const {
     repository,
     repositoryError,
@@ -121,6 +124,7 @@ export function RepositoryScreen() {
   return (
     <main ref={screen} data-repository-context={repository.path} data-selected-file={externalFile?.file.path} className={styles["repository-screen"]}>
       <RepositoryToolbar
+        submodules={<SubmodulesPanel path={repository.path} disabled={controlsDisabled || isRefreshing || hasActiveRepositoryOperation} run={onDelivery} error={conflictOperationError} onOpened={addRepository} />}
         externalTools={<ExternalTools path={repository.path} file={externalFile?.file.path ?? null}
           kind={externalFile?.kind ?? null} conflicted={!!externalFile && !!status?.conflicts.some(file => file.path === externalFile.file.path)}
           disabled={controlsDisabled || isRefreshing} launch={onLaunchExternalTool} refresh={onRefresh} />}

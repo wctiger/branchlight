@@ -13,6 +13,7 @@ pub(crate) mod resolution;
 mod runner;
 mod stashes;
 mod status;
+pub(crate) mod submodules;
 pub(crate) mod tags;
 mod version;
 

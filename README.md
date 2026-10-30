@@ -87,6 +87,13 @@ The application implements the following workflows:
   duplicate bindings, disable bindings, or restore defaults. Commands reuse
   the primary UI's guards and confirmations; shortcuts are ignored while typing
   or another dialog is open.
+- Discover configured submodules, expected/current revisions and dirty state;
+  open initialized children as independent repository tabs. Review add, URL/branch
+  configuration, initialize/update-to-expected, reset and removal operations before
+  applying. Reset preserves unrelated untracked/ignored and nested repository work;
+  removal refuses dirty or untracked content and retains Git module metadata.
+  Parent/child mutations share repository locks and refresh related open views.
+  Existing `.gitmodules` edits must be committed or stashed before add/edit/remove.
 - Detect system Git LFS, inspect tracked patterns and pointer/content/cache state,
   explicitly initialize local filters and pre-push hooks, and track/untrack patterns
   in root or nested attributes files. Fetch/pull/push use configured remotes and

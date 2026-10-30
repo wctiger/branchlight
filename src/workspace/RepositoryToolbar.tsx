@@ -27,6 +27,7 @@ export function RepositoryToolbar({
   onRefresh,
   onOpenRepository,
   externalTools,
+  submodules,
 }: {
   repository: Repository;
   status: RepositoryStatus | null;
@@ -40,6 +41,7 @@ export function RepositoryToolbar({
   onRefresh: () => void;
   onOpenRepository: () => void;
   externalTools?: ReactNode;
+  submodules?: ReactNode;
 }) {
   return (
     <header className={styles["repository-bar"]}>
@@ -72,6 +74,7 @@ export function RepositoryToolbar({
       <div className={styles["repository-actions"]}>
         <DiagnosticsPanel path={repository.path} />
         {externalTools}
+        {submodules}
         <LfsPanel path={repository.path} disabled={isRefreshing || isMutating || hasActiveRepositoryOperation || openState !== "idle"} run={onDelivery} />
         <RemoteControls
           path={repository.path}

@@ -41,4 +41,5 @@ export type AppOperation =
   | { state: "resolvingConflict"; path: string }
   | { state: "tagging" }
   | { state: "lfs" }
+  | { state: "submodule" }
   | { state: "launchingTool" };

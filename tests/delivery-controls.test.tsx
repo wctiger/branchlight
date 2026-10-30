@@ -1030,3 +1030,79 @@ test("LFS pruning requires preview confirmation and repository mutations share t
   expect(calls.find(call => call.command === "execute_lfs_action")?.args).toEqual({path:"/repo",action:{kind:"prune",token:"reviewed-token"}});
   expect(calls.some(call => call.command === "get_repository_status")).toBe(true);
 });
+
+const { SubmodulesPanel } = await import("../src/features/SubmodulesPanel");
+const { subscribeRelatedRepositoryRefresh } = await import("../src/stores/repository-refresh");
+const childModule = {
+  name:"vendor [x]/child space",path:"vendor [x]/child space",url:"ssh://git@example.invalid/team/repo.git",branch:null,
+  expectedOid:"a".repeat(40),currentOid:"b".repeat(40),initialized:true,dirty:true,error:null,commonDirectory:"/repo/.git/modules/child",
+};
+const submoduleReview = {action:{kind:"reset" as const,path:childModule.path},path:childModule.path,token:"reviewed-child",parentHead:"c".repeat(40),expectedOid:childModule.expectedOid,currentOid:childModule.currentOid,effects:"Discard tracked child edits; retain unrelated untracked files."};
+test("submodule reset shows reviewed revisions, starts on Cancel, and only executes after confirmation", async()=>{
+  const user=userEvent.setup({document});
+  intercept=(command,args)=>command==="get_submodules"?Promise.resolve([childModule])
+    :command==="review_submodule_action"?Promise.resolve({...submoduleReview,action:args.action}):undefined;
+  const actions:DeliveryAction[]=[];
+  const view=render(<SubmodulesPanel path="/repo" disabled={false} error={null} run={async action=>{actions.push(action);return true;}} onOpened={()=>{}} />);
+  await user.click(view.getByRole("button",{name:"Submodules"}));
+  await user.click(await view.findByRole("button",{name:"Reset submodule…"}));
+  await waitFor(()=>expect(view.getByRole("button",{name:"Confirm reset"})).toBeTruthy());
+  expect(view.getByText(childModule.expectedOid)).toBeTruthy();expect(view.getByText(childModule.currentOid)).toBeTruthy();
+  expect(actions).toHaveLength(0);expect(document.activeElement?.textContent).toBe("Cancel");
+  await user.click(view.getByRole("button",{name:"Confirm reset"}));
+  await waitFor(()=>expect(actions).toEqual([{kind:"submodule",review:submoduleReview}]));
+  await waitFor(()=>expect(calls.filter(call=>call.command==="get_submodules")).toHaveLength(2));
+  await waitFor(()=>expect(document.activeElement?.textContent).toBe("Cancel"));
+});
+test("submodule open revalidates its path through Rust and opens the returned repository context",async()=>{
+  const user=userEvent.setup({document});
+  const opened:{path:string;name:string}[]=[];
+  intercept=command=>command==="get_submodules"?Promise.resolve([{...childModule,dirty:false}])
+    :command==="open_submodule"?Promise.resolve({path:"/repo/vendor [x]/child space",name:"child space"}):undefined;
+  const view=render(<SubmodulesPanel path="/repo" disabled={false} error={null} run={async()=>false} onOpened={repository=>opened.push(repository)} />);
+  await user.click(view.getByRole("button",{name:"Submodules"}));
+  await user.click(await view.findByRole("button",{name:"Open repository"}));
+  await waitFor(()=>expect(opened).toEqual([{path:"/repo/vendor [x]/child space",name:"child space"}]));
+  expect(calls.find(call=>call.command==="open_submodule")?.args).toEqual({path:"/repo",submodulePath:childModule.path});
+});
+test("submodule add previews source HEAD and reports remote failures before a mutation",async()=>{
+  const user=userEvent.setup({document});
+  intercept=command=>command==="get_submodules"?Promise.resolve([])
+    :command==="review_submodule_action"?Promise.reject({code:"commandFailed",message:"Source is unavailable",output:{stdout:"",stderr:"Remote could not be read",exitCode:128}}):undefined;
+  const view=render(<SubmodulesPanel path="/repo" disabled={false} error={null} run={async()=>{throw Error("must not execute");}} onOpened={()=>{}} />);
+  await user.click(view.getByRole("button",{name:"Submodules"}));
+  await user.click(await view.findByRole("button",{name:"Add submodule…"}));
+  await user.type(view.getByLabelText("New submodule path (relative)"),"vendor/child");
+  await user.type(view.getByLabelText("Source URL or absolute local path"),"ssh://git@example.invalid/repo");
+  await user.click(view.getByRole("button",{name:"Review add"}));
+  await waitFor(()=>expect(view.getByText("Remote could not be read")).toBeTruthy());
+  expect(view.getByRole("button",{name:"Review add"})).toBeTruthy();
+  expect(calls.some(call=>call.command==="execute_submodule_action")).toBe(false);
+});
+test("failed submodule mutations refresh parent and mounted child views without clearing child feedback",async()=>{
+  intercept=command=>command==="execute_submodule_action"?Promise.reject({code:"commandFailed",message:"Changed submodule state"}):undefined;
+  const parent=createRepositoryStore({path:"/repo",name:"Parent"},()=>{});
+  const child=createRepositoryStore({path:"/repo/vendor [x]/child space",name:"Child"},()=>{});
+  child.setState({branchOperationNotice:"Keep child feedback"});
+  const unsubscribe=subscribeRelatedRepositoryRefresh(child.getState().repository.path,()=>void child.getState().onRelatedRefresh());
+  try {
+    expect(await parent.getState().onDelivery({kind:"submodule",review:submoduleReview})).toBe(false);
+    await waitFor(()=>expect(calls.filter(call=>call.command==="get_repository_status").map(call=>call.args.path)).toContain(child.getState().repository.path));
+    expect(calls.some(call=>call.command==="get_repository_status"&&call.args.path==="/repo")).toBe(true);
+    expect(child.getState().branchOperationNotice).toBe("Keep child feedback");
+    expect(parent.getState().conflictOperationError?.message).toBe("Changed submodule state");
+    expect(parent.getState().operation.state).toBe("idle");
+  } finally {unsubscribe();}
+});
+
+
+test("successful LFS checkout restores focus to the manager's Cancel button", async () => {
+  const user=userEvent.setup({document});
+  intercept=command=>command==="get_lfs_state"?Promise.resolve(lfsState):undefined;
+  const view=render(<LfsPanel path="/repo" disabled={false} run={async()=>true} />);
+  await user.click(view.getByRole("button",{name:"LFS"}));
+  await user.click(await view.findByRole("button",{name:"Checkout cached content…"}));
+  await user.click(await view.findByRole("button",{name:"Confirm checkout"}));
+  await waitFor(()=>expect(view.queryByRole("button",{name:"Confirm checkout"})).toBeNull());
+  await waitFor(()=>expect(document.activeElement?.textContent).toBe("Cancel"));
+});
