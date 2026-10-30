@@ -222,12 +222,13 @@ mod tests {
     impl Fixture {
         fn new() -> Self {
             let path = std::env::temp_dir().join(format!(
-                "branchlight-history-{}-{}",
+                "branchlight-history-{}-{}-{}",
                 std::process::id(),
                 SystemTime::now()
                     .duration_since(UNIX_EPOCH)
                     .unwrap()
-                    .as_nanos()
+                    .as_nanos(),
+                crate::git::fixture_nonce()
             ));
             fs::create_dir(&path).unwrap();
             let f = Self(path);

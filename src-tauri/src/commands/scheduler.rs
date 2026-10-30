@@ -105,12 +105,13 @@ mod tests {
     impl Repositories {
         fn new() -> Self {
             let root = std::env::temp_dir().join(format!(
-                "branchlight-scheduler-{}-{}",
+                "branchlight-scheduler-{}-{}-{}",
                 std::process::id(),
                 SystemTime::now()
                     .duration_since(UNIX_EPOCH)
                     .unwrap()
-                    .as_nanos()
+                    .as_nanos(),
+                crate::git::fixture_nonce()
             ));
             fs::create_dir(&root).unwrap();
             for name in ["a", "b"] {

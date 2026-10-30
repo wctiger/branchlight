@@ -35,3 +35,11 @@ pub(crate) use runner::repository_lock_identities;
 pub(crate) mod inspection;
 
 pub(crate) mod delivery;
+
+/// Timestamp resolution differs across runners; test fixtures also need a
+/// per-process unique suffix when they are constructed concurrently.
+#[cfg(test)]
+pub(crate) fn fixture_nonce() -> u64 {
+    static NEXT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+    NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+}

@@ -480,12 +480,13 @@ mod tests {
     impl Fixture {
         fn new() -> Self {
             let root = std::env::temp_dir().join(format!(
-                "branchlight-lfs-{}-{}",
+                "branchlight-lfs-{}-{}-{}",
                 std::process::id(),
                 std::time::SystemTime::now()
                     .duration_since(std::time::UNIX_EPOCH)
                     .unwrap()
-                    .as_nanos()
+                    .as_nanos(),
+                crate::git::fixture_nonce()
             ));
             fs::create_dir(&root).unwrap();
             let f = Self(root);
