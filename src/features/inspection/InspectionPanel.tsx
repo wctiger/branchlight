@@ -1,10 +1,10 @@
 import styles from "@/features/inspection/InspectionPanel.module.css";
-import { cn } from "@/lib/utils";
-import { diffLines } from "@/features/inspection/diff-lines";
 import { OperationDialog } from "@/components/operation-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
+
+const DiffViewer = lazy(() => import("@/features/inspection/DiffViewer"));
 import {
   compareRevisions,
   getTextDiff,
@@ -71,16 +71,6 @@ export function InspectionPanel({
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const request = useRef(0);
-  const diffElement = useRef<HTMLPreElement>(null);
-  const hunkIndex = useRef(-1);
-  function navigateHunk(direction: number) {
-    const hunks =
-      diffElement.current?.querySelectorAll<HTMLElement>("[data-hunk]");
-    if (!hunks?.length) return;
-    hunkIndex.current =
-      (hunkIndex.current + direction + hunks.length) % hunks.length;
-    hunks[hunkIndex.current].scrollIntoView({ block: "center" });
-  }
   function invalidate() {
     request.current++;
     setLoading(false);
@@ -102,7 +92,6 @@ export function InspectionPanel({
   }, [status]);
   async function load<T>(action: () => Promise<T>, apply: (value: T) => void) {
     const id = ++request.current;
-    hunkIndex.current = -1;
     setLoading(true);
     setError("");
     setDiff(null);
@@ -176,7 +165,10 @@ export function InspectionPanel({
   const unavailable = (change: FileChange) =>
     unsupportedPaths.has(change.path) || change.path.endsWith("/");
   return (
-    <section className={styles["inspection-panel"]} aria-label="Change inspection">
+    <section
+      className={styles["inspection-panel"]}
+      aria-label="Change inspection"
+    >
       <h2>{file || "Inspect changes"}</h2>
       <p>
         Read-only text comparisons. Diffs are limited to 512 KiB. Binary content
@@ -481,40 +473,9 @@ export function InspectionPanel({
               ))}
             </div>
           ) : (
-            <>
-              <div className={styles["diff-navigation"]} aria-label="Diff navigation">
-                <Button variant="outline" onClick={() => navigateHunk(-1)}>
-                  Previous hunk
-                </Button>
-                <Button variant="outline" onClick={() => navigateHunk(1)}>
-                  Next hunk
-                </Button>
-              </div>
-              <pre ref={diffElement} className={styles["text-diff"]}>
-                {diffLines(
-                  diff.text || "No text changes in this comparison.",
-                ).map(({ text: line, old, next, hunk }, index) => (
-                  <span
-                    key={index}
-                    data-hunk={hunk ? "true" : undefined}
-                    className={cn(
-                      styles["diff-line"],
-                      line.startsWith("@@") || line.startsWith("+++") || line.startsWith("---")
-                        ? styles["diff-line--hunk"]
-                        : line.startsWith("+")
-                          ? styles["diff-line--add"]
-                          : line.startsWith("-")
-                            ? styles["diff-line--delete"]
-                            : undefined,
-                    )}
-                  >
-                    <span className={styles["diff-line-number"]}>{old}</span>
-                    <span className={styles["diff-line-number"]}>{next}</span>
-                    <span>{line || " "}</span>
-                  </span>
-                ))}
-              </pre>
-            </>
+            <Suspense fallback={<p role="status">Loading diff viewer…</p>}>
+              <DiffViewer diff={diff} />
+            </Suspense>
           )}
         </section>
       )}

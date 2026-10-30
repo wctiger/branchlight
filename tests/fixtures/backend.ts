@@ -168,7 +168,7 @@ export async function invoke<T>(
     case "get_text_diff":
       result = {
         context: "HEAD → index · reconcile.ts",
-        text: "diff --git a/reconcile.ts b/reconcile.ts\n--- a/reconcile.ts\n+++ b/reconcile.ts\n@@ -1,2 +1,2 @@\n-const pending = await fetchAll();\n+const pending = await fetchScoped(repository);\n return reconcile(pending);",
+        text: inspectionFixturePatch(),
         truncated: false,
         binary: false,
       };
@@ -184,4 +184,18 @@ export async function invoke<T>(
       );
   }
   return structuredClone(result) as T;
+}
+
+// Development-only stress case; production builds never import this fixture.
+function inspectionFixturePatch() {
+  if (
+    new URLSearchParams(window.location.search).get("diffFixture") === "large"
+  ) {
+    const first = Array.from(
+      { length: 800 },
+      (_, i) => `+export const value${i} = ${i};`,
+    ).join("\n");
+    return `diff --git a/large.ts b/large.ts\n--- a/large.ts\n+++ b/large.ts\n@@ -1 +1,800 @@\n-old value\n${first}\n@@ -5000 +5800 @@\n-old tail\n+new tail\n`;
+  }
+  return "diff --git a/reconcile.ts b/reconcile.ts\n--- a/reconcile.ts\n+++ b/reconcile.ts\n@@ -1,2 +1,2 @@\n-const pending = await fetchAll();\n+const pending = await fetchScoped(repository);\n return reconcile(pending);\n";
 }
