@@ -1,11 +1,9 @@
 import {
-  Component,
   useCallback,
   useMemo,
   useRef,
   useState,
   useSyncExternalStore,
-  type ReactNode,
 } from "react";
 import {
   VirtualizedFileDiff,
@@ -21,6 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import type { TextDiff } from "@/lib/tauri";
 import { prepareDiff } from "@/features/inspection/diff-model";
+import { RawPatch } from "@/features/inspection/DiffRenderBoundary";
 import styles from "@/features/inspection/DiffViewer.module.css";
 
 // Static, application-owned CSS crosses the library's Shadow DOM boundary.
@@ -57,40 +56,6 @@ function subscribeTheme(notify: () => void) {
     attributeFilter: ["class"],
   });
   return () => observer.disconnect();
-}
-
-function RawPatch({ text, reason }: { text: string; reason: string }) {
-  return (
-    <>
-      <p role="status">{reason}</p>
-      <pre className={styles.raw}>{text}</pre>
-    </>
-  );
-}
-
-/** Renderer failure retains the exact captured text, never an empty or fabricated diff. */
-class RenderBoundary extends Component<
-  { text: string; children: ReactNode },
-  { failed: boolean }
-> {
-  state = { failed: false };
-  static getDerivedStateFromError() {
-    return { failed: true };
-  }
-  componentDidUpdate(previous: { text: string }) {
-    if (previous.text !== this.props.text && this.state.failed)
-      this.setState({ failed: false });
-  }
-  render() {
-    return this.state.failed ? (
-      <RawPatch
-        text={this.props.text}
-        reason="The diff renderer is unavailable. Showing Git’s original output as plain text."
-      />
-    ) : (
-      this.props.children
-    );
-  }
 }
 
 function FileSurface({
@@ -219,11 +184,9 @@ export default function DiffViewer({ diff }: { diff: TextDiff }) {
       ) : model.kind === "raw" ? (
         <RawPatch text={diff.text} reason={model.reason} />
       ) : (
-        <RenderBoundary text={diff.text}>
-          <Virtualizer className={styles.viewport}>
-            <ParsedDiff key={diff.text} files={model.files} />
-          </Virtualizer>
-        </RenderBoundary>
+        <Virtualizer className={styles.viewport}>
+          <ParsedDiff key={diff.text} files={model.files} />
+        </Virtualizer>
       )}
     </div>
   );

@@ -150,8 +150,11 @@ controlled state only while the item should remain, then return `'accept'`;
 acceptance during removal or teardown does not reinsert it. `CodeView` builds
 `nextItem` with `edit: false` and an incremented `version`.
 
-`CodeViewHandle.getEditor(id)` returns the current `Editor` instance. The item
-editor keeps its active document and history when virtualization or collapse
+`CodeViewHandle.getEditor(id)` returns the current `Editor` instance or
+`undefined` when no CodeView instance or current item editor exists, including
+while a partial edit item is loading or after its edit session ends. Guard the
+result before using it, or access the editor from its `onAttach` callback. The
+item editor keeps its active document and history when virtualization or collapse
 removes the item from the rendered window. `getEditStateKey` extends that
 retention to later editor instances after the edit session ends.
 

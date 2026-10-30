@@ -17,7 +17,30 @@ entry also re-exports every type in [Shared types](api-types.md).
 | `preloadUnresolvedFileHTML` | Renders a merge-conflict file directly to an HTML string.     |
 | `renderHTML`                | Serializes rendered HAST elements to HTML.                    |
 
-## Types
+## React annotation props
+
+Annotated preload results return `annotations`; the matching React components
+read `lineAnnotations`. Map that property explicitly and supply a
+`renderAnnotation` callback to render the annotation content:
+
+```tsx
+const { annotations, ...props } = await preloadFileDiff({
+  fileDiff,
+  annotations: diffAnnotations,
+});
+
+<FileDiff
+  {...props}
+  lineAnnotations={annotations}
+  renderAnnotation={(annotation) => <span>{annotation.metadata.message}</span>}
+/>;
+```
+
+Apply the same mapping for `preloadFile`, `preloadMultiFileDiff`,
+`preloadPatchDiff`, `preloadUnresolvedFile`, and each `preloadPatchFile` result.
+Spreading an annotated preload result alone does not render its annotations.
+
+## Result and input types
 
 | Export                         | Purpose                                                  |
 | ------------------------------ | -------------------------------------------------------- |

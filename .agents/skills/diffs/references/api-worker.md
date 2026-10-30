@@ -99,6 +99,9 @@ use the regular worker entry with your bundler.
 The pool resolves themes and Shiki grammars on the main thread and sends them to
 the worker. Their catalogs are excluded from the portable script.
 
-A pool is optional. When one is supplied, highlighting goes through its workers
-for every backend. Highlights is often fast enough on the main thread to skip
-the pool.
+A pool is optional and supports every highlighter backend. With a working pool,
+highlighting uses workers unless `mainThreadMaxCharacters` routes a qualifying
+file or diff to the main thread. Files count `contents`; diffs count both sides.
+Worker initialization failures also fall back to main-thread highlighting.
+Editable surfaces may highlight on the main thread while an edit session is
+active. Highlights is often fast enough on the main thread to skip the pool.

@@ -2,6 +2,7 @@ import styles from "@/features/inspection/InspectionPanel.module.css";
 import { OperationDialog } from "@/components/operation-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DiffRenderBoundary } from "@/features/inspection/DiffRenderBoundary";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 
 const DiffViewer = lazy(() => import("@/features/inspection/DiffViewer"));
@@ -473,9 +474,11 @@ export function InspectionPanel({
               ))}
             </div>
           ) : (
-            <Suspense fallback={<p role="status">Loading diff viewer…</p>}>
-              <DiffViewer diff={diff} />
-            </Suspense>
+            <DiffRenderBoundary text={diff.text}>
+              <Suspense fallback={<p role="status">Loading diff viewer…</p>}>
+                <DiffViewer diff={diff} />
+              </Suspense>
+            </DiffRenderBoundary>
           )}
         </section>
       )}

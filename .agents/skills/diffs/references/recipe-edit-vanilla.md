@@ -170,8 +170,12 @@ editor-owned view-state retention across editor instances. Forward the resulting
 third factory argument to `new Editor`. `CodeView` creates and removes the item
 editors.
 
-`viewer.getEditor(id)` returns the current `Editor` instance. Call
-`viewer.cleanUp()` when the host removes the viewer.
+`viewer.getEditor(id)` returns the current `Editor` instance or `undefined`
+when no current item editor exists, including while a partial edit item is
+loading or after its edit session ends. Guard the result before using it, or
+access the editor from its `onAttach` callback. Collapsing or virtualizing an
+item preserves its current editor. Call `viewer.cleanUp()` when the host
+removes the viewer.
 
 When a worker pool highlights an editable surface, set
 `useTokenTransformer: true` in the worker `highlighterOptions`.

@@ -13,7 +13,7 @@ Use `@pierre/diffs` to render syntax-highlighted files and diffs. Use its
 optional editor, SSR, and worker entries for those capabilities.
 
 For standalone HTML or token generation with `@pierre/highlights`, read the
-[highlights skill](../highlights/SKILL.md).
+[upstream highlights skill](https://github.com/pierrecomputer/pierre/blob/main/skills/highlights/SKILL.md).
 
 ## Install
 

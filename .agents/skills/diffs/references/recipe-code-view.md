@@ -224,7 +224,10 @@ should remain.
 Use `getEditStateKey(item)` to opt into retaining the draft, undo/redo history,
 selections, and editor-owned view state across editor instances. The returned
 `editStateKey` is passed to the editor factory. `getEditor(id)` returns the
-current `Editor` instance.
+current `Editor` instance or `undefined` when no CodeView instance or current
+item editor exists, including while a partial edit item is loading or after its
+edit session ends (for example, when removed). Collapsing or virtualizing an
+item preserves its current editor. Guard the result before using it.
 
 Read [Edit with React](recipe-edit-react.md) or
 [Edit with vanilla JavaScript](recipe-edit-vanilla.md) for the complete editor
