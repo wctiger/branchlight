@@ -69,6 +69,12 @@ The application implements the following workflows:
   resolution, and safely abort the matching operation.
 - Browse a bounded 200-commit history with a read-only SVG DAG.
 
+Text diffs use `@pierre/diffs` with unified/side-by-side layouts, syntax highlighting,
+virtualized rows, and hunk navigation. Highlighting workers and language assets
+are bundled locally. Combined conflict patches, truncated output, and unsupported
+patch formats retain a labeled plain-text fallback. Conflict resolution still uses
+external Git.
+
 Repository views retain state while switching tabs. Backend commands queue by
 canonical common Git directory, coordinating linked worktrees while allowing
 independent repositories to use up to eight background workers. Busy tabs cannot

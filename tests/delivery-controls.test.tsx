@@ -1,6 +1,6 @@
 import { createWorkspaceStore } from "@/stores/workspace-store";
 import { WorkspaceStoreContext } from "@/stores/workspace-context";
-import inspectionStyles from "@/features/inspection/InspectionPanel.module.css";
+
 import "./setup-dom";
 import { afterEach, expect, mock, test } from "bun:test";
 import { cleanup, render, waitFor } from "@testing-library/react";
@@ -338,9 +338,7 @@ test("selected diff follows staging and unstaging, preserves partial comparison,
   const count = diffs().length;
   view.rerender(<InspectionPanel {...props} status={emptyStatus} />);
   expect(diffs()).toHaveLength(count);
-  expect(
-    view.container.querySelector(`.${inspectionStyles["text-diff"]}`),
-  ).toBeNull();
+  expect(view.queryByRole("region", { name: "File diff" })).toBeNull();
 });
 
 test("conflict selection uses the supported unstaged comparison and refreshes from conflict status", async () => {

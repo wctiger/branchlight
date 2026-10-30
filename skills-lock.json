@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "diffs": {
+      "source": "pierrecomputer/pierre",
+      "sourceType": "github",
+      "skillPath": "skills/diffs/SKILL.md",
+      "computedHash": "5d87e4260a426475b988577c3b5c5c2a160e8f3df132b4522897f254bf617065"
+    }
+  }
+}
