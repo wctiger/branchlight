@@ -155,6 +155,12 @@ export async function invoke<T>(
     case "get_history":
       result = commits;
       break;
+    case "search_history": {
+      const query = String(args.query ?? "").toLowerCase();
+      const matching = commits.filter(commit => args.mode === "hash" ? commit.hash.startsWith(query) : commit.subject.toLowerCase().includes(query));
+      result = {commits: matching.slice(0, args.mode === "hash" ? 1 : 200), limit: 200, hasMore: args.mode !== "hash" && matching.length > 200};
+      break;
+    }
     case "compare_revisions":
       result = {
         base: args.base,

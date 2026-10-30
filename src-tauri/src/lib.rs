@@ -41,6 +41,7 @@ pub fn run() {
             commands::tags::create_local_tag,
             commands::tags::delete_local_tag,
             commands::history::get_history,
+            commands::history::search_history,
             commands::history_operations::execute_history_action,
             commands::history_operations::get_rebase_plan,
             commands::history_operations::abort_history_operation,

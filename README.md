@@ -73,6 +73,9 @@ The application implements the following workflows:
   branch range: pick, drop, reorder, squash, or reword. Confirm the branch rewrite
   before applying; conflict stops retain continue, skip, and abort controls.
 - Browse a bounded 200-commit history with a read-only SVG DAG.
+- Search full commit messages across local refs using case-insensitive literal
+  text (up to 200 matching commits), or inspect an unambiguous local commit hash.
+  Search results open the existing commit inspection view.
 - List and inspect local tags, create unsigned lightweight or annotated tags at
   a selected commit, and confirm deletion of the exact reviewed local tag.
   Tag creation never overwrites an existing name; remote tag administration is

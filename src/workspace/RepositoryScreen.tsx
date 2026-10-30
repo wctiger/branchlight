@@ -13,6 +13,7 @@ import { BranchControls } from "@/features/DeliveryControls";
 import { BranchPanel } from "@/features/branches/BranchPanel";
 import { HistoryPanel } from "@/features/history/HistoryPanel";
 import { TagsPanel } from "@/features/history/TagsPanel";
+import { CommitSearch } from "@/features/history/CommitSearch";
 import { InspectionPanel } from "@/features/inspection/InspectionPanel";
 import { ChangesPanel } from "@/workspace/ChangesPanel";
 import { ConflictBanner } from "@/workspace/ConflictBanner";
@@ -227,6 +228,11 @@ export function RepositoryScreen() {
           onInspectorToggle={() => setInspectorOpen(!inspectorOpen)}
           history={
             <HistoryPanel
+              search={<CommitSearch path={repository.path} refreshKey={historyState} onSelect={(hash) => {
+                setSelectedFile(null);
+                setInspectionCommit(hash);
+                setMode("diff");
+              }} />}
               renderActions={(commit) => (
                 <HistoryControls
                   key={commit.hash}

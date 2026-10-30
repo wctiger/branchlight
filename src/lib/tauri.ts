@@ -415,3 +415,8 @@ export function createLocalTag(path: string, name: string, revision: string, ann
 export function deleteLocalTag(path: string, name: string, expectedOid: string): Promise<GitOutput> {
   return invoke("delete_local_tag", {path, name, expectedOid});
 }
+
+export interface HistorySearchResult { commits: Commit[]; limit: number; hasMore: boolean }
+export function searchHistory(path: string, query: string, mode: "message" | "hash"): Promise<HistorySearchResult> {
+  return invoke("search_history", {path, query, mode});
+}

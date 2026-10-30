@@ -27,6 +27,7 @@ export type HistoryState =
     }
   | { state: "error"; error: GitError };
 interface HistoryPanelProps {
+  search?: ReactNode;
   renderActions?: (commit: Commit) => ReactNode;
   state: HistoryState;
   controlsDisabled: boolean;
@@ -53,6 +54,7 @@ export function HistoryPanel({
   onRefresh,
   onSelectCommit,
   renderActions,
+  search,
 }: HistoryPanelProps) {
   const titleId = useId();
   const commits = useMemo(
@@ -155,6 +157,7 @@ export function HistoryPanel({
         Latest 200 commits from Git
         {commits.length > 200 ? " · synthetic fixture" : ""}
       </p>
+      {search}
       {failure && (
         <div role="alert" className={styles["history-error"]}>
           <strong>History unavailable</strong>

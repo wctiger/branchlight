@@ -1,7 +1,7 @@
 mod branches;
 mod conflicts;
 pub(crate) mod diagnostics;
-mod history;
+pub(crate) mod history;
 pub(crate) mod history_operations;
 mod operations;
 pub(crate) mod rebase_plan;

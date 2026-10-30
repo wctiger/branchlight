@@ -888,3 +888,39 @@ test("local tag creation freezes the selected commit and does not invoke Git unt
   await user.click(view.getByRole("button", {name: "Create local tag", exact: true}));
   expect(submitted).toEqual([{kind: "createTag", name: "release/v2", revision: "a".repeat(40), annotation: null}]);
 });
+
+test("commit search discards responses from a previous repository and opens the current result", async () => {
+  const { CommitSearch } = await import("../src/features/history/CommitSearch");
+  const first = deferred<unknown>(), second = deferred<unknown>();
+  intercept = (command, args) => command === "search_history" ? (args.path === "/first" ? first.promise : second.promise) : undefined;
+  const inspected: string[] = [];
+  const props = {refreshKey: 0, onSelect: (hash: string) => inspected.push(hash)};
+  const view = render(<CommitSearch {...props} path="/first" />);
+  const user = userEvent.setup({document});
+  await user.type(view.getByLabelText("Search commits"), "needle");
+  await waitFor(() => expect(calls.some(call => call.command === "search_history" && call.args.path === "/first")).toBe(true));
+  view.rerender(<CommitSearch {...props} path="/second" />);
+  await waitFor(() => expect(calls.some(call => call.command === "search_history" && call.args.path === "/second")).toBe(true));
+  const commits = await fixture<import("../src/types/history").Commit[]>("get_history");
+  first.resolve({commits: [{...commits[0], subject: "Stale result"}], limit: 200, hasMore: false});
+  second.resolve({commits: [{...commits[1], subject: "Current result"}], limit: 200, hasMore: false});
+  await waitFor(() => expect(view.getByText("Current result")).toBeTruthy());
+  expect(view.queryByText("Stale result")).toBeNull();
+  await user.click(view.getByRole("button", {name: `Inspect ${commits[1].hash} Current result`}));
+  expect(inspected).toEqual([commits[1].hash]);
+  await user.click(view.getByRole("button", {name: "Clear search", exact: true}));
+  await waitFor(() => expect(Boolean(view.queryByText("Current result"))).toBe(false));
+});
+
+test("commit search communicates limits, empty matches and hash lookup errors", async () => {
+  const { CommitSearch } = await import("../src/features/history/CommitSearch");
+  intercept = (command, args) => command === "search_history" ? args.mode === "hash" ? Promise.reject({code: "invalidOperationInput", message: "Enter an unambiguous commit hash"}) : Promise.resolve({commits: [], limit: 200, hasMore: false}) : undefined;
+  const view = render(<CommitSearch path="/search" refreshKey={0} onSelect={() => {}} />);
+  const user = userEvent.setup({document});
+  expect(view.getByText(/Up to 200 matching commits/)).toBeTruthy();
+  await user.type(view.getByLabelText("Search commits"), "missing");
+  await waitFor(() => expect(view.getByText(/No matching commits/)).toBeTruthy());
+  await user.selectOptions(view.getByLabelText("Search by"), "hash");
+  await waitFor(() => expect(view.getByRole("alert").textContent).toContain("unambiguous"));
+  expect(view.queryByText(/No matching commits/)).toBeNull();
+});
