@@ -267,7 +267,7 @@ export function HistoryPanel({
                 aria-pressed={node.hash === selectedHash}
                 data-graph-hash={node.hash}
                 className={styles["history-graph__node"]}
-                onClick={() => choose(node.row)}
+                onClick={() => choose(node.row, true, true)}
                 onKeyDown={(event) => {
                   if (event.key === "Enter" || event.key === " ") {
                     event.preventDefault();
@@ -312,7 +312,7 @@ export function HistoryPanel({
                     aria-label={full}
                     aria-pressed={commit.hash === selectedHash}
                     tabIndex={commit.hash === selectedHash ? 0 : -1}
-                    onClick={() => choose(index)}
+                    onClick={() => choose(index, true)}
                     onKeyDown={(event) => navigate(event, index)}
                   >
                     <code>{commit.hash.slice(0, 8)}</code>

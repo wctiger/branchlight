@@ -350,7 +350,8 @@ test("graph nodes select commits, retain keyboard focus, and expose bounded pare
   fireEvent.click(graphNode);
   expect(selected.at(-1)).toBe(subset[1].hash);
   expect(graphNode.getAttribute("aria-pressed")).toBe("true");
-  fireEvent.keyDown(graphNode, {key: "ArrowDown"});
+  await waitFor(() => expect(document.activeElement === graphNode).toBe(true));
+  fireEvent.keyDown(document.activeElement!, {key: "ArrowDown"});
   await waitFor(() => expect(document.activeElement?.getAttribute("data-graph-hash")).toBe(subset[2].hash));
   expect(selected.at(-1)).toBe(subset[2].hash);
   expect(view.getByText(/outside loaded history/)).toBeTruthy();

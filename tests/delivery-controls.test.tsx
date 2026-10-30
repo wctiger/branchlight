@@ -814,7 +814,7 @@ test("conflict resolver retains edits on failed saves and requires a deliberate 
   }} />);
   const user = userEvent.setup({document});
   await waitFor(() => expect(view.getByLabelText("Resolution output")).toBeTruthy());
-  expect(view.getByRole("region", {name: "Current · rebased branch (ours)"})).toBeTruthy();
+  expect(view.getByRole("region", {name: "Current · rebase result so far (ours)"})).toBeTruthy();
   expect(view.getByRole("region", {name: "Incoming · commit being replayed (theirs)"})).toBeTruthy();
   const output = view.getByLabelText("Resolution output") as HTMLTextAreaElement;
   await user.clear(output); await user.type(output, "chosen resolution");

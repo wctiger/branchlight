@@ -63,7 +63,7 @@ export default function ConflictResolver({
             {
               label:
                 snapshot.operation === "rebase"
-                  ? "Current · rebased branch (ours)"
+                  ? "Current · rebase result so far (ours)"
                   : "Current · index stage 2 (ours)",
               file: { name: filePath, contents: snapshot.current },
             },
