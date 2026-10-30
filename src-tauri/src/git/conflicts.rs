@@ -263,7 +263,9 @@ mod tests {
         );
         abort_rebase(&repository).unwrap();
         assert_eq!(
-            fs::read_to_string(repository.join("conflict.txt")).unwrap(),
+            fs::read_to_string(repository.join("conflict.txt"))
+                .unwrap()
+                .replace("\r\n", "\n"),
             "topic two\n"
         );
         assert!(!git(&repository, &["rebase", "main"]).status.success());
@@ -274,7 +276,9 @@ mod tests {
             RepositoryOperation::None
         );
         assert_eq!(
-            fs::read_to_string(repository.join("conflict.txt")).unwrap(),
+            fs::read_to_string(repository.join("conflict.txt"))
+                .unwrap()
+                .replace("\r\n", "\n"),
             "main\n"
         );
         assert!(recover_rebase(&repository, RebaseRecovery::Skip).is_err());

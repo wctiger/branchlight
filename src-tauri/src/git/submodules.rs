@@ -855,6 +855,7 @@ mod tests {
                 &format!("160000,{next},{}", path()),
             ],
         );
+        let original_checkout = fs::read_to_string(f.child().join("file.txt")).unwrap();
         fs::write(f.child().join("file.txt"), "Preserve local edit\n").unwrap();
         f.apply(SubmoduleAction::Update { path: path() });
         assert_eq!(git(&f.child(), &["rev-parse", "HEAD"]), next);
@@ -868,7 +869,7 @@ mod tests {
         f.apply(SubmoduleAction::Reset { path: path() });
         assert_eq!(
             fs::read_to_string(f.child().join("file.txt")).unwrap(),
-            "Base content\n"
+            original_checkout
         );
         assert_eq!(
             fs::read_to_string(f.child().join("keep.txt")).unwrap(),

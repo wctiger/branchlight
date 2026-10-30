@@ -706,11 +706,44 @@ mod tests {
                     Err(error) => panic!("LFS batch server did not receive a request: {error}"),
                 }
             };
+            // Windows can inherit the listener's nonblocking mode on accept.
+            stream.set_nonblocking(false).unwrap();
             stream
                 .set_read_timeout(Some(std::time::Duration::from_secs(10)))
                 .unwrap();
             let mut buffer = [0; 8192];
-            let _ = stream.read(&mut buffer).unwrap();
+            let mut request = Vec::new();
+            let header_end = loop {
+                let count = stream.read(&mut buffer).unwrap();
+                assert!(count > 0, "LFS batch request closed before its headers");
+                request.extend_from_slice(&buffer[..count]);
+                assert!(request.len() <= 65536, "LFS test request exceeds its bound");
+                if let Some(end) = request.windows(4).position(|part| part == b"\r\n\r\n") {
+                    break end + 4;
+                }
+            };
+            let headers = String::from_utf8_lossy(&request[..header_end]);
+            assert!(headers.starts_with("POST /lfs/objects/batch "));
+            let length: usize = headers
+                .lines()
+                .find_map(|line| {
+                    let (name, value) = line.split_once(':')?;
+                    name.eq_ignore_ascii_case("content-length")
+                        .then(|| value.trim().parse().unwrap())
+                })
+                .unwrap();
+            assert!(header_end + length <= 65536);
+            if headers
+                .to_ascii_lowercase()
+                .contains("expect: 100-continue")
+            {
+                stream.write_all(b"HTTP/1.1 100 Continue\r\n\r\n").unwrap();
+            }
+            while request.len() < header_end + length {
+                let count = stream.read(&mut buffer).unwrap();
+                assert!(count > 0, "LFS batch request closed before its body");
+                request.extend_from_slice(&buffer[..count]);
+            }
             let body = serde_json::json!({"objects":[{"oid":response_oid,"size":20,"error":{"code":404,"message":"Missing object"}}]}).to_string();
             write!(stream, "HTTP/1.1 200 OK\r\nContent-Type: application/vnd.git-lfs+json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}", body.len(), body).unwrap();
         });
