@@ -12,6 +12,7 @@ import { HistoryControls } from "@/features/history/HistoryControls";
 import { BranchControls } from "@/features/DeliveryControls";
 import { BranchPanel } from "@/features/branches/BranchPanel";
 import { HistoryPanel } from "@/features/history/HistoryPanel";
+import { TagsPanel } from "@/features/history/TagsPanel";
 import { InspectionPanel } from "@/features/inspection/InspectionPanel";
 import { ChangesPanel } from "@/workspace/ChangesPanel";
 import { ConflictBanner } from "@/workspace/ConflictBanner";
@@ -205,6 +206,18 @@ export function RepositoryScreen() {
               run={onDelivery}
             />
           )}
+          <TagsPanel
+            path={repository.path}
+            revision={inspectionCommit ?? status?.branch.oid ?? null}
+            disabled={controlsDisabled || isRefreshing}
+            refreshKey={status}
+            run={onDelivery}
+            onInspectCommit={(hash) => {
+              setSelectedFile(null);
+              setInspectionCommit(hash);
+              setMode("diff");
+            }}
+          />
         </BranchPanel>
         <RepositoryMainContent
           mode={mode}

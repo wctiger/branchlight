@@ -12,6 +12,8 @@ import {
   abortRebase,
   recoverRebase,
   saveConflictFile,
+  createLocalTag,
+  deleteLocalTag,
   applyStash,
   composeCommit,
   createBranchAt,
@@ -697,12 +699,15 @@ export function createRepositoryStore(
         return false;
       clearOperationFeedback();
       const branchAction =
+        action.kind === "createTag" || action.kind === "deleteTag" ||
         action.kind === "createAt" ||
         action.kind === "checkoutRemote" ||
         action.kind === "upstream";
       set({
         operation:
-          action.kind === "history"
+          action.kind === "createTag" || action.kind === "deleteTag"
+            ? { state: "tagging" }
+          : action.kind === "history"
             ? { state: "editingHistory" }
             : branchAction
               ? {
@@ -721,6 +726,12 @@ export function createRepositoryStore(
       let succeeded = false;
       try {
         switch (action.kind) {
+          case "createTag":
+            await createLocalTag(repository.path, action.name, action.revision, action.annotation);
+            break;
+          case "deleteTag":
+            await deleteLocalTag(repository.path, action.name, action.expectedOid);
+            break;
           case "history":
             await executeHistoryAction(
               repository.path,

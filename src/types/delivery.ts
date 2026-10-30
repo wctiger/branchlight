@@ -26,6 +26,8 @@ export type HistoryAction =
   | { kind: "cherryPick" | "revert"; revision: string }
   | { kind: "reset"; revision: string; mode: "soft" | "mixed" | "hard" };
 export type DeliveryAction =
+  | { kind: "createTag"; name: string; revision: string; annotation: string | null }
+  | { kind: "deleteTag"; name: string; expectedOid: string }
   | { kind: "history"; expectedHead: string; expectedBranch: string; action: HistoryAction }
   | { kind: "createAt"; name: string; revision: string; checkout: boolean }
   | { kind: "checkoutRemote"; name: string; reference: string }

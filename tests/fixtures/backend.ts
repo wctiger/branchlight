@@ -80,6 +80,9 @@ export async function invoke<T>(
         exitCode: 0,
       };
       break;
+    case "get_local_tags":
+      result = [];
+      break;
     case "open_repository":
     case "create_repository":
       result = { path, name: path.split("/").pop() };

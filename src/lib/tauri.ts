@@ -394,3 +394,24 @@ export interface Diagnostics {
 export function getDiagnostics(path: string): Promise<Diagnostics> {
   return invoke("get_diagnostics", { path });
 }
+
+export interface LocalTag { name: string; objectId: string }
+export interface TagDetails extends LocalTag {
+  targetId: string;
+  targetType: string;
+  annotated: boolean;
+  metadata: string;
+  metadataTruncated: boolean;
+}
+export function getLocalTags(path: string): Promise<LocalTag[]> {
+  return invoke("get_local_tags", {path});
+}
+export function inspectLocalTag(path: string, name: string): Promise<TagDetails> {
+  return invoke("inspect_local_tag", {path, name});
+}
+export function createLocalTag(path: string, name: string, revision: string, annotation: string | null): Promise<GitOutput> {
+  return invoke("create_local_tag", {path, name, revision, annotation});
+}
+export function deleteLocalTag(path: string, name: string, expectedOid: string): Promise<GitOutput> {
+  return invoke("delete_local_tag", {path, name, expectedOid});
+}

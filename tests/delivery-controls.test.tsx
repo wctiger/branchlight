@@ -850,3 +850,41 @@ test("conflict saves use the store mutation guard and refresh after a partial sa
   expect(store.getState().operation.state).toBe("idle");
   expect(store.getState().conflictOperationError?.message).toContain("stage failed");
 });
+
+test("local tag deletion retains the reviewed object ID across an external refresh", async () => {
+  const { TagsPanel } = await import("../src/features/history/TagsPanel");
+  const original = "a".repeat(40), moved = "b".repeat(40);
+  let current = original;
+  intercept = command => {
+    if (command === "get_local_tags") return Promise.resolve([{name: "v1", objectId: current}]);
+    if (command === "inspect_local_tag") return Promise.resolve({name: "v1", objectId: current, targetId: current, targetType: "commit", annotated: true, metadata: "Release notes", metadataTruncated: false});
+    return undefined;
+  };
+  const submitted: DeliveryAction[] = [];
+  const props = {path: "/repo with spaces", revision: original, disabled: false, refreshKey: 0, run: async (action: DeliveryAction) => {submitted.push(action);return false;}, onInspectCommit: () => {}};
+  const view = render(<TagsPanel {...props} />);
+  const user = userEvent.setup({document});
+  await waitFor(() => expect(view.getByRole("button", {name: "v1", exact: true})).toBeTruthy());
+  await user.click(view.getByRole("button", {name: "v1", exact: true}));
+  await waitFor(() => expect(view.getByText("Release notes")).toBeTruthy());
+  await user.click(view.getByRole("button", {name: "Delete local tag…", exact: true}));
+  expect(submitted).toEqual([]);
+  current = moved;view.rerender(<TagsPanel {...props} refreshKey={1} />);
+  await user.click(view.getByRole("button", {name: "Delete reviewed local tag", exact: true}));
+  expect(submitted).toEqual([{kind: "deleteTag", name: "v1", expectedOid: original}]);
+});
+
+test("local tag creation freezes the selected commit and does not invoke Git until confirmed", async () => {
+  const { TagsPanel } = await import("../src/features/history/TagsPanel");
+  intercept = command => command === "get_local_tags" ? Promise.resolve([]) : undefined;
+  const submitted: DeliveryAction[] = [];
+  const props = {path: "/tags", revision: "a".repeat(40), disabled: false, refreshKey: 0, run: async (action: DeliveryAction) => {submitted.push(action);return true;}, onInspectCommit: () => {}};
+  const view = render(<TagsPanel {...props} />);
+  const user = userEvent.setup({document});
+  await user.click(view.getByRole("button", {name: "Create tag at selected commit…"}));
+  await user.type(view.getByLabelText("Tag name"), "release/v2");
+  view.rerender(<TagsPanel {...props} revision={"b".repeat(40)} />);
+  expect(submitted).toEqual([]);
+  await user.click(view.getByRole("button", {name: "Create local tag", exact: true}));
+  expect(submitted).toEqual([{kind: "createTag", name: "release/v2", revision: "a".repeat(40), annotation: null}]);
+});

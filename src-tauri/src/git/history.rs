@@ -36,6 +36,37 @@ pub(crate) fn get_history(repository: &Path) -> Result<Vec<Commit>, GitError> {
         commit.refs = refs.get(&commit.hash).cloned().unwrap_or_default();
     }
 
+    let tags = run_git(
+        repository,
+        &[
+            "for-each-ref",
+            "--format=%(refname)%00%(objectname)%00%(*objectname)%00",
+            "refs/tags/",
+        ],
+    )?;
+    for record in tags.stdout.lines() {
+        let fields: Vec<_> = record.split('\0').collect();
+        if fields.len() != 4 || !fields[3].is_empty() {
+            return Err(super::inspection::invalid(
+                "Malformed history tag metadata.",
+            ));
+        }
+        let target = if fields[2].is_empty() {
+            fields[1]
+        } else {
+            fields[2]
+        };
+        if let Some(commit) = commits.iter_mut().find(|commit| commit.hash == target) {
+            commit.refs.push(format!(
+                "tag: {}",
+                fields[0]
+                    .strip_prefix("refs/tags/")
+                    .ok_or_else(|| super::inspection::invalid("Unexpected tag ref."))?
+            ));
+            commit.refs.sort();
+        }
+    }
+
     Ok(commits)
 }
 

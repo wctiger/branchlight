@@ -73,6 +73,10 @@ The application implements the following workflows:
   branch range: pick, drop, reorder, squash, or reword. Confirm the branch rewrite
   before applying; conflict stops retain continue, skip, and abort controls.
 - Browse a bounded 200-commit history with a read-only SVG DAG.
+- List and inspect local tags, create unsigned lightweight or annotated tags at
+  a selected commit, and confirm deletion of the exact reviewed local tag.
+  Tag creation never overwrites an existing name; remote tag administration is
+  excluded.
 
 Text diffs use `@pierre/diffs` with unified/side-by-side layouts, syntax highlighting,
 virtualized rows, and hunk navigation. Highlighting workers and language assets

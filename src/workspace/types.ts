@@ -38,4 +38,5 @@ export type AppOperation =
   | { state: "abortingMerge" }
   | { state: "abortingRebase" }
   | { state: "recoveringRebase" }
-  | { state: "resolvingConflict"; path: string };
+  | { state: "resolvingConflict"; path: string }
+  | { state: "tagging" };

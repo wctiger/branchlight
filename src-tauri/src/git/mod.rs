@@ -11,6 +11,7 @@ pub(crate) mod resolution;
 mod runner;
 mod stashes;
 mod status;
+pub(crate) mod tags;
 mod version;
 
 pub(crate) use branches::{
