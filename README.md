@@ -82,6 +82,11 @@ The application implements the following workflows:
   tool in the current repository/file context. Editor and terminal preferences
   use an executable plus structured arguments; refresh after external changes.
   Git tool completion refreshes repository views even after a failure.
+- Discover repository and workspace actions through **Commands** (Command+K on
+  macOS, Ctrl+K on Windows by default). Configure local shortcuts, detect
+  duplicate bindings, disable bindings, or restore defaults. Commands reuse
+  the primary UI's guards and confirmations; shortcuts are ignored while typing
+  or another dialog is open.
 - List and inspect local tags, create unsigned lightweight or annotated tags at
   a selected commit, and confirm deletion of the exact reviewed local tag.
   Tag creation never overwrites an existing name; remote tag administration is

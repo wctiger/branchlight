@@ -153,6 +153,7 @@ export function RemoteControls({
       <Button
         variant="outline"
         disabled={disabled}
+        data-command="remote.fetch"
         onClick={() => setMode("fetch")}
       >
         Fetch…
@@ -160,6 +161,7 @@ export function RemoteControls({
       <Button
         variant="outline"
         disabled={disabled}
+        data-command="remote.pull"
         onClick={() => setMode("pull")}
       >
         Pull…
@@ -167,6 +169,7 @@ export function RemoteControls({
       <Button
         variant="outline"
         disabled={disabled}
+        data-command="remote.push"
         onClick={() => void run({ kind: "push" })}
       >
         Push
@@ -174,6 +177,7 @@ export function RemoteControls({
       <Button
         variant="outline"
         disabled={disabled}
+        data-command="remote.force"
         onClick={() => setMode("force")}
       >
         Force push…

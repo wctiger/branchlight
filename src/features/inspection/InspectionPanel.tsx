@@ -263,6 +263,8 @@ export function InspectionPanel({
                           : "Discard both staged and unstaged changes for this path"
                       }
                       onClick={() => setDiscardSelection(change)}
+                      data-command="file.discard"
+                      data-command-file={change.path}
                     >
                       Discard
                     </Button>

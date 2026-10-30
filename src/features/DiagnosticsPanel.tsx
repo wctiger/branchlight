@@ -34,7 +34,7 @@ export function DiagnosticsPanel({ path }: { path: string }) {
   }, [path, open, revision]);
   return (
     <>
-      <Button size="sm" variant="ghost" onClick={() => setOpen(true)}>
+      <Button data-command="repository.diagnostics" size="sm" variant="ghost" onClick={() => setOpen(true)}>
         <Bug data-icon="inline-start" aria-hidden="true" />
         Diagnostics
       </Button>

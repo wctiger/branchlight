@@ -114,10 +114,12 @@ export function ConflictBanner({
           {activeOperation === "rebase" && (
             <>
               <Button variant="outline" disabled={actionsDisabled || conflictCount > 0}
+                data-command="rebase.continue"
                 onClick={() => void onRecoverRebase("continue")}>
                 Continue rebase
               </Button>
               <Button variant="outline" disabled={actionsDisabled}
+                data-command="rebase.skip"
                 onClick={() => setConfirmSkip(true)}>
                 Skip rebase commit…
               </Button>
@@ -147,6 +149,7 @@ export function ConflictBanner({
               type="button"
               disabled={actionsDisabled}
               aria-busy={isAborting}
+              data-command="operation.abort"
               onClick={() => onAbort(activeOperation)}
             >
               {isAborting && (

@@ -48,6 +48,7 @@ export function HistoryControls({
         (action) => (
           <Button
             key={action}
+            data-command={`history.${action}`}
             size="sm"
             variant="outline"
             disabled={

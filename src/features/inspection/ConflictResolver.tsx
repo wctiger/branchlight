@@ -180,16 +180,18 @@ export default function ConflictResolver({
               variant="outline"
               disabled={disabled || busy}
               onClick={() => void save(false)}
+              data-command="conflict.draft"
             >
               Save draft
             </Button>
-            <Button disabled={disabled || busy} onClick={() => void save(true)}>
+            <Button data-command="conflict.resolve" disabled={disabled || busy} onClick={() => void save(true)}>
               Save and mark resolved
             </Button>
           </div>
         </>
       )}
       <Button
+        data-command="conflict.reload"
         variant="outline"
         disabled={disabled || busy}
         onClick={() => {

@@ -40,8 +40,10 @@ export function OperationDialog({
         showCloseButton={false}
         ref={contentRef}
         initialFocus={() => {
+          const content = contentRef.current;
+          if (!content) return false;
           const cancel = [
-            ...contentRef.current!.querySelectorAll<HTMLButtonElement>(
+            ...content.querySelectorAll<HTMLButtonElement>(
               "button",
             ),
           ].find((button) => button.textContent?.trim() === "Cancel");

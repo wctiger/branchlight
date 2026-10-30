@@ -91,6 +91,7 @@ export function RepositoryToolbar({
             hasActiveRepositoryOperation ||
             openState !== "idle"
           }
+          data-command="stash.create"
           onClick={onStash}
         >
           Stash
@@ -100,6 +101,7 @@ export function RepositoryToolbar({
           type="button"
           disabled={isRefreshing || isMutating || openState !== "idle"}
           aria-busy={isRefreshing}
+          data-command="repository.refresh"
           onClick={onRefresh}
         >
           {isRefreshing ? (

@@ -60,6 +60,7 @@ export function CommitSearch({
         <label>
           Search commits
           <Input
+            data-command="history.search"
             type="search"
             maxLength={256}
             value={query}

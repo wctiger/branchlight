@@ -69,6 +69,7 @@ export function TagsPanel({
       <Button
         size="sm"
         variant="outline"
+        data-command="tag.create"
         disabled={disabled || busy || !revision}
         onClick={() => {
           setTarget(revision!);
@@ -141,6 +142,7 @@ export function TagsPanel({
           <Button
             size="sm"
             variant="outline"
+            data-command="tag.delete"
             disabled={disabled || busy}
             onClick={() => {
               setDeleteReview(selected);

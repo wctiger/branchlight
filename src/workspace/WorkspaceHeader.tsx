@@ -2,6 +2,7 @@ import styles from "@/workspace/WorkspaceHeader.module.css";
 import { Button } from "@/components/ui/button";
 import { DialogTrigger } from "@/components/ui/dialog";
 import { ThemeSelect } from "@/components/theme-select";
+import { CommandPalette } from "@/features/CommandPalette";
 import { BranchlightMark } from "@/workspace/icons";
 
 export function WorkspaceHeader({
@@ -21,16 +22,18 @@ export function WorkspaceHeader({
           Branchlight<span> / Workspace</span>
         </strong>
         <Button
+          data-command="workspace.open"
           variant="outline"
           onClick={() => onOpen()}
           disabled={opening || !gitReady}
         >
           {opening ? "Opening…" : "Open repository"}
         </Button>
-        <DialogTrigger render={<Button variant="ghost" />}>
+        <DialogTrigger render={<Button variant="ghost" data-command="workspace.groups" />}>
           Groups
         </DialogTrigger>
         <ThemeSelect />
+        <CommandPalette />
       </div>
     </header>
   );

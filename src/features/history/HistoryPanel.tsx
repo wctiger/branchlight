@@ -343,6 +343,7 @@ export function HistoryPanel({
             <Button
               size="sm"
               variant="outline"
+              data-command="history.inspect"
               onClick={() => onInspectCommit(selected.hash)}
             >
               Inspect selected commit

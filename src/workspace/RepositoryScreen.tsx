@@ -119,7 +119,7 @@ export function RepositoryScreen() {
       : null;
 
   return (
-    <main ref={screen} className={styles["repository-screen"]}>
+    <main ref={screen} data-repository-context={repository.path} data-selected-file={externalFile?.file.path} className={styles["repository-screen"]}>
       <RepositoryToolbar
         externalTools={<ExternalTools path={repository.path} file={externalFile?.file.path ?? null}
           kind={externalFile?.kind ?? null} conflicted={!!externalFile && !!status?.conflicts.some(file => file.path === externalFile.file.path)}

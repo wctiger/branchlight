@@ -52,6 +52,7 @@ export function InteractiveRebaseControls({
   return (
     <>
       <Button
+        data-command="history.interactiveRebase"
         size="sm"
         variant="outline"
         disabled={disabled || busy || !head || !branch}

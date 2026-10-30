@@ -97,6 +97,7 @@ export function ExternalTools({
   return (
     <>
       <Button
+        data-command="repository.tools"
         variant="outline"
         disabled={disabled}
         onClick={() => {

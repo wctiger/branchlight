@@ -397,6 +397,7 @@ export function BranchPanel({
           aria-label="Create a local branch"
           disabled={actionsDisabled || isRefreshing}
           onClick={openCreate}
+          data-command="branch.create"
         >
           +
         </Button>
@@ -498,6 +499,7 @@ export function BranchPanel({
               actionsDisabled || isRefreshing || selectedLocalBranch.isCurrent
             }
             onClick={() => void onSwitch(selectedLocalBranch.name)}
+            data-command="branch.switch"
           >
             Switch
           </Button>
@@ -506,6 +508,7 @@ export function BranchPanel({
             type="button"
             disabled={actionsDisabled || isRefreshing}
             onClick={openRename}
+            data-command="branch.rename"
           >
             Rename
           </Button>
@@ -517,6 +520,7 @@ export function BranchPanel({
               actionsDisabled || isRefreshing || selectedLocalBranch.isCurrent
             }
             onClick={() => openIntegration(selectedLocalBranch)}
+            data-command="branch.integrate"
           >
             Merge / rebase…
           </Button>
@@ -535,6 +539,7 @@ export function BranchPanel({
             onClick={() =>
               setEditor({ mode: "delete", branch: selectedLocalBranch })
             }
+            data-command="branch.delete"
           >
             Delete
           </Button>
