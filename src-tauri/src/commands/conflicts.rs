@@ -5,6 +5,17 @@ use crate::{
     models::{GitError, GitOutput},
 };
 
+#[tauri::command]
+pub(crate) async fn recover_rebase(
+    path: String,
+    action: git::RebaseRecovery,
+) -> Result<GitOutput, GitError> {
+    super::scheduler::run(Some(path.clone()), move || {
+        git::recover_rebase(Path::new(&path), action)
+    })
+    .await
+}
+
 /// Aborts the active merge after verifying repository operation state.
 #[tauri::command]
 pub(crate) async fn abort_merge(path: String) -> Result<GitOutput, GitError> {

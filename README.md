@@ -67,6 +67,8 @@ The application implements the following workflows:
   command names, exit codes, and timings, excluding arguments and output.
 - Detect active merges/rebases/cherry-picks/reverts, list conflicts, refresh after external
   resolution, and safely abort the matching operation.
+- Continue a stopped rebase after resolving and staging conflicts, or explicitly
+  skip its current commit after confirming that its changes will be discarded.
 - Browse a bounded 200-commit history with a read-only SVG DAG.
 
 Text diffs use `@pierre/diffs` with unified/side-by-side layouts, syntax highlighting,
@@ -82,8 +84,8 @@ be closed until their operation and refresh finish. Git output capture is capped
 at 8 MiB per stream; text previews at 512 KiB.
 
 Worktree lifecycle remains planned. Merge and rebase
-target the checked-out branch; conflict resolution and rebase continuation require
-external tools/Git, including continuation of stopped cherry-picks/reverts. Repository history is limited to 200 commits; file history to
+target the checked-out branch; conflict resolution and continuation of stopped
+merges/cherry-picks/reverts require external tools/Git. Repository history is limited to 200 commits; file history to
 100 commits without rename tracing. Large-repository performance remains unverified.
 Delivery 1 acceptance is recorded in [PR #67](https://github.com/wctiger/branchlight/pull/67).
 Delivery 2 platform builds and desktop acceptance are tracked separately from

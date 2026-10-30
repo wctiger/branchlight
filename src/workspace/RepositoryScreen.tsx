@@ -47,6 +47,7 @@ export function RepositoryScreen() {
     onMergeBranch,
     onRebaseBranch,
     onAbortOperation,
+    onRecoverRebase,
     onDelivery,
     onCreateStash,
     onApplyStash,
@@ -166,6 +167,7 @@ export function RepositoryScreen() {
           controlsDisabled={controlsDisabled}
           onRefresh={onRefresh}
           onAbort={onAbortOperation}
+          onRecoverRebase={onRecoverRebase}
         />
       )}
 

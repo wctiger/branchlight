@@ -33,6 +33,7 @@ pub fn run() {
             commands::branches::rebase_onto_branch,
             commands::conflicts::abort_merge,
             commands::conflicts::abort_rebase,
+            commands::conflicts::recover_rebase,
             commands::history::get_history,
             commands::history_operations::execute_history_action,
             commands::history_operations::abort_history_operation,

@@ -50,6 +50,38 @@ pub(crate) fn abort_rebase(repository: &Path) -> Result<GitOutput, GitError> {
     run_git(repository, &["rebase", "--abort"])
 }
 
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) enum RebaseRecovery {
+    Continue,
+    Skip,
+}
+
+/// Rechecks per-worktree state under the scheduler lock before resuming Git.
+pub(crate) fn recover_rebase(
+    repository: &Path,
+    action: RebaseRecovery,
+) -> Result<GitOutput, GitError> {
+    require_operation(repository, RepositoryOperation::Rebase)?;
+    let flag = match action {
+        RebaseRecovery::Continue => {
+            if !run_git(repository, &["ls-files", "--unmerged", "-z"])?
+                .stdout
+                .is_empty()
+            {
+                return Err(GitError::InvalidOperationInput {
+                    message: "Resolve and stage all conflicts before continuing the rebase.".into(),
+                });
+            }
+            "--continue"
+        }
+        RebaseRecovery::Skip => "--skip",
+    };
+    // Reuse the commit message already prepared by rebase; never open an editor
+    // that cannot be interacted with from the desktop process.
+    super::runner::run_git_with_env(repository, &["rebase", flag], &[("GIT_EDITOR", "true")])
+}
+
 /// Resolves metadata through Git so linked worktrees use their own operation state.
 fn resolve_git_path(repository: &Path, name: &str) -> Result<PathBuf, GitError> {
     let output = run_git(repository, &["rev-parse", "--git-path", name])?;
@@ -167,6 +199,79 @@ mod tests {
         assert!(status.conflicts.is_empty());
 
         fs::remove_dir_all(repository).expect("the test repository should be removed");
+    }
+
+    fn stopped_rebase(label: &str) -> PathBuf {
+        let repository = temporary_repository(label);
+        commit_conflict_file(&repository, "base\n", "Base");
+        assert!(git(&repository, &["switch", "-c", "topic"])
+            .status
+            .success());
+        commit_conflict_file(&repository, "topic one\n", "Topic one");
+        commit_conflict_file(&repository, "topic two\n", "Topic two");
+        assert!(git(&repository, &["switch", "main"]).status.success());
+        commit_conflict_file(&repository, "main\n", "Main");
+        assert!(git(&repository, &["switch", "topic"]).status.success());
+        assert!(!git(&repository, &["rebase", "main"]).status.success());
+        repository
+    }
+
+    #[test]
+    fn rebase_continue_preserves_a_subsequent_stop_and_finishes_after_resolution() {
+        let repository = stopped_rebase("continue");
+        assert!(recover_rebase(&repository, RebaseRecovery::Continue).is_err());
+        commit_resolution(&repository, "resolved one\n");
+        // The first commit succeeds, but replaying the second conflicts again.
+        assert!(recover_rebase(&repository, RebaseRecovery::Continue).is_err());
+        let status = get_repository_status(&repository).unwrap();
+        assert_eq!(status.operation, RepositoryOperation::Rebase);
+        assert_eq!(status.conflicts.len(), 1);
+        commit_resolution(&repository, "resolved two\n");
+        recover_rebase(&repository, RebaseRecovery::Continue).unwrap();
+        let status = get_repository_status(&repository).unwrap();
+        assert_eq!(status.operation, RepositoryOperation::None);
+        assert!(status.conflicts.is_empty());
+        assert_eq!(
+            fs::read_to_string(repository.join("conflict.txt")).unwrap(),
+            "resolved two\n"
+        );
+        assert!(recover_rebase(&repository, RebaseRecovery::Continue).is_err());
+        fs::remove_dir_all(repository).unwrap();
+    }
+
+    fn commit_resolution(repository: &Path, contents: &str) {
+        fs::write(repository.join("conflict.txt"), contents).unwrap();
+        assert!(git(repository, &["add", "--", "conflict.txt"])
+            .status
+            .success());
+    }
+
+    #[test]
+    fn rebase_skip_omits_commits_and_keeps_abort_available_after_another_stop() {
+        let repository = stopped_rebase("skip");
+        assert!(recover_rebase(&repository, RebaseRecovery::Skip).is_err());
+        assert_eq!(
+            get_repository_operation(&repository).unwrap(),
+            RepositoryOperation::Rebase
+        );
+        abort_rebase(&repository).unwrap();
+        assert_eq!(
+            fs::read_to_string(repository.join("conflict.txt")).unwrap(),
+            "topic two\n"
+        );
+        assert!(!git(&repository, &["rebase", "main"]).status.success());
+        assert!(recover_rebase(&repository, RebaseRecovery::Skip).is_err());
+        recover_rebase(&repository, RebaseRecovery::Skip).unwrap();
+        assert_eq!(
+            get_repository_operation(&repository).unwrap(),
+            RepositoryOperation::None
+        );
+        assert_eq!(
+            fs::read_to_string(repository.join("conflict.txt")).unwrap(),
+            "main\n"
+        );
+        assert!(recover_rebase(&repository, RebaseRecovery::Skip).is_err());
+        fs::remove_dir_all(repository).unwrap();
     }
 
     #[test]

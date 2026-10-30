@@ -675,6 +675,7 @@ test.each([
       controlsDisabled: false,
       onRefresh: () => {},
       onAbort: () => {},
+      onRecoverRebase: async () => false,
     };
     const view = render(<ConflictBanner {...props} />);
     expect(
@@ -731,4 +732,50 @@ test("diagnostics labels the PATH scan as a candidate", async () => {
   expect(
     view.getByText(/operating system may select a different executable/),
   ).toBeTruthy();
+});
+
+test("rebase recovery serializes mutations and refreshes a failed step into new conflict state", async () => {
+  const store = createRepositoryStore({ name: "recovery", path: "/recovery" }, () => {});
+  let conflicted = false;
+  const pendingStep = deferred<unknown>();
+  intercept = (command) => {
+    if (command === "get_repository_status") return fixture<import("../src/types/status").RepositoryStatus>(command).then(status => ({
+      ...status, operation: "rebase", conflicts: conflicted ? [{path: "next.txt", originalPath: null, status: "conflicted"}] : [],
+    }));
+    if (command === "recover_rebase") return pendingStep.promise;
+    return undefined;
+  };
+  await store.getState().onRefresh();
+  const pending = store.getState().onRecoverRebase("continue");
+  expect(store.getState().operation.state).toBe("recoveringRebase");
+  expect(await store.getState().onRecoverRebase("skip")).toBe(false);
+  expect(calls.filter(c => c.command === "recover_rebase")).toHaveLength(1);
+  expect(calls.find(c => c.command === "recover_rebase")?.args).toEqual({path: "/recovery", action: "continue"});
+  conflicted = true;
+  pendingStep.reject({code: "commandFailed", message: "Next commit conflicts"});
+  expect(await pending).toBe(false);
+  const state = store.getState();
+  expect(state.operation.state).toBe("idle");
+  expect(state.conflictOperationError?.message).toBe("Next commit conflicts");
+  expect(state.statusState.state === "ready" && state.statusState.status.conflicts[0].path).toBe("next.txt");
+  expect(await state.onRecoverRebase("continue")).toBe(false);
+});
+
+test("rebase skip requires explicit confirmation and continue is unavailable with unresolved files", async () => {
+  const { ConflictBanner } = await import("../src/workspace/ConflictBanner");
+  const status = await fixture<import("../src/types/status").RepositoryStatus>("get_repository_status");
+  const actions: string[] = [];
+  const user = userEvent.setup({ document });
+  const view = render(<ConflictBanner status={{...status, operation: "rebase", conflicts: [{path: "conflict.txt", originalPath: null, status: "conflicted"}]}}
+    operation={{state: "idle"}} operationError={null} isRefreshing={false} controlsDisabled={false}
+    onRefresh={() => {}} onAbort={() => {}} onRecoverRebase={async action => {actions.push(action);return true;}} />);
+  expect((view.getByRole("button", {name: "Continue rebase"}) as HTMLButtonElement).disabled).toBe(true);
+  await user.click(view.getByRole("button", {name: "Skip rebase commit…"}));
+  expect(actions).toEqual([]);
+  expect(view.getByRole("dialog").textContent).toContain("discard its changes");
+  await user.click(view.getByRole("button", {name: "Cancel", exact: true}));
+  expect(actions).toEqual([]);
+  await user.click(view.getByRole("button", {name: "Skip rebase commit…"}));
+  await user.click(view.getByRole("button", {name: "Skip current commit", exact: true}));
+  expect(actions).toEqual(["skip"]);
 });

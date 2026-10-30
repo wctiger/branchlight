@@ -136,6 +136,10 @@ export function abortRebase(path: string): Promise<GitOutput> {
   return invoke<GitOutput>("abort_rebase", { path });
 }
 
+export function recoverRebase(path: string, action: "continue" | "skip"): Promise<GitOutput> {
+  return invoke("recover_rebase", { path, action });
+}
+
 /** Fetches remote refs using the repository's configured Git remotes. */
 export function fetchRemote(
   path: string,

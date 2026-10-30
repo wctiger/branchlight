@@ -10,6 +10,7 @@ import {
   abortHistoryOperation,
   executeHistoryAction,
   abortRebase,
+  recoverRebase,
   applyStash,
   composeCommit,
   createBranchAt,
@@ -112,6 +113,7 @@ export type RepositoryState = {
     kind: "merge" | "rebase" | "cherryPick" | "revert",
   ) => void;
   onDelivery: RunDelivery;
+  onRecoverRebase: (action: "continue" | "skip") => Promise<boolean>;
   onCreateStash: (message: string) => Promise<boolean>;
   onApplyStash: (stash: Stash) => Promise<boolean>;
   onPopStash: (stash: Stash) => Promise<boolean>;
@@ -669,6 +671,25 @@ export function createRepositoryStore(
       }
       await finishRepositoryMutation(repository.path);
     };
+    const handleRecoverRebase = async (action: "continue" | "skip"): Promise<boolean> => {
+      const { statusState, operation } = get();
+      if (operation.state !== "idle" || statusState.state !== "ready" ||
+          statusState.isRefreshing || statusState.status.operation !== "rebase" ||
+          (action === "continue" && statusState.status.conflicts.length > 0) ||
+          !beginRepositoryMutation()) return false;
+      clearOperationFeedback();
+      set({ operation: { state: "recoveringRebase" } });
+      let succeeded = false;
+      try {
+        await recoverRebase(repository.path, action);
+        succeeded = true;
+        set({ operationNotice: "Rebase step completed. Review the refreshed operation status." });
+      } catch (error) {
+        set({ conflictOperationError: normalizeGitError(error) });
+      }
+      await finishRepositoryMutation(repository.path);
+      return succeeded;
+    };
     const handleDelivery = async (action: DeliveryAction): Promise<boolean> => {
       if (get().operation.state !== "idle" || !beginRepositoryMutation())
         return false;
@@ -882,6 +903,7 @@ export function createRepositoryStore(
         handleBranchIntegration("rebase", sourceBranch),
       onAbortOperation: (kind) => void handleAbortOperation(kind),
       onDelivery: handleDelivery,
+      onRecoverRebase: handleRecoverRebase,
       onCreateStash: (message) =>
         handleStashMutation({
           kind: "create",

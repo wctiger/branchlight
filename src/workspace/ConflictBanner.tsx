@@ -1,7 +1,8 @@
 import styles from "@/workspace/ConflictBanner.module.css";
 import sharedStyles from "@/styles/shared.module.css";
 import { TriangleAlert, RefreshCw, LoaderCircle } from "lucide-react";
-import { useId } from "react";
+import { useId, useState } from "react";
+import { OperationDialog } from "@/components/operation-dialog";
 import { Button } from "@/components/ui/button";
 import { ErrorNotice } from "@/workspace/ErrorNotice";
 import type { AppOperation } from "@/workspace/types";
@@ -20,6 +21,7 @@ export function ConflictBanner({
   controlsDisabled,
   onRefresh,
   onAbort,
+  onRecoverRebase,
 }: {
   status: RepositoryStatus;
   operation: AppOperation;
@@ -28,8 +30,10 @@ export function ConflictBanner({
   controlsDisabled: boolean;
   onRefresh: () => void;
   onAbort: (kind: "merge" | "rebase" | "cherryPick" | "revert") => void;
+  onRecoverRebase: (action: "continue" | "skip") => Promise<boolean>;
 }) {
   const headingId = useId();
+  const [confirmSkip, setConfirmSkip] = useState(false);
   const activeOperation = status.operation;
   const hasRepositoryConflict =
     activeOperation !== "none" || status.conflicts.length > 0;
@@ -97,7 +101,7 @@ export function ConflictBanner({
       <div className={styles["conflict-banner__guidance"]}>
         <p>
           {activeOperation === "rebase"
-            ? "Resolve and stage conflicts with an external Git tool, then continue or skip the rebase there. Branchlight currently supports abort only. Refresh after each external step."
+            ? "Resolve and stage conflicts, then continue the rebase. Skip omits the current commit and discards its changes. Abort restores the branch to its pre-rebase state."
             : activeOperation === "merge"
               ? "Resolve and stage conflicts with an external Git tool, then finish the merge there. Refresh Branchlight afterward, or abort the merge here."
               : activeOperation === "cherryPick" || activeOperation === "revert"
@@ -107,6 +111,18 @@ export function ConflictBanner({
                   : "Review Git’s message below, then refresh Branchlight before continuing."}
         </p>
         <div>
+          {activeOperation === "rebase" && (
+            <>
+              <Button variant="outline" disabled={actionsDisabled || conflictCount > 0}
+                onClick={() => void onRecoverRebase("continue")}>
+                Continue rebase
+              </Button>
+              <Button variant="outline" disabled={actionsDisabled}
+                onClick={() => setConfirmSkip(true)}>
+                Skip rebase commit…
+              </Button>
+            </>
+          )}
           <Button
             variant="outline"
             type="button"
@@ -150,6 +166,19 @@ export function ConflictBanner({
 
       {operationError && (
         <ErrorNotice error={operationError} title="Git operation failed" />
+      )}
+      {confirmSkip && activeOperation === "rebase" && (
+        <OperationDialog title="Skip current rebase commit?"
+          description="Git will omit the current commit and discard its changes, including any resolution edits for this step. Later commits may stop with more conflicts."
+          busy={operation.state === "recoveringRebase"}
+          onClose={() => setConfirmSkip(false)}>
+          <Button variant="outline" disabled={operation.state === "recoveringRebase"}
+            onClick={() => setConfirmSkip(false)}>Cancel</Button>
+          <Button disabled={actionsDisabled} onClick={async () => {
+            await onRecoverRebase("skip");
+            setConfirmSkip(false);
+          }}>Skip current commit</Button>
+        </OperationDialog>
       )}
     </section>
   );
