@@ -978,3 +978,55 @@ test("external tool failures refresh repository state and release the mutation g
   expect(store.getState().operation.state).toBe("idle");
   expect(store.getState().conflictOperationError?.message).toContain("Merge tool failed");
 });
+
+const { LfsPanel } = await import("../src/features/LfsPanel");
+const lfsState = {
+  available: true, version: "git-lfs/3.8.1", filterConfigured: true,
+  hookInstalled: true, hookPath: "/repo/.git/hooks/pre-push", storagePath: "/repo/.git/lfs/objects",
+  pruneAllowed: true, pruneReason: "Default storage", patterns: [{pattern:"*.bin",source:".gitattributes",tracked:true,lockable:false}],
+  files: [{name:"file [x].bin",oid:"a".repeat(64),size:20,checkout:false,downloaded:true}], head:"a".repeat(40),
+};
+test("LFS reviews captured remote and HEAD, displays pointer state, and refreshes after failure", async () => {
+  const user = userEvent.setup({document});
+  intercept = command => command === "get_lfs_state" ? Promise.resolve(lfsState) : undefined;
+  const actions: DeliveryAction[] = [];
+  const view = render(<LfsPanel path="/repo" disabled={false} run={async action => {actions.push(action); return false;}} />);
+  await user.click(view.getByRole("button",{name:"LFS"}));
+  await waitFor(() => expect(view.getByText(/pointer; cached; 20 bytes/)).toBeTruthy());
+  await user.click(view.getByRole("button",{name:"Push objects…"}));
+  expect(view.getByText(/Remote: origin/).textContent).toContain(lfsState.head);
+  expect(actions).toHaveLength(0);
+  expect(document.activeElement?.textContent).toBe("Cancel");
+  await user.click(view.getByRole("button",{name:"Confirm push"}));
+  await waitFor(() => expect(actions).toEqual([{kind:"lfs",action:{kind:"push",remote:"origin",expectedHead:lfsState.head}}]));
+  await waitFor(() => expect(calls.filter(call => call.command === "get_lfs_state")).toHaveLength(2));
+  expect(view.getByRole("button",{name:"Confirm push"})).toBeTruthy();
+  expect(view.getByRole("status").textContent).toContain("stopped");
+});
+test("LFS missing tooling explains setup and cannot initialize or transfer", async () => {
+  const user = userEvent.setup({document});
+  intercept = command => command === "get_lfs_state" ? Promise.resolve({...lfsState,available:false,version:"Git LFS is unavailable"}) : undefined;
+  const view = render(<LfsPanel path="/repo" disabled={false} run={async () => {throw Error("must not run");}} />);
+  await user.click(view.getByRole("button",{name:"LFS"}));
+  await waitFor(() => expect(view.getByRole("link",{name:"the official setup guide"})).toBeTruthy());
+  expect(view.queryByRole("button",{name:"Initialize for this repository…"})).toBeNull();
+});
+test("LFS pruning requires preview confirmation and repository mutations share the store guard", async () => {
+  const user = userEvent.setup({document});
+  intercept = command => command === "get_lfs_state" ? Promise.resolve(lfsState)
+    : command === "review_lfs_prune" ? Promise.resolve({report:"1 eligible object: oid123",token:"reviewed-token"})
+    : command === "execute_lfs_action" ? Promise.reject({code:"commandFailed",message:"Remote missing object"}) : undefined;
+  const repository = {name:"Repo",path:"/repo"};
+  const store = createRepositoryStore(repository);
+  const view = render(<LfsPanel path="/repo" disabled={false} run={store.getState().onDelivery} />);
+  await user.click(view.getByRole("button",{name:"LFS"}));
+  await user.click(await view.findByRole("button",{name:"Preview prune…"}));
+  await waitFor(() => expect(view.getByText(/1 eligible object: oid123/)).toBeTruthy());
+  expect(calls.some(call => call.command === "execute_lfs_action")).toBe(false);
+  await waitFor(() => expect(document.activeElement?.textContent).toBe("Cancel"));
+  await user.click(view.getByRole("button",{name:"Confirm prune"}));
+  await waitFor(() => expect(store.getState().operation.state).toBe("idle"));
+  expect(store.getState().conflictOperationError?.message).toBe("Remote missing object");
+  expect(calls.find(call => call.command === "execute_lfs_action")?.args).toEqual({path:"/repo",action:{kind:"prune",token:"reviewed-token"}});
+  expect(calls.some(call => call.command === "get_repository_status")).toBe(true);
+});

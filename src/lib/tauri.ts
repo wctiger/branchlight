@@ -427,3 +427,16 @@ export function launchExternalTool(path: string, request: import("@/types/extern
 export function getLauncherStatus(jobId: number): Promise<import("@/types/external-tools").LauncherStatus> {
   return invoke("get_launcher_status", {jobId});
 }
+
+export function getLfsState(path: string): Promise<import("@/types/lfs").LfsState> {
+  return invoke("get_lfs_state", {path});
+}
+export function getLfsProgress(path: string): Promise<import("@/types/lfs").LfsProgress> {
+  return invoke("get_lfs_progress", {path});
+}
+export function reviewLfsPrune(path: string): Promise<import("@/types/lfs").LfsPruneReview> {
+  return invoke("review_lfs_prune", {path});
+}
+export function executeLfsAction(path: string, action: import("@/types/lfs").LfsAction): Promise<GitOutput> {
+  return invoke("execute_lfs_action", {path, action});
+}

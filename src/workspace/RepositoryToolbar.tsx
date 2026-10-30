@@ -5,6 +5,7 @@ import { FolderOpen, RefreshCw, LoaderCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DiagnosticsPanel } from "@/features/DiagnosticsPanel";
 import { RemoteControls } from "@/features/DeliveryControls";
+import { LfsPanel } from "@/features/LfsPanel";
 import { BranchSummary } from "@/workspace/BranchSummary";
 import { BranchlightMark } from "@/workspace/icons";
 import type { OpenState, RepositoryStatusState } from "@/workspace/types";
@@ -71,6 +72,7 @@ export function RepositoryToolbar({
       <div className={styles["repository-actions"]}>
         <DiagnosticsPanel path={repository.path} />
         {externalTools}
+        <LfsPanel path={repository.path} disabled={isRefreshing || isMutating || hasActiveRepositoryOperation || openState !== "idle"} run={onDelivery} />
         <RemoteControls
           path={repository.path}
           disabled={

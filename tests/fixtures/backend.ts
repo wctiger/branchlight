@@ -125,6 +125,25 @@ export async function invoke<T>(
         ],
       };
       break;
+    case "get_lfs_state":
+      result = {
+        available: true, version: "git-lfs/3.8.1 (browser fixture)", filterConfigured: true,
+        hookInstalled: true, hookPath: `${path}/.git/hooks/pre-push`, storagePath: `${path}/.git/lfs/objects`,
+        pruneAllowed: true, pruneReason: "Default repository storage; remote verification is required before deletion.",
+        patterns: [{pattern:"*.psd",source:".gitattributes",tracked:true,lockable:false}],
+        files: [{name:"design/header.psd",oid:"a".repeat(64),size:16384,checkout:false,downloaded:true}],
+        head: commits[0].hash,
+      };
+      break;
+    case "review_lfs_prune":
+      result = {report:"1 file would be pruned (16 KB)\n * " + "b".repeat(64),token:"fixture-prune"};
+      break;
+    case "get_lfs_progress":
+      result = {active:false,message:"Git LFS operation completed."};
+      break;
+    case "execute_lfs_action":
+      result = {stdout:"LFS fixture operation completed",stderr:"",exitCode:0};
+      break;
     case "get_remotes":
       result = ["origin", "backup"];
       break;

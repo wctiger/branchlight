@@ -4,6 +4,7 @@ pub(crate) mod diagnostics;
 pub(crate) mod external_tools;
 pub(crate) mod history;
 pub(crate) mod history_operations;
+pub(crate) mod lfs;
 mod operations;
 pub(crate) mod rebase_plan;
 mod remotes;

@@ -6,6 +6,7 @@ export interface AppCommand {
   reveal?: string;
 }
 export const appCommands: AppCommand[] = [
+  { id: "repository.lfs", title: "Manage Git LFS…", scope: "repository" },
   { id: "file.stage", title: "Stage selected file", scope: "repository" },
   { id: "file.unstage", title: "Unstage selected file", scope: "repository" },
   { id: "file.discard", title: "Discard selected file…", scope: "repository" },

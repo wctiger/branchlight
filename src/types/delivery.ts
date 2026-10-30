@@ -26,6 +26,7 @@ export type HistoryAction =
   | { kind: "cherryPick" | "revert"; revision: string }
   | { kind: "reset"; revision: string; mode: "soft" | "mixed" | "hard" };
 export type DeliveryAction =
+  | { kind: "lfs"; action: import("./lfs").LfsAction }
   | { kind: "createTag"; name: string; revision: string; annotation: string | null }
   | { kind: "deleteTag"; name: string; expectedOid: string }
   | { kind: "history"; expectedHead: string; expectedBranch: string; action: HistoryAction }

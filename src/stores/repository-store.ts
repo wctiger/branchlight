@@ -9,6 +9,7 @@ import {
   abortMerge,
   abortHistoryOperation,
   executeHistoryAction,
+  executeLfsAction,
   abortRebase,
   recoverRebase,
   saveConflictFile,
@@ -707,6 +708,7 @@ export function createRepositoryStore(
         action.kind === "upstream";
       set({
         operation:
+          action.kind === "lfs" ? { state: "lfs" } :
           action.kind === "createTag" || action.kind === "deleteTag"
             ? { state: "tagging" }
           : action.kind === "history"
@@ -728,6 +730,9 @@ export function createRepositoryStore(
       let succeeded = false;
       try {
         switch (action.kind) {
+          case "lfs":
+            await executeLfsAction(repository.path, action.action);
+            break;
           case "createTag":
             await createLocalTag(repository.path, action.name, action.revision, action.annotation);
             break;
@@ -782,7 +787,7 @@ export function createRepositoryStore(
         });
         succeeded = true;
       } catch (error) {
-        if (action.kind === "history")
+        if (action.kind === "history" || action.kind === "lfs")
           set({ conflictOperationError: normalizeGitError(error) });
         else if (branchAction)
           set({

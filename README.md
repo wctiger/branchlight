@@ -87,6 +87,13 @@ The application implements the following workflows:
   duplicate bindings, disable bindings, or restore defaults. Commands reuse
   the primary UI's guards and confirmations; shortcuts are ignored while typing
   or another dialog is open.
+- Detect system Git LFS, inspect tracked patterns and pointer/content/cache state,
+  explicitly initialize local filters and pre-push hooks, and track/untrack patterns
+  in root or nested attributes files. Fetch/pull/push use configured remotes and
+  local credentials; cached checkout preserves modified files. Pruning requires
+  an eligibility preview, confirmation, and remote-adapter verification, and is
+  unavailable for custom/shared/symlinked storage. LFS is not bundled; install it
+  separately using its official setup guide. History migration is excluded.
 - List and inspect local tags, create unsigned lightweight or annotated tags at
   a selected commit, and confirm deletion of the exact reviewed local tag.
   Tag creation never overwrites an existing name; remote tag administration is

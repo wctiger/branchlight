@@ -17,6 +17,16 @@ pub(super) fn run_git_with_env(
     arguments: &[&str],
     environment: &[(&str, &str)],
 ) -> Result<GitOutput, GitError> {
+    run_git_observed(repository, arguments, environment, None)
+}
+
+pub(super) type ProgressObserver<'a> = &'a (dyn Fn(bool, &[u8]) + Sync);
+pub(super) fn run_git_observed(
+    repository: &Path,
+    arguments: &[&str],
+    environment: &[(&str, &str)],
+    progress: Option<ProgressObserver<'_>>,
+) -> Result<GitOutput, GitError> {
     let started = std::time::Instant::now();
     let mut child = Command::new("git")
         .current_dir(repository)
@@ -37,8 +47,8 @@ pub(super) fn run_git_with_env(
     let stdout = child.stdout.take().expect("piped stdout");
     let stderr = child.stderr.take().expect("piped stderr");
     let (stdout, stderr) = std::thread::scope(|scope| {
-        let out = scope.spawn(|| read_bounded(stdout));
-        let err = scope.spawn(|| read_bounded(stderr));
+        let out = scope.spawn(|| read_bounded(stdout, false, progress));
+        let err = scope.spawn(|| read_bounded(stderr, true, progress));
         (
             out.join().expect("stdout reader"),
             err.join().expect("stderr reader"),
@@ -88,7 +98,7 @@ pub(super) fn run_git_with_env(
 
 /// Remote transports and hooks may echo credential-bearing URLs. Keep their
 /// useful host/path/error details, but never serialize HTTP userinfo or tokens.
-fn sanitize_diagnostic(value: &str) -> String {
+pub(super) fn sanitize_diagnostic(value: &str) -> String {
     value
         .split_inclusive(char::is_whitespace)
         .map(|part| {
@@ -112,7 +122,11 @@ fn sanitize_diagnostic(value: &str) -> String {
         .collect()
 }
 
-fn read_bounded(mut reader: impl Read) -> std::io::Result<(Vec<u8>, bool)> {
+fn read_bounded(
+    mut reader: impl Read,
+    stderr: bool,
+    progress: Option<ProgressObserver<'_>>,
+) -> std::io::Result<(Vec<u8>, bool)> {
     const LIMIT: usize = 8 * 1024 * 1024;
     let mut retained = Vec::new();
     let mut buffer = [0; 16 * 1024];
@@ -121,6 +135,9 @@ fn read_bounded(mut reader: impl Read) -> std::io::Result<(Vec<u8>, bool)> {
         let count = reader.read(&mut buffer)?;
         if count == 0 {
             break;
+        }
+        if let Some(notify) = progress {
+            notify(stderr, &buffer[..count]);
         }
         let keep = count.min(LIMIT - retained.len());
         retained.extend_from_slice(&buffer[..keep]);
