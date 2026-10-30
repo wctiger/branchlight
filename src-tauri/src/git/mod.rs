@@ -29,7 +29,7 @@ pub(crate) use stashes::{apply_stash, create_stash, drop_stash, get_stashes, pop
 pub(crate) use status::get_repository_status;
 pub(crate) use version::get_git_version;
 
-pub(crate) use runner::repository_identity;
+pub(crate) use runner::repository_lock_identities;
 
 pub(crate) mod inspection;
 

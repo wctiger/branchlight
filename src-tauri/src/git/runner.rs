@@ -178,6 +178,31 @@ pub(crate) fn repository_identity(path: &Path) -> Result<String, GitError> {
         })
 }
 
+/// A child repository also coordinates with its containing superprojects.
+/// This makes ordinary child mutations conflict with parent lifecycle work.
+pub(crate) fn repository_lock_identities(path: &Path) -> Result<Vec<String>, GitError> {
+    let mut current = path.to_owned();
+    let mut identities = Vec::new();
+    for _ in 0..32 {
+        let identity = repository_identity(&current)?;
+        if identities.contains(&identity) {
+            return Err(super::inspection::invalid(
+                "Cyclic superproject metadata; inspect this repository using external Git.",
+            ));
+        }
+        identities.push(identity);
+        let parent = run_git(&current, &["rev-parse", "--show-superproject-working-tree"])?;
+        let parent = parent.stdout.trim_end_matches(['\r', '\n']);
+        if parent.is_empty() {
+            return Ok(identities);
+        }
+        current = std::path::PathBuf::from(parent);
+    }
+    Err(super::inspection::invalid(
+        "Submodule nesting exceeds the supported 32-level scheduling bound.",
+    ))
+}
+
 #[cfg(test)]
 mod tests {
     use std::env;
