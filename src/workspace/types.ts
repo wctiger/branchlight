@@ -37,4 +37,5 @@ export type AppOperation =
   | { state: "rebasing"; branchName: string }
   | { state: "abortingMerge" }
   | { state: "abortingRebase" }
-  | { state: "recoveringRebase" };
+  | { state: "recoveringRebase" }
+  | { state: "resolvingConflict"; path: string };

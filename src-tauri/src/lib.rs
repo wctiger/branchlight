@@ -34,6 +34,8 @@ pub fn run() {
             commands::conflicts::abort_merge,
             commands::conflicts::abort_rebase,
             commands::conflicts::recover_rebase,
+            commands::conflicts::get_conflict_file,
+            commands::conflicts::save_conflict_file,
             commands::history::get_history,
             commands::history_operations::execute_history_action,
             commands::history_operations::get_rebase_plan,

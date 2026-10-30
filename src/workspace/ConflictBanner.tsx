@@ -103,9 +103,9 @@ export function ConflictBanner({
           {activeOperation === "rebase"
             ? "Resolve and stage conflicts, then continue the rebase. Skip omits the current commit and discards its changes. Abort restores the branch to its pre-rebase state."
             : activeOperation === "merge"
-              ? "Resolve and stage conflicts with an external Git tool, then finish the merge there. Refresh Branchlight afterward, or abort the merge here."
+              ? "Select an ordinary text conflict to resolve it here, or use an external tool. After staging every resolution, finish the merge using external Git, or abort here."
               : activeOperation === "cherryPick" || activeOperation === "revert"
-                ? "Resolve and stage conflicts using external Git, then continue or skip there. You can also abort here. Refresh after each external step."
+                ? "Select an ordinary text conflict to resolve it here, or use an external tool. Continue or skip using external Git, or abort here. Refresh after each external step."
                 : hasRepositoryConflict
                   ? "Resolve and stage these files with an external Git tool, then refresh Branchlight to read Git’s latest state."
                   : "Review Git’s message below, then refresh Branchlight before continuing."}

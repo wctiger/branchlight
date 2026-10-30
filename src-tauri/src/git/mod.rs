@@ -7,6 +7,7 @@ mod operations;
 pub(crate) mod rebase_plan;
 mod remotes;
 mod repository;
+pub(crate) mod resolution;
 mod runner;
 mod stashes;
 mod status;

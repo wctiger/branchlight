@@ -803,3 +803,50 @@ test("interactive rebase submits an explicitly reviewed ordered plan and blocks 
   await user.click(view.getByRole("button", {name: "Rewrite branch with this plan"}));
   expect(submitted).toEqual([{kind: "history", expectedHead: beta, expectedBranch: "main", action: {kind: "interactiveRebase", revision: alpha, steps: [{hash: beta, action: "reword", message: "New beta message"}, {hash: alpha, action: "pick", message: ""}]}}]);
 });
+
+test("conflict resolver retains edits on failed saves and requires a deliberate reload", async () => {
+  const { default: ConflictResolver } = await import("../src/features/inspection/ConflictResolver");
+  const snapshot = {filePath: "conflict.ts", operation: "rebase", base: "base\n", current: "current\n", incoming: "incoming\n", output: "draft\n", token: "reviewed-token"};
+  intercept = command => command === "get_conflict_file" ? Promise.resolve(snapshot) : undefined;
+  const saved: {output: string; markResolved: boolean}[] = [];
+  const view = render(<ConflictResolver path="/resolution" filePath="conflict.ts" disabled={false} onSave={async (reviewed, output, markResolved) => {
+    expect(reviewed.token).toBe("reviewed-token"); saved.push({output, markResolved});return false;
+  }} />);
+  const user = userEvent.setup({document});
+  await waitFor(() => expect(view.getByLabelText("Resolution output")).toBeTruthy());
+  expect(view.getByRole("region", {name: "Current · rebased branch (ours)"})).toBeTruthy();
+  expect(view.getByRole("region", {name: "Incoming · commit being replayed (theirs)"})).toBeTruthy();
+  const output = view.getByLabelText("Resolution output") as HTMLTextAreaElement;
+  await user.clear(output); await user.type(output, "chosen resolution");
+  await user.click(view.getByRole("button", {name: "Save draft", exact: true}));
+  expect(saved).toEqual([{output: "chosen resolution", markResolved: false}]);
+  expect(output.value).toBe("chosen resolution");
+  expect(view.getByRole("alert").textContent).toContain("draft is retained");
+  await user.click(view.getByRole("button", {name: "Reload conflict versions"}));
+  expect(view.getByRole("dialog").textContent).toContain("replaces your draft");
+  await user.click(view.getByRole("button", {name: "Cancel", exact: true}));
+  expect(output.value).toBe("chosen resolution");
+  await user.click(view.getByRole("button", {name: "Save and mark resolved", exact: true}));
+  expect(saved.at(-1)).toEqual({output: "chosen resolution", markResolved: true});
+});
+
+test("conflict saves use the store mutation guard and refresh after a partial save failure", async () => {
+  const store = createRepositoryStore({name: "resolution", path: "/resolution"}, () => {});
+  const snapshot = {filePath: "conflict.ts", operation: "merge", base: "base", current: "current", incoming: "incoming", output: "draft", token: "token"};
+  const failure = deferred<unknown>();
+  intercept = command => {
+    if (command === "get_repository_status") return fixture<import("../src/types/status").RepositoryStatus>(command).then(status => ({...status, operation: "merge", conflicts: [{path: snapshot.filePath, originalPath: null, status: "conflicted"}]}));
+    if (command === "save_conflict_file") return failure.promise;
+    return undefined;
+  };
+  await store.getState().onRefresh();
+  const initialReads = calls.filter(call => call.command === "get_repository_status").length;
+  const pending = store.getState().onSaveConflict(snapshot, "resolved", true);
+  expect(store.getState().operation.state).toBe("resolvingConflict");
+  expect(await store.getState().onSaveConflict(snapshot, "another", true)).toBe(false);
+  failure.reject({code: "commandFailed", message: "Saved file but stage failed"});
+  expect(await pending).toBe(false);
+  expect(calls.filter(call => call.command === "get_repository_status").length).toBeGreaterThan(initialReads);
+  expect(store.getState().operation.state).toBe("idle");
+  expect(store.getState().conflictOperationError?.message).toContain("stage failed");
+});

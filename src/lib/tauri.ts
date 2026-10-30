@@ -144,6 +144,22 @@ export function getRebasePlan(path: string, revision: string): Promise<{hash: st
   return invoke("get_rebase_plan", { path, revision });
 }
 
+export interface ConflictFile {
+  filePath: string;
+  operation: string;
+  base: string;
+  current: string;
+  incoming: string;
+  output: string;
+  token: string;
+}
+export function getConflictFile(path: string, filePath: string): Promise<ConflictFile> {
+  return invoke("get_conflict_file", { path, filePath });
+}
+export function saveConflictFile(path: string, filePath: string, token: string, output: string, markResolved: boolean): Promise<void> {
+  return invoke("save_conflict_file", { path, filePath, token, output, markResolved });
+}
+
 /** Fetches remote refs using the repository's configured Git remotes. */
 export function fetchRemote(
   path: string,

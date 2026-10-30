@@ -76,9 +76,11 @@ The application implements the following workflows:
 
 Text diffs use `@pierre/diffs` with unified/side-by-side layouts, syntax highlighting,
 virtualized rows, and hunk navigation. Highlighting workers and language assets
-are bundled locally. Combined conflict patches, truncated output, and unsupported
-patch formats retain a labeled plain-text fallback. Conflict resolution still uses
-external Git.
+are bundled locally. Truncated output and unsupported patch formats retain a
+labeled plain-text fallback. Ordinary UTF-8 text conflicts expose base, current,
+incoming, and editable output. Save a draft without resolving, or explicitly save
+and stage the resolution. Binary, deleted-file, missing-stage, symlink, and
+over-512-KiB conflicts require external tools.
 
 Repository views retain state while switching tabs. Backend commands queue by
 canonical common Git directory, coordinating linked worktrees while allowing
@@ -87,8 +89,8 @@ be closed until their operation and refresh finish. Git output capture is capped
 at 8 MiB per stream; text previews at 512 KiB.
 
 Worktree lifecycle remains planned. Merge and rebase
-target the checked-out branch; conflict resolution and continuation of stopped
-merges/cherry-picks/reverts require external tools/Git. Repository history is limited to 200 commits; file history to
+target the checked-out branch; continuation of stopped merges/cherry-picks/reverts
+and unsupported conflict resolution require external tools/Git. Repository history is limited to 200 commits; file history to
 100 commits without rename tracing. Large-repository performance remains unverified.
 Delivery 1 acceptance is recorded in [PR #67](https://github.com/wctiger/branchlight/pull/67).
 Delivery 2 platform builds and desktop acceptance are tracked separately from

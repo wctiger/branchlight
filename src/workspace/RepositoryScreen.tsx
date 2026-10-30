@@ -54,6 +54,7 @@ export function RepositoryScreen() {
     onPopStash,
     onDropStash,
     onDiscard,
+    onSaveConflict,
   } = useRepositoryStore((state) => state);
   const [mode, setMode] = useState<"history" | "diff">("history");
   const [inspectorOpen, setInspectorOpen] = useState(true);
@@ -247,6 +248,7 @@ export function RepositoryScreen() {
               selectedFile={selectedFile}
               disabled={controlsDisabled}
               onDiscard={onDiscard}
+              onSaveConflict={onSaveConflict}
             />
           }
         />

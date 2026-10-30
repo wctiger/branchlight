@@ -6,6 +6,7 @@ import { DiffRenderBoundary } from "@/features/inspection/DiffRenderBoundary";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 
 const DiffViewer = lazy(() => import("@/features/inspection/DiffViewer"));
+const ConflictResolver = lazy(() => import("@/features/inspection/ConflictResolver"));
 import {
   compareRevisions,
   getTextDiff,
@@ -49,6 +50,7 @@ export function InspectionPanel({
   commit,
   disabled,
   onDiscard,
+  onSaveConflict,
   selectedFile,
 }: {
   selectedFile?: { change: FileChange; kind: string } | null;
@@ -57,6 +59,7 @@ export function InspectionPanel({
   commit: string | null;
   disabled: boolean;
   onDiscard: (change: FileChange) => void;
+  onSaveConflict?: (snapshot: import("@/lib/tauri").ConflictFile, output: string, markResolved: boolean) => Promise<boolean>;
 }) {
   const [discardSelection, setDiscardSelection] = useState<FileChange | null>(
     null,
@@ -165,12 +168,21 @@ export function InspectionPanel({
   );
   const unavailable = (change: FileChange) =>
     unsupportedPaths.has(change.path) || change.path.endsWith("/");
+  const conflictPath = selectedFile && onSaveConflict && status?.conflicts.some(change => change.path === selectedFile.change.path)
+    ? selectedFile.change.path : null;
   return (
     <section
       className={styles["inspection-panel"]}
       aria-label="Change inspection"
     >
       <h2>{file || "Inspect changes"}</h2>
+      {conflictPath && onSaveConflict && (
+        <DiffRenderBoundary text={diff?.text ?? "Unable to load the conflict resolver. Use an external Git tool and refresh status."}>
+          <Suspense fallback={<p role="status">Loading conflict resolver…</p>}>
+            <ConflictResolver key={`${path}:${conflictPath}`} path={path} filePath={conflictPath} disabled={disabled} onSave={onSaveConflict} />
+          </Suspense>
+        </DiffRenderBoundary>
+      )}
       <p>
         Read-only text comparisons. Diffs are limited to 512 KiB. Binary content
         has no text preview.
@@ -442,7 +454,7 @@ export function InspectionPanel({
           </ul>
         </section>
       )}
-      {diff && (
+      {diff && !conflictPath && (
         <section>
           <h3>{diff.context}</h3>
           {diff.truncated && (

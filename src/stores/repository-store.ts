@@ -11,6 +11,7 @@ import {
   executeHistoryAction,
   abortRebase,
   recoverRebase,
+  saveConflictFile,
   applyStash,
   composeCommit,
   createBranchAt,
@@ -114,6 +115,7 @@ export type RepositoryState = {
   ) => void;
   onDelivery: RunDelivery;
   onRecoverRebase: (action: "continue" | "skip") => Promise<boolean>;
+  onSaveConflict: (snapshot: import("@/lib/tauri").ConflictFile, output: string, markResolved: boolean) => Promise<boolean>;
   onCreateStash: (message: string) => Promise<boolean>;
   onApplyStash: (stash: Stash) => Promise<boolean>;
   onPopStash: (stash: Stash) => Promise<boolean>;
@@ -904,6 +906,22 @@ export function createRepositoryStore(
       onAbortOperation: (kind) => void handleAbortOperation(kind),
       onDelivery: handleDelivery,
       onRecoverRebase: handleRecoverRebase,
+      onSaveConflict: async (snapshot, output, markResolved) => {
+        const state = get();
+        if (state.operation.state !== "idle" || state.statusState.state !== "ready" ||
+            state.statusState.isRefreshing || !state.statusState.status.conflicts.some(file => file.path === snapshot.filePath) ||
+            !beginRepositoryMutation()) return false;
+        clearOperationFeedback();
+        set({ operation: { state: "resolvingConflict", path: snapshot.filePath } });
+        let succeeded = false;
+        try {
+          await saveConflictFile(repository.path, snapshot.filePath, snapshot.token, output, markResolved);
+          succeeded = true;
+          set({ operationNotice: markResolved ? "Resolution saved and staged. Review the active operation before continuing." : "Draft saved. The file remains conflicted until explicitly marked resolved." });
+        } catch (error) { set({ conflictOperationError: normalizeGitError(error) }); }
+        await finishRepositoryMutation(repository.path);
+        return succeeded;
+      },
       onCreateStash: (message) =>
         handleStashMutation({
           kind: "create",
