@@ -127,7 +127,7 @@ describe("virtualized commit history", () => {
     expect(scroll.scrollTop).toBe(top);
     expect(
       view.container
-        .querySelector('[aria-pressed="true"]')
+        .querySelector(`.${historyStyles["history-item"]}[aria-pressed="true"]`)
         ?.getAttribute("data-hash"),
     ).toBe(commits[299].hash);
     expect(
@@ -338,4 +338,53 @@ test("cancelling stash drop returns focus to the same mounted Drop button", asyn
   );
   await user.keyboard("{Escape}");
   await waitFor(() => expect(document.activeElement).toBe(trigger));
+});
+
+test("graph nodes select commits, retain keyboard focus, and expose bounded parents", async () => {
+  const selected: string[] = [], inspected: string[] = [];
+  const subset = commits.slice(0, 3);
+  const props = {state: {state: "ready" as const, commits: subset, isRefreshing: false, refreshError: null}, controlsDisabled: true,
+    onRefresh: () => {}, onSelectCommit: (hash: string) => selected.push(hash), onInspectCommit: (hash: string) => inspected.push(hash)};
+  const view = render(<HistoryPanel {...props} />);
+  const graphNode = view.getByRole("button", {name: `Select graph commit ${subset[1].hash} ${subset[1].subject}`});
+  fireEvent.click(graphNode);
+  expect(selected.at(-1)).toBe(subset[1].hash);
+  expect(graphNode.getAttribute("aria-pressed")).toBe("true");
+  fireEvent.keyDown(graphNode, {key: "ArrowDown"});
+  await waitFor(() => expect(document.activeElement?.getAttribute("data-graph-hash")).toBe(subset[2].hash));
+  expect(selected.at(-1)).toBe(subset[2].hash);
+  expect(view.getByText(/outside loaded history/)).toBeTruthy();
+  fireEvent.click(view.getByRole("button", {name: "Inspect selected commit"}));
+  expect(inspected).toEqual([subset[2].hash]);
+  view.rerender(<HistoryPanel {...props} state={{...props.state, commits: structuredClone(subset)}} />);
+  expect(view.getByRole("button", {name: `Select graph commit ${subset[2].hash} ${subset[2].subject}`}).getAttribute("aria-pressed")).toBe("true");
+  fireEvent.keyDown(document.activeElement!, {key: "Home"});
+  await waitFor(() => expect(document.activeElement?.getAttribute("data-graph-hash")).toBe(subset[0].hash));
+  fireEvent.click(view.getByRole("button", {name: `Select parent ${subset[1].hash}`}));
+  await waitFor(() => expect(document.activeElement?.getAttribute("data-hash")).toBe(subset[1].hash));
+});
+
+test("appearance selection persists across remounts and follows system changes only in system mode", async () => {
+  const { ThemeSelect } = await import("../src/components/theme-select");
+  const original = globalThis.matchMedia;
+  const listeners = new Set<() => void>();
+  const media = {matches: false, addEventListener: (_type: string, callback: () => void) => listeners.add(callback), removeEventListener: (_type: string, callback: () => void) => listeners.delete(callback)};
+  globalThis.matchMedia = () => media as unknown as MediaQueryList;
+  try {
+    const user = userEvent.setup({document});
+    let view = render(<ThemeSelect />);
+    await user.selectOptions(view.getByLabelText("Appearance"), "dark");
+    expect(localStorage.getItem(themeStorageKey)).toBe("dark");
+    expect(document.documentElement.classList.contains("dark")).toBe(true);
+    view.unmount();
+    view = render(<ThemeSelect />);
+    expect((view.getByLabelText("Appearance") as HTMLSelectElement).value).toBe("dark");
+    await user.selectOptions(view.getByLabelText("Appearance"), "light");
+    act(() => {media.matches = true;listeners.forEach(listener => listener());});
+    expect(document.documentElement.classList.contains("dark")).toBe(false);
+    await user.selectOptions(view.getByLabelText("Appearance"), "system");
+    expect(document.documentElement.classList.contains("dark")).toBe(true);
+    act(() => {media.matches = false;listeners.forEach(listener => listener());});
+    expect(document.documentElement.classList.contains("dark")).toBe(false);
+  } finally {globalThis.matchMedia = original;}
 });

@@ -171,3 +171,12 @@
 .history-selection {
   flex-shrink: 0;
 }
+
+.history-graph__node {
+  cursor: pointer;
+  outline: none;
+}
+.history-graph__node:focus-visible .history-graph__node-ring {
+  stroke: var(--focus-ring);
+  stroke-width: 2px;
+}

@@ -72,7 +72,9 @@ The application implements the following workflows:
 - Review an interactive rebase plan for up to 200 commits on a linear local
   branch range: pick, drop, reorder, squash, or reword. Confirm the branch rewrite
   before applying; conflict stops retain continue, skip, and abort controls.
-- Browse a bounded 200-commit history with a read-only SVG DAG.
+- Navigate a bounded 200-commit SVG graph with pointer and keyboard selection,
+  parent navigation, and selected-commit inspection. Parents outside the loaded
+  snapshot are labeled explicitly; selection survives safe refreshes.
 - Search full commit messages across local refs using case-insensitive literal
   text (up to 200 matching commits), or inspect an unambiguous local commit hash.
   Search results open the existing commit inspection view.

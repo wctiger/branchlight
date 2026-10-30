@@ -228,6 +228,11 @@ export function RepositoryScreen() {
           onInspectorToggle={() => setInspectorOpen(!inspectorOpen)}
           history={
             <HistoryPanel
+              onInspectCommit={(hash) => {
+                setSelectedFile(null);
+                setInspectionCommit(hash);
+                setMode("diff");
+              }}
               search={<CommitSearch path={repository.path} refreshKey={historyState} onSelect={(hash) => {
                 setSelectedFile(null);
                 setInspectionCommit(hash);
