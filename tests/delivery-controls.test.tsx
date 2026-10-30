@@ -779,3 +779,27 @@ test("rebase skip requires explicit confirmation and continue is unavailable wit
   await user.click(view.getByRole("button", {name: "Skip current commit", exact: true}));
   expect(actions).toEqual(["skip"]);
 });
+
+test("interactive rebase submits an explicitly reviewed ordered plan and blocks stale HEAD", async () => {
+  const { InteractiveRebaseControls } = await import("../src/features/history/InteractiveRebaseControls");
+  const alpha = "a".repeat(40), beta = "b".repeat(40);
+  intercept = command => command === "get_rebase_plan" ? Promise.resolve([{hash: alpha, subject: "Alpha"}, {hash: beta, subject: "Beta"}]) : undefined;
+  const submitted: DeliveryAction[] = [];
+  const props = {path: "/rebase", revision: alpha, head: beta, branch: "main", disabled: false, run: async (action: DeliveryAction) => {submitted.push(action);return true;}};
+  const view = render(<InteractiveRebaseControls {...props} />);
+  const user = userEvent.setup({document});
+  await user.click(view.getByRole("button", {name: "Interactive rebase…"}));
+  await waitFor(() => expect(view.getByRole("dialog")).toBeTruthy());
+  await user.click(view.getByRole("button", {name: `Move ${beta.slice(0,12)} earlier`}));
+  const selects = view.getAllByRole("combobox");
+  await user.selectOptions(selects[0], "squash");
+  expect((view.getByRole("button", {name: "Rewrite branch with this plan"}) as HTMLButtonElement).disabled).toBe(true);
+  await user.selectOptions(selects[0], "reword");
+  await user.type(view.getByRole("textbox"), "New beta message");
+  view.rerender(<InteractiveRebaseControls {...props} head={"c".repeat(40)} />);
+  expect((view.getByRole("button", {name: "Rewrite branch with this plan"}) as HTMLButtonElement).disabled).toBe(true);
+  view.rerender(<InteractiveRebaseControls {...props} />);
+  expect(submitted).toEqual([]);
+  await user.click(view.getByRole("button", {name: "Rewrite branch with this plan"}));
+  expect(submitted).toEqual([{kind: "history", expectedHead: beta, expectedBranch: "main", action: {kind: "interactiveRebase", revision: alpha, steps: [{hash: beta, action: "reword", message: "New beta message"}, {hash: alpha, action: "pick", message: ""}]}}]);
+});

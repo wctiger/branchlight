@@ -9,11 +9,27 @@ use std::path::Path;
 #[derive(Deserialize)]
 #[serde(tag = "kind", rename_all = "camelCase")]
 pub(crate) enum HistoryAction {
-    Amend { message: String },
-    Reword { revision: String, message: String },
-    CherryPick { revision: String },
-    Revert { revision: String },
-    Reset { revision: String, mode: ResetMode },
+    InteractiveRebase {
+        revision: String,
+        steps: Vec<super::rebase_plan::PlanStep>,
+    },
+    Amend {
+        message: String,
+    },
+    Reword {
+        revision: String,
+        message: String,
+    },
+    CherryPick {
+        revision: String,
+    },
+    Revert {
+        revision: String,
+    },
+    Reset {
+        revision: String,
+        mode: ResetMode,
+    },
 }
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -68,6 +84,9 @@ pub(crate) fn execute(
         ));
     }
     match action {
+        HistoryAction::InteractiveRebase { revision, steps } => {
+            super::rebase_plan::execute(repository, &revision, steps)
+        }
         HistoryAction::Amend { message } => {
             message_valid(&message)?;
             run_git(repository, &["commit", "--amend", "-m", &message])
@@ -247,6 +266,134 @@ mod tests {
         fn drop(&mut self) {
             let _ = fs::remove_dir_all(&self.0);
         }
+    }
+
+    fn plan_step(
+        hash: &str,
+        action: super::super::rebase_plan::PlanAction,
+        message: Option<&str>,
+    ) -> super::super::rebase_plan::PlanStep {
+        super::super::rebase_plan::PlanStep {
+            hash: hash.into(),
+            action,
+            message: message.map(str::to_owned),
+        }
+    }
+
+    #[test]
+    fn interactive_plan_reorders_independent_changes_and_preserves_all_commit_identities() {
+        use super::super::rebase_plan::{inspect, PlanAction::*};
+        let f = Fixture::new();
+        fs::write(f.0.join("alpha"), "alpha").unwrap();
+        f.git(&["add", "alpha"]);
+        f.git(&["commit", "-m", "Alpha"]);
+        let alpha = f.head();
+        fs::write(f.0.join("beta"), "beta").unwrap();
+        f.git(&["add", "beta"]);
+        f.git(&["commit", "-m", "Beta"]);
+        let beta = f.head();
+        let plan = inspect(&f.0, &alpha).unwrap();
+        assert_eq!(
+            plan.iter().map(|c| c.hash.as_str()).collect::<Vec<_>>(),
+            vec![alpha.as_str(), beta.as_str()]
+        );
+        f.execute(HistoryAction::InteractiveRebase {
+            revision: alpha.clone(),
+            steps: vec![plan_step(&beta, Pick, None), plan_step(&alpha, Pick, None)],
+        });
+        assert_eq!(f.git(&["log", "-2", "--format=%s"]), "Alpha\nBeta");
+        assert!(f.0.join("alpha").exists() && f.0.join("beta").exists());
+    }
+
+    #[test]
+    fn interactive_plan_handles_drop_squash_and_literal_reword_messages() {
+        use super::super::rebase_plan::PlanAction::*;
+        let f = Fixture::new();
+        let mut hashes = Vec::new();
+        for name in ["alpha", "beta", "gamma"] {
+            fs::write(f.0.join(name), name).unwrap();
+            f.git(&["add", name]);
+            f.git(&["commit", "-m", name]);
+            hashes.push(f.head());
+        }
+        f.execute(HistoryAction::InteractiveRebase {
+            revision: hashes[0].clone(),
+            steps: vec![
+                plan_step(
+                    &hashes[0],
+                    Reword,
+                    Some("Literal 'quote' $(touch injected)\n\nBody with `ticks`"),
+                ),
+                plan_step(&hashes[1], Drop, None),
+                plan_step(&hashes[2], Squash, None),
+            ],
+        });
+        assert_eq!(f.git(&["rev-list", "--count", "HEAD"]), "2");
+        assert!(!f.0.join("beta").exists() && !f.0.join("injected").exists());
+        assert!(f
+            .git(&["log", "-1", "--format=%B"])
+            .contains("$(touch injected)"));
+    }
+
+    #[test]
+    fn interactive_plan_rejects_duplicates_invalid_squash_and_stale_head() {
+        use super::super::rebase_plan::PlanAction::*;
+        let f = Fixture::new();
+        let base = f.head();
+        f.commit("next", "Next");
+        let next = f.head();
+        let action = || HistoryAction::InteractiveRebase {
+            revision: base.clone(),
+            steps: vec![plan_step(&base, Pick, None), plan_step(&base, Drop, None)],
+        };
+        assert!(execute(&f.0, &next, action()).is_err());
+        assert!(execute(&f.0, &base, action()).is_err());
+        assert!(execute(
+            &f.0,
+            &next,
+            HistoryAction::InteractiveRebase {
+                revision: base.clone(),
+                steps: vec![plan_step(&base, Squash, None), plan_step(&next, Pick, None)]
+            }
+        )
+        .is_err());
+        assert_eq!(f.head(), next);
+    }
+
+    #[test]
+    fn interactive_reword_survives_conflict_recovery_without_losing_its_message() {
+        use super::super::{
+            conflicts::{recover_rebase, RebaseRecovery},
+            rebase_plan::PlanAction::*,
+        };
+        let f = Fixture::new();
+        f.commit("one", "One");
+        let one = f.head();
+        f.commit("two", "Two");
+        let two = f.head();
+        assert!(execute(
+            &f.0,
+            &two,
+            HistoryAction::InteractiveRebase {
+                revision: one.clone(),
+                steps: vec![
+                    plan_step(&two, Pick, None),
+                    plan_step(&one, Reword, Some("Reviewed message\n\nPreserved body"))
+                ],
+            }
+        )
+        .is_err());
+        fs::write(f.0.join("file"), "two resolved").unwrap();
+        f.git(&["add", "file"]);
+        assert!(recover_rebase(&f.0, RebaseRecovery::Continue).is_err());
+        fs::write(f.0.join("file"), "one resolved").unwrap();
+        f.git(&["add", "file"]);
+        recover_rebase(&f.0, RebaseRecovery::Continue).unwrap();
+        assert_eq!(
+            f.git(&["log", "-1", "--format=%B"]),
+            "Reviewed message\n\nPreserved body"
+        );
+        assert!(!f.0.join(".git/branchlight-rebase-plan").exists());
     }
     #[test]
     fn amend_includes_index_but_reword_preserves_it() {

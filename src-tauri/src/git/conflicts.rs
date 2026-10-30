@@ -47,7 +47,9 @@ pub(crate) fn abort_merge(repository: &Path) -> Result<GitOutput, GitError> {
 /// Aborts only an active rebase so an unrelated operation cannot be interrupted.
 pub(crate) fn abort_rebase(repository: &Path) -> Result<GitOutput, GitError> {
     require_operation(repository, RepositoryOperation::Rebase)?;
-    run_git(repository, &["rebase", "--abort"])
+    let output = run_git(repository, &["rebase", "--abort"])?;
+    super::rebase_plan::cleanup(repository);
+    Ok(output)
 }
 
 #[derive(serde::Deserialize)]
@@ -79,7 +81,12 @@ pub(crate) fn recover_rebase(
     };
     // Reuse the commit message already prepared by rebase; never open an editor
     // that cannot be interacted with from the desktop process.
-    super::runner::run_git_with_env(repository, &["rebase", flag], &[("GIT_EDITOR", "true")])
+    let output =
+        super::runner::run_git_with_env(repository, &["rebase", flag], &[("GIT_EDITOR", "true")]);
+    if get_repository_operation(repository).is_ok_and(|op| op == RepositoryOperation::None) {
+        super::rebase_plan::cleanup(repository);
+    }
+    output
 }
 
 /// Resolves metadata through Git so linked worktrees use their own operation state.

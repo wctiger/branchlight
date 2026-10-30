@@ -69,6 +69,9 @@ The application implements the following workflows:
   resolution, and safely abort the matching operation.
 - Continue a stopped rebase after resolving and staging conflicts, or explicitly
   skip its current commit after confirming that its changes will be discarded.
+- Review an interactive rebase plan for up to 200 commits on a linear local
+  branch range: pick, drop, reorder, squash, or reword. Confirm the branch rewrite
+  before applying; conflict stops retain continue, skip, and abort controls.
 - Browse a bounded 200-commit history with a read-only SVG DAG.
 
 Text diffs use `@pierre/diffs` with unified/side-by-side layouts, syntax highlighting,

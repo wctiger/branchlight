@@ -4,6 +4,7 @@ pub(crate) mod diagnostics;
 mod history;
 pub(crate) mod history_operations;
 mod operations;
+pub(crate) mod rebase_plan;
 mod remotes;
 mod repository;
 mod runner;

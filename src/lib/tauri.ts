@@ -140,6 +140,10 @@ export function recoverRebase(path: string, action: "continue" | "skip"): Promis
   return invoke("recover_rebase", { path, action });
 }
 
+export function getRebasePlan(path: string, revision: string): Promise<{hash: string; subject: string}[]> {
+  return invoke("get_rebase_plan", { path, revision });
+}
+
 /** Fetches remote refs using the repository's configured Git remotes. */
 export function fetchRemote(
   path: string,

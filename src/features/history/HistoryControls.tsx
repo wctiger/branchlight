@@ -4,15 +4,18 @@ import { OperationDialog } from "@/components/operation-dialog";
 import type { HistoryAction, RunDelivery } from "@/types/delivery";
 import type { Commit } from "@/types/history";
 import styles from "@/features/DeliveryControls.module.css";
+import { InteractiveRebaseControls } from "@/features/history/InteractiveRebaseControls";
 
 export function HistoryControls({
   commit,
+  path,
   head,
   branch,
   disabled,
   run,
 }: {
   commit: Commit;
+  path?: string;
   head: string | null;
   branch: string | null;
   disabled: boolean;
@@ -20,7 +23,7 @@ export function HistoryControls({
 }) {
   const [expectedHead, setExpectedHead] = useState<string | null>(null);
   const [expectedBranch, setExpectedBranch] = useState<string | null>(null);
-  const [kind, setKind] = useState<HistoryAction["kind"] | null>(null);
+  const [kind, setKind] = useState<Exclude<HistoryAction["kind"], "interactiveRebase"> | null>(null);
   const [message, setMessage] = useState("");
   const [mode, setMode] = useState<"soft" | "mixed" | "hard">("soft");
   const [busy, setBusy] = useState(false);
@@ -40,6 +43,7 @@ export function HistoryControls({
   };
   return (
     <div className={styles["history-controls"]}>
+      {path && <InteractiveRebaseControls path={path} revision={commit.hash} head={head} branch={branch} disabled={disabled} run={run} />}
       {(["amend", "reword", "cherryPick", "revert", "reset"] as const).map(
         (action) => (
           <Button

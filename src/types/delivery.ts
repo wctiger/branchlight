@@ -20,6 +20,7 @@ export interface CommitResult {
   pushError: GitError | null;
 }
 export type HistoryAction =
+  | { kind: "interactiveRebase"; revision: string; steps: RebaseStep[] }
   | { kind: "amend"; message: string }
   | { kind: "reword"; revision: string; message: string }
   | { kind: "cherryPick" | "revert"; revision: string }
@@ -34,3 +35,8 @@ export type DeliveryAction =
   | { kind: "push" }
   | { kind: "force"; review: PushReview };
 export type RunDelivery = (action: DeliveryAction) => Promise<boolean>;
+export interface RebaseStep {
+  hash: string;
+  action: "pick" | "drop" | "squash" | "reword";
+  message?: string | null;
+}

@@ -216,6 +216,7 @@ export function RepositoryScreen() {
               renderActions={(commit) => (
                 <HistoryControls
                   key={commit.hash}
+                  path={repository.path}
                   commit={commit}
                   head={status?.branch.oid ?? null}
                   branch={status?.branch.name ?? null}

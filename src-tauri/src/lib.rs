@@ -36,6 +36,7 @@ pub fn run() {
             commands::conflicts::recover_rebase,
             commands::history::get_history,
             commands::history_operations::execute_history_action,
+            commands::history_operations::get_rebase_plan,
             commands::history_operations::abort_history_operation,
             commands::history_operations::get_diagnostics,
             commands::operations::stage_file,
