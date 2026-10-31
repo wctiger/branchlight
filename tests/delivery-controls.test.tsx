@@ -1106,3 +1106,52 @@ test("successful LFS checkout restores focus to the manager's Cancel button", as
   await waitFor(()=>expect(view.queryByRole("button",{name:"Confirm checkout"})).toBeNull());
   await waitFor(()=>expect(document.activeElement?.textContent).toBe("Cancel"));
 });
+
+test("commit inspection exposes changed paths outside advanced controls and reloads the same commit after file selection or refresh", async () => {
+  const user=userEvent.setup({document});
+  const revision="c".repeat(40), base="b".repeat(40);
+  intercept=(command,args)=>command==="compare_revisions"?Promise.resolve({base,target:args.target,files:[change]}):undefined;
+  const props={path:"/repo",commit:revision,status:emptyStatus,selectedFile:null,disabled:false,onDiscard:()=>{}};
+  const view=render(<InspectionPanel {...props} />);
+  await waitFor(()=>expect(view.getByRole("region",{name:"Revision comparison"})).toBeTruthy());
+  const region=view.getByRole("region",{name:"Revision comparison"});
+  expect(region.closest("details")).toBeNull();
+  expect(region.textContent).toContain(revision);
+  await user.click(view.getByRole("button",{name:`modified ${change.path}`}));
+  await waitFor(()=>expect(calls.filter(call=>call.command==="get_text_diff").at(-1)?.args).toMatchObject({path:"/repo",kind:"revisions",filePath:change.path,base,target:revision}));
+  const status={...emptyStatus,unstaged:[change]};
+  view.rerender(<InspectionPanel {...props} status={status} selectedFile={{change,kind:"unstaged"}} />);
+  await waitFor(()=>expect(calls.filter(call=>call.command==="get_text_diff").at(-1)?.args.kind).toBe("unstaged"));
+  const comparisons=()=>calls.filter(call=>call.command==="compare_revisions");
+  const before=comparisons().length;
+  view.rerender(<InspectionPanel {...props} status={status} />);
+  await waitFor(()=>expect(comparisons().length).toBe(before+1));
+  await waitFor(()=>expect(view.getByRole("region",{name:"Revision comparison"}).textContent).toContain(revision));
+  view.rerender(<InspectionPanel {...props} status={{...emptyStatus}} />);
+  await waitFor(()=>expect(comparisons().length).toBe(before+2));
+  await waitFor(()=>expect(view.getByRole("region",{name:"Revision comparison"}).textContent).toContain(revision));
+});
+
+
+test("external tool configuration keeps technical input literal and persists JSON argument arrays", async () => {
+  const { ExternalTools } = await import("../src/features/ExternalTools");
+  const { readToolPreferences, toolStorageKey } = await import("../src/lib/external-tools");
+  window.localStorage.removeItem(toolStorageKey);
+  const user=userEvent.setup({document});
+  const view=render(<ExternalTools path="/repo" file="notes [x].txt" kind="unstaged" conflicted={false} disabled={false} launch={async()=>null} refresh={async()=>{}} />);
+  try {
+    await user.click(view.getByRole("button",{name:"External tools…"}));
+    await user.click(view.getByRole("button",{name:"Configure editor and terminal…"}));
+    for (const name of ["Editor executable","Editor arguments","Terminal executable","Terminal arguments"]) {
+      const input=view.getByLabelText(name);
+      expect(input.getAttribute("autocorrect")).toBe("off");
+      expect(input.getAttribute("spellcheck")).toBe("false");
+    }
+    await user.type(view.getByLabelText("Editor executable"),"/usr/bin/open");
+    const args=view.getByLabelText("Editor arguments");
+    await user.clear(args);
+    await user.type(args,JSON.stringify(["-a","TextEdit","{target}"]).replace(/\[/g,"[[").replace(/\{/g,"{{"));
+    await user.click(view.getByRole("button",{name:"Save tool settings",exact:true}));
+    expect(readToolPreferences().editor).toEqual({executable:"/usr/bin/open",args:["-a","TextEdit","{target}"]});
+  } finally {window.localStorage.removeItem(toolStorageKey);}
+});

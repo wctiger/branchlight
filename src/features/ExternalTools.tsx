@@ -201,6 +201,9 @@ export function ExternalTools({
                       ? "Editor executable"
                       : "Terminal executable"}
                     <Input
+                      autoCorrect="off"
+                      autoCapitalize="off"
+                      spellCheck={false}
                       value={preferences[tool].executable}
                       onChange={(event) =>
                         setPreferences({
@@ -218,6 +221,9 @@ export function ExternalTools({
                       ? "Editor arguments"
                       : "Terminal arguments"}
                     <Input
+                      autoCorrect="off"
+                      autoCapitalize="off"
+                      spellCheck={false}
                       value={tool === "editor" ? editorArgs : terminalArgs}
                       onChange={(event) =>
                         tool === "editor"

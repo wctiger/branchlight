@@ -118,13 +118,16 @@ export function InspectionPanel({
     void load(() => compareRevisions(path, from, to), setComparison);
   }
   useEffect(() => {
-    if (commit) {
+    if (commit && !selectedFile) {
+      setFile("");
       setBase("@parent");
       setTarget(commit);
+      setRevision(commit);
       compare("@parent", commit);
     }
-    // Commit changes intentionally drive a new comparison; typed inputs do not.
-  }, [commit, path]);
+    // An inspected commit stays visible after a safe refresh or after leaving
+    // a working-file selection. Manual input edits do not trigger this effect.
+  }, [commit, path, selectedFile, status]);
   function showChange(change: FileChange, kind: string) {
     setFile(change.path);
     setComparison(null);
@@ -156,7 +159,7 @@ export function InspectionPanel({
     const current =
       matches.find(({ kind }) => kind === selectedFile.kind) ?? matches[0];
     if (current) showChange(current.change, current.kind);
-    else invalidate();
+    else {invalidate(); setFile("");}
     // Follow files between status groups, preserving the chosen comparison when both exist.
   }, [selectedFile, status, path]);
   const unsupportedPaths = new Set(
@@ -327,44 +330,6 @@ export function InspectionPanel({
             Reverse
           </Button>
         </form>
-        {comparison && (
-          <section>
-            <p>
-              <code>{comparison.base}</code> → <code>{comparison.target}</code>
-            </p>
-            {!comparison.files.length && (
-              <p>No changed paths between these revisions.</p>
-            )}
-            <ul>
-              {comparison.files.map((change) => (
-                <li key={change.path}>
-                  <Button
-                    variant="outline"
-                    disabled={disabled}
-                    onClick={() => {
-                      setFile(change.path);
-                      void load(
-                        () =>
-                          getTextDiff(
-                            path,
-                            "revisions",
-                            change.path,
-                            comparison.base,
-                            comparison.target,
-                          ),
-                        setDiff,
-                      );
-                    }}
-                  >
-                    {change.status}{" "}
-                    {change.originalPath ? `${change.originalPath} → ` : ""}
-                    {change.path}
-                  </Button>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
         <form
           onSubmit={(event) => {
             event.preventDefault();
@@ -426,6 +391,44 @@ export function InspectionPanel({
           </Button>
         </form>
       </details>
+      {comparison && (
+        <section aria-label="Revision comparison">
+          <p>
+            <code>{comparison.base}</code> → <code>{comparison.target}</code>
+          </p>
+          {!comparison.files.length && (
+            <p>No changed paths between these revisions.</p>
+          )}
+          <ul>
+            {comparison.files.map((change) => (
+              <li key={change.path}>
+                <Button
+                  variant="outline"
+                  disabled={disabled}
+                  onClick={() => {
+                    setFile(change.path);
+                    void load(
+                      () =>
+                        getTextDiff(
+                          path,
+                          "revisions",
+                          change.path,
+                          comparison.base,
+                          comparison.target,
+                        ),
+                      setDiff,
+                    );
+                  }}
+                >
+                  {change.status}{" "}
+                  {change.originalPath ? `${change.originalPath} → ` : ""}
+                  {change.path}
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
       {loading && <p role="status">Loading inspection…</p>}
       {error && <p role="alert">{error}</p>}
       {history && (

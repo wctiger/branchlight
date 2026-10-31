@@ -237,7 +237,7 @@ export function RepositoryScreen() {
         </BranchPanel>
         <RepositoryMainContent
           mode={mode}
-          filePath={selectedFile?.change.path}
+          filePath={externalFile?.file.path}
           inspectorOpen={inspectorOpen}
           onModeChange={setMode}
           onInspectorToggle={() => setInspectorOpen(!inspectorOpen)}
