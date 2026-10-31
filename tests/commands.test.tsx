@@ -15,12 +15,26 @@ import {
   normalizeShortcut,
   paletteCommand,
   readKeybindings,
+  shortcutFromEvent,
   validateKeybindings,
 } from "../src/lib/commands";
 
 afterEach(() => {
   cleanup();
   window.localStorage.removeItem(keybindingStorageKey);
+});
+test("Option shortcuts handle macOS composed characters without overriding layout letters or IME input", () => {
+  function optionEvent(key: string, code: string, isComposing = false, altGraph = false) {
+    const event = new KeyboardEvent("keydown", { key, code, altKey: true, isComposing });
+    // Happy DOM treats every Alt press as AltGraph; real browsers distinguish them.
+    event.getModifierState = (modifier) => modifier === "AltGraph" && altGraph;
+    return event;
+  }
+  expect(shortcutFromEvent(optionEvent("˙", "KeyH"))).toBe("Alt+H");
+  expect(shortcutFromEvent(optionEvent("∂", "KeyD"))).toBe("Alt+D");
+  expect(shortcutFromEvent(optionEvent("a", "KeyQ"))).toBe("Alt+A");
+  expect(shortcutFromEvent(optionEvent("˙", "KeyH", true))).toBe("");
+  expect(shortcutFromEvent(optionEvent("˙", "KeyH", false, true))).toBe("");
 });
 test("shortcut validation normalizes platform modifiers, catches conflicts and restores defaults", () => {
   expect(normalizeShortcut("mod+shift+r", true)).toBe("Meta+Shift+R");
