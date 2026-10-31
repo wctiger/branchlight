@@ -351,8 +351,20 @@ fn remove_config_section(
     }
     Ok(())
 }
+fn validate_source(source: &str) -> Result<(), GitError> {
+    if Path::new(source).is_absolute()
+        || source.to_ascii_lowercase().starts_with("file:")
+        || source.starts_with("\\\\")
+        || (source.as_bytes().get(1) == Some(&b':')
+            && source.as_bytes()[0].is_ascii_alphabetic()
+            && matches!(source.as_bytes().get(2), Some(b'/' | b'\\')))
+    {
+        return Err(invalid("Use a remote submodule URL. Local file sources are not supported; Git normally disables file transport for submodule clones."));
+    }
+    super::repository::validate_clone_source(source)
+}
 fn source_head(repository: &Path, source: &str) -> Result<String, GitError> {
-    super::repository::validate_clone_source(source)?;
+    validate_source(source)?;
     let out = run_git(
         repository,
         &["ls-remote", "--exit-code", "--", source, "HEAD"],
@@ -386,19 +398,29 @@ fn untracked_paths(child: &Path) -> Result<String, GitError> {
 }
 fn reset_collisions(child: &Path, target: &str) -> Result<(), GitError> {
     let tree = run_git(child, &["ls-tree", "-r", "--name-only", "-z", target])?;
+    let mut tracked = std::collections::HashSet::new();
+    let mut directories = std::collections::HashSet::new();
+    for path in tree.stdout.split('\0').filter(|path| !path.is_empty()) {
+        tracked.insert(path);
+        let mut prefix = path;
+        while let Some((parent, _)) = prefix.rsplit_once('/') {
+            directories.insert(parent);
+            prefix = parent;
+        }
+    }
     let untracked = untracked_paths(child)?;
     for file in untracked.split('\0').filter(|path| !path.is_empty()) {
         let file = file.trim_end_matches('/');
-        if tree
-            .stdout
-            .split('\0')
-            .filter(|path| !path.is_empty())
-            .any(|tracked| {
-                tracked == file
-                    || tracked.starts_with(&format!("{file}/"))
-                    || file.starts_with(&format!("{tracked}/"))
-            })
-        {
+        let mut ancestor_tracked = false;
+        let mut prefix = file;
+        while let Some((parent, _)) = prefix.rsplit_once('/') {
+            if tracked.contains(parent) {
+                ancestor_tracked = true;
+                break;
+            }
+            prefix = parent;
+        }
+        if tracked.contains(file) || directories.contains(file) || ancestor_tracked {
             return Err(invalid("An untracked or ignored path would be overwritten by this reset. Move or save it using external Git before retrying."));
         }
     }
@@ -424,10 +446,9 @@ pub(crate) fn review(
         {
             return Err(invalid("Choose a new submodule path outside existing submodules; existing destinations are never overwritten."));
         }
-        if !source.contains(':') && !Path::new(source).is_absolute() {
-            return Err(invalid(
-                "Use an absolute local source path or remote URL when adding a submodule.",
-            ));
+        validate_source(source)?;
+        if !source.contains(':') {
+            return Err(invalid("Use a remote URL when adding a submodule."));
         }
         let mut ancestor = path
             .parent()
@@ -460,7 +481,7 @@ pub(crate) fn review(
         match &action {
             SubmoduleAction::Edit {url,branch,..} => {
                 attributes_clean(repository)?;
-                super::repository::validate_clone_source(url)?;
+                validate_source(url)?;
                 if let Some(branch) = branch {
                     if branch.is_empty() || branch.starts_with('-') || branch.contains(['\n','\r','\0']) || branch.contains("@{") {return Err(invalid("Enter a branch name, or clear the branch to use the remote default."));}
                     if branch != "." {run_git(repository,&["check-ref-format","--branch",branch])?;}
@@ -997,6 +1018,65 @@ mod tests {
             "Unrelated work"
         );
     }
+    #[test]
+    fn local_submodule_sources_are_refused_before_add_or_configuration_changes() {
+        let f = Fixture::new();
+        for source in [
+            f.source.to_string_lossy().into_owned(),
+            "file:///tmp/source".into(),
+            "C:\\source".into(),
+            "\\\\server\\source".into(),
+        ] {
+            assert!(validate_source(&source).is_err());
+            assert!(review(
+                &f.parent,
+                SubmoduleAction::Add {
+                    path: "local-child".into(),
+                    source
+                }
+            )
+            .is_err());
+            assert!(!f.parent.join("local-child").exists());
+        }
+        f.add();
+        f.commit_parent();
+        let original = fs::read(f.parent.join(".gitmodules")).unwrap();
+        assert!(review(
+            &f.parent,
+            SubmoduleAction::Edit {
+                path: path(),
+                url: f.source.to_string_lossy().into_owned(),
+                branch: None
+            }
+        )
+        .is_err());
+        assert_eq!(fs::read(f.parent.join(".gitmodules")).unwrap(), original);
+    }
+
+    #[test]
+    fn reset_collision_index_detects_equal_ancestor_and_descendant_paths() {
+        let f = Fixture::new();
+        fs::create_dir(f.source.join("nested")).unwrap();
+        fs::write(f.source.join("nested/child"), "Tracked nested content").unwrap();
+        git(&f.source, &["add", "."]);
+        git(&f.source, &["commit", "-m", "Nested tracked tree"]);
+        let target = git(&f.source, &["rev-parse", "HEAD"]);
+        git(&f.source, &["rm", "--cached", "-r", "."]);
+        git(&f.source, &["add", ".gitignore"]);
+        assert!(reset_collisions(&f.source, &target).is_err());
+        fs::remove_file(f.source.join("file.txt")).unwrap();
+        fs::remove_dir_all(f.source.join("nested")).unwrap();
+        fs::write(f.source.join("nested"), "Untracked ancestor").unwrap();
+        assert!(reset_collisions(&f.source, &target).is_err());
+        fs::remove_file(f.source.join("nested")).unwrap();
+        fs::create_dir(f.source.join("file.txt")).unwrap();
+        fs::write(f.source.join("file.txt/untracked"), "Untracked descendant").unwrap();
+        assert!(reset_collisions(&f.source, &target).is_err());
+        fs::remove_dir_all(f.source.join("file.txt")).unwrap();
+        fs::write(f.source.join("unrelated"), "Preserve unrelated work").unwrap();
+        reset_collisions(&f.source, &target).unwrap();
+    }
+
     #[test]
     fn missing_sources_and_destinations_in_other_repositories_do_not_create_files() {
         let f = Fixture::new();

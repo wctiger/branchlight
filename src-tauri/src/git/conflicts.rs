@@ -77,7 +77,10 @@ pub(crate) fn recover_rebase(
             }
             "--continue"
         }
-        RebaseRecovery::Skip => "--skip",
+        RebaseRecovery::Skip => {
+            super::rebase_plan::skip_pending_reword(repository)?;
+            "--skip"
+        }
     };
     // Reuse the commit message already prepared by rebase; never open an editor
     // that cannot be interacted with from the desktop process.

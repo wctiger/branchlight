@@ -397,6 +397,92 @@ mod tests {
         assert!(!f.0.join(".git/branchlight-rebase-plan").exists());
     }
     #[test]
+    fn skipped_conflicting_reword_preserves_the_previous_commit_message() {
+        use super::super::{
+            conflicts::{recover_rebase, RebaseRecovery},
+            rebase_plan::PlanAction::*,
+        };
+        for reword_first in [true, false] {
+            let f = Fixture::new();
+            let base = f.head();
+            f.commit("one", "One");
+            let one = f.head();
+            f.commit("two", "Two");
+            let two = f.head();
+            let steps = if reword_first {
+                vec![
+                    plan_step(&two, Reword, Some("Must never amend the base")),
+                    plan_step(&one, Drop, None),
+                ]
+            } else {
+                vec![
+                    plan_step(&two, Pick, None),
+                    plan_step(&one, Reword, Some("Must never amend Two")),
+                ]
+            };
+            assert!(execute(
+                &f.0,
+                &two,
+                HistoryAction::InteractiveRebase {
+                    revision: one,
+                    steps
+                }
+            )
+            .is_err());
+            let before = if reword_first {
+                base
+            } else {
+                fs::write(f.0.join("file"), "two resolved").unwrap();
+                f.git(&["add", "file"]);
+                assert!(recover_rebase(&f.0, RebaseRecovery::Continue).is_err());
+                f.head()
+            };
+            let message = f.git(&["log", "-1", "--format=%B"]);
+            recover_rebase(&f.0, RebaseRecovery::Skip).unwrap();
+            assert_eq!(f.head(), before);
+            assert_eq!(f.git(&["log", "-1", "--format=%B"]), message);
+            assert_eq!(
+                super::super::conflicts::get_repository_operation(&f.0).unwrap(),
+                RepositoryOperation::None
+            );
+        }
+    }
+
+    #[test]
+    fn stale_generated_plans_are_removed_without_deleting_unknown_files() {
+        use super::super::rebase_plan::PlanAction::*;
+        let f = Fixture::new();
+        let base = f.head();
+        let directory = f.0.join(".git/branchlight-rebase-plan");
+        fs::create_dir(&directory).unwrap();
+        fs::write(directory.join("todo"), "old todo").unwrap();
+        fs::write(directory.join("message-199"), "old message").unwrap();
+        f.execute(HistoryAction::InteractiveRebase {
+            revision: base.clone(),
+            steps: vec![plan_step(&base, Reword, Some("New message"))],
+        });
+        assert_eq!(f.git(&["log", "-1", "--format=%s"]), "New message");
+        assert!(!directory.exists());
+        fs::create_dir(&directory).unwrap();
+        fs::write(directory.join("unrelated"), "Keep this file").unwrap();
+        let head = f.head();
+        assert!(execute(
+            &f.0,
+            &head,
+            HistoryAction::InteractiveRebase {
+                revision: head.clone(),
+                steps: vec![plan_step(&head, Pick, None)]
+            }
+        )
+        .is_err());
+        assert_eq!(
+            fs::read_to_string(directory.join("unrelated")).unwrap(),
+            "Keep this file"
+        );
+        assert_eq!(f.head(), head);
+    }
+
+    #[test]
     fn amend_includes_index_but_reword_preserves_it() {
         let f = Fixture::new();
         fs::write(f.0.join("file"), "staged").unwrap();

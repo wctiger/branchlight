@@ -122,8 +122,7 @@ function LfsManager({
     };
   }, [busy, path]);
   const blocked = disabled || busy || loading;
-  const ready =
-    !!state?.available && state.filterConfigured && state.hookInstalled;
+  const ready = !!state?.available && state.filterConfigured;
   function choose(action: LfsAction, title: string, description: string) {
     if (blocked) return;
     setReview({ action, title, description });
@@ -171,7 +170,10 @@ function LfsManager({
     }
   }
   function transfer(kind: "fetch" | "pull" | "push") {
-    if (!state?.head || !remote || !ready) return;
+    if (
+      !state?.head || !remote || !ready ||
+      (kind === "push" && !state.hookInstalled)
+    ) return;
     choose(
       { kind, remote, expectedHead: state.head },
       `${kind[0].toUpperCase()}${kind.slice(1)} LFS objects`,
@@ -347,7 +349,10 @@ function LfsManager({
                         <Button
                           key={kind}
                           variant="outline"
-                          disabled={blocked || !ready || !state.head || !remote}
+                          disabled={
+                            blocked || !ready || !state.head || !remote ||
+                            (kind === "push" && !state.hookInstalled)
+                          }
                           onClick={() => transfer(kind)}
                         >
                           {kind[0].toUpperCase()}

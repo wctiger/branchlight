@@ -1003,6 +1003,18 @@ test("LFS reviews captured remote and HEAD, displays pointer state, and refreshe
   expect(view.getByRole("button",{name:"Confirm push"})).toBeTruthy();
   expect(view.getByRole("status").textContent).toContain("stopped");
 });
+test("configured LFS filters allow non-push actions with an unrelated pre-push hook", async () => {
+  const user = userEvent.setup({document});
+  intercept = command => command === "get_lfs_state" ? Promise.resolve({...lfsState, hookInstalled:false}) : undefined;
+  const view = render(<LfsPanel path="/repo" disabled={false} run={async () => true} />);
+  await user.click(view.getByRole("button", {name:"LFS"}));
+  await waitFor(() => expect(view.getByRole<HTMLButtonElement>("button", {name:"Fetch objects…"}).disabled).toBe(false));
+  expect(view.getByRole<HTMLButtonElement>("button", {name:"Pull objects…"}).disabled).toBe(false);
+  expect(view.getByRole<HTMLButtonElement>("button", {name:"Checkout cached content…"}).disabled).toBe(false);
+  expect(view.getByRole<HTMLButtonElement>("button", {name:"Push objects…"}).disabled).toBe(true);
+  await user.click(view.getByRole("button", {name:"Fetch objects…"}));
+  expect(view.getByRole("button", {name:"Confirm fetch"})).toBeTruthy();
+});
 test("LFS missing tooling explains setup and cannot initialize or transfer", async () => {
   const user = userEvent.setup({document});
   intercept = command => command === "get_lfs_state" ? Promise.resolve({...lfsState,available:false,version:"Git LFS is unavailable"}) : undefined;
@@ -1073,11 +1085,30 @@ test("submodule add previews source HEAD and reports remote failures before a mu
   await user.click(view.getByRole("button",{name:"Submodules"}));
   await user.click(await view.findByRole("button",{name:"Add submodule…"}));
   await user.type(view.getByLabelText("New submodule path (relative)"),"vendor/child");
-  await user.type(view.getByLabelText("Source URL or absolute local path"),"ssh://git@example.invalid/repo");
+  await user.type(view.getByLabelText("Source URL"),"ssh://git@example.invalid/repo");
   await user.click(view.getByRole("button",{name:"Review add"}));
   await waitFor(()=>expect(view.getByText("Remote could not be read")).toBeTruthy());
   expect(view.getByRole("button",{name:"Review add"})).toBeTruthy();
   expect(calls.some(call=>call.command==="execute_submodule_action")).toBe(false);
+});
+test("submodule review trims new form values while preserving the selected module path", async () => {
+  const user = userEvent.setup({document});
+  intercept = command => command === "get_submodules" ? Promise.resolve([childModule])
+    : command === "review_submodule_action" ? Promise.reject({code:"invalidOperationInput",message:"Preview only"}) : undefined;
+  const view = render(<SubmodulesPanel path="/repo" disabled={false} error={null} run={async()=>false} onOpened={()=>{}} />);
+  await user.click(view.getByRole("button", {name:"Submodules"}));
+  await user.click(await view.findByRole("button", {name:"Add submodule…"}));
+  await user.type(view.getByLabelText("New submodule path (relative)"), " vendor/new ");
+  await user.type(view.getByLabelText("Source URL"), " ssh://git@example.invalid/new ");
+  await user.click(view.getByRole("button", {name:"Review add"}));
+  await waitFor(()=>expect(calls.find(call=>call.command === "review_submodule_action")?.args.action).toEqual({kind:"add",path:"vendor/new",source:"ssh://git@example.invalid/new"}));
+  await user.click(view.getByRole("button", {name:"Cancel editing"}));
+  await user.click(view.getByRole("button", {name:"Edit configuration…"}));
+  await user.clear(view.getByLabelText("New submodule URL"));
+  await user.type(view.getByLabelText("New submodule URL"), " ssh://git@example.invalid/edited ");
+  await user.type(view.getByLabelText("Tracking branch (blank for remote default)"), "   ");
+  await user.click(view.getByRole("button", {name:"Review edit"}));
+  await waitFor(()=>expect(calls.filter(call=>call.command === "review_submodule_action").at(-1)?.args.action).toEqual({kind:"edit",path:childModule.path,url:"ssh://git@example.invalid/edited",branch:null}));
 });
 test("failed submodule mutations refresh parent and mounted child views without clearing child feedback",async()=>{
   intercept=command=>command==="execute_submodule_action"?Promise.reject({code:"commandFailed",message:"Changed submodule state"}):undefined;

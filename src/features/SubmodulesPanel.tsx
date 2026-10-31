@@ -387,8 +387,8 @@ function SubmoduleManager({
                   <Field>
                     <FieldLabel htmlFor={`${id}-url`}>
                       {form === "add"
-                        ? "Source URL or absolute local path"
-                        : "New submodule URL or absolute local path"}
+                        ? "Source URL"
+                        : "New submodule URL"}
                     </FieldLabel>
                     <Input
                       id={`${id}-url`}
@@ -433,12 +433,16 @@ function SubmoduleManager({
                     onClick={() =>
                       void prepare(
                         form === "add"
-                          ? { kind: "add", path: destination, source }
+                          ? {
+                              kind: "add",
+                              path: destination.trim(),
+                              source: source.trim(),
+                            }
                           : {
                               kind: "edit",
                               path: module!.path,
-                              url: source,
-                              branch: branch || null,
+                              url: source.trim(),
+                              branch: branch.trim() || null,
                             },
                       )
                     }

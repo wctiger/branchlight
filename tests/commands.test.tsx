@@ -36,6 +36,15 @@ test("Option shortcuts handle macOS composed characters without overriding layou
   expect(shortcutFromEvent(optionEvent("˙", "KeyH", true))).toBe("");
   expect(shortcutFromEvent(optionEvent("˙", "KeyH", false, true))).toBe("");
 });
+test("shifted digit shortcuts match their configured canonical binding", () => {
+  for (const [key, code, binding, modifiers] of [
+    ["!", "Digit1", "Ctrl+Shift+1", { ctrlKey: true }],
+    ["@", "Digit2", "Meta+Shift+2", { metaKey: true }],
+  ] as const) {
+    const event = new KeyboardEvent("keydown", { key, code, shiftKey: true, ...modifiers });
+    expect(shortcutFromEvent(event)).toBe(normalizeShortcut(binding));
+  }
+});
 test("shortcut validation normalizes platform modifiers, catches conflicts and restores defaults", () => {
   expect(normalizeShortcut("mod+shift+r", true)).toBe("Meta+Shift+R");
   expect(normalizeShortcut("mod+shift+r", false)).toBe("Ctrl+Shift+R");

@@ -99,6 +99,48 @@ pub(crate) fn cleanup(repository: &Path) {
     let _ = fs::remove_dir(directory);
 }
 
+/// A conflicting pick leaves its following amend pending. Skip must omit both,
+/// or that amend would rewrite the preceding commit instead. Match only the
+/// exact generated command for REBASE_HEAD, leaving other todo commands alone.
+pub(crate) fn skip_pending_reword(repository: &Path) -> Result<(), GitError> {
+    let directory = plan_directory(repository)?;
+    let original = match fs::read_to_string(directory.join("todo")) {
+        Ok(todo) => todo,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(()),
+        Err(error) => return Err(io_error(error)),
+    };
+    let Ok(stopped) = run_git(repository, &["rev-parse", "--verify", "REBASE_HEAD"]) else {
+        return Ok(());
+    };
+    let pick = format!("pick {}", stopped.stdout.trim());
+    let mut lines = original.lines();
+    let Some(amend) = lines.find(|line| *line == pick).and_then(|_| lines.next()) else {
+        return Ok(());
+    };
+    if !amend.starts_with("exec git -c commit.cleanup=verbatim commit --amend --only --file=") {
+        return Ok(());
+    }
+    let todo_path = directory
+        .parent()
+        .unwrap()
+        .join("rebase-merge/git-rebase-todo");
+    let todo = fs::read_to_string(&todo_path).map_err(io_error)?;
+    let mut offset = 0;
+    for line in todo.split_inclusive('\n') {
+        let command = line.trim_end_matches(['\r', '\n']);
+        if !command.trim().is_empty() && !command.trim_start().starts_with('#') {
+            if command == amend {
+                let mut updated = todo.clone();
+                updated.replace_range(offset..offset + line.len(), "");
+                fs::write(todo_path, updated).map_err(io_error)?;
+            }
+            break;
+        }
+        offset += line.len();
+    }
+    Ok(())
+}
+
 /// Called only after the common history executor rechecks branch, HEAD and operation state.
 pub(crate) fn execute(
     repository: &Path,
@@ -144,6 +186,9 @@ pub(crate) fn execute(
     if directory.to_string_lossy().contains(['\n', '\r']) {
         return Err(invalid("Interactive rebase cannot use metadata paths containing line breaks. Use an external Git tool for this repository."));
     }
+    // The history executor verified no active operation. External completion or
+    // a crash can leave our generated files behind; preserve unrelated files.
+    cleanup(repository);
     fs::create_dir(&directory).map_err(io_error)?;
     let prepare = (|| {
         let mut todo = String::new();

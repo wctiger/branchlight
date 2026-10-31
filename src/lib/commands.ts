@@ -238,18 +238,23 @@ export function readKeybindings(): Keybindings {
 export function shortcutFromEvent(event: KeyboardEvent): string {
   if (event.isComposing || event.repeat || event.getModifierState("AltGraph"))
     return "";
-  // macOS Option produces characters such as ˙ for H. Recover the key only
-  // when that character cannot name a supported shortcut; preserve layout keys.
-  const key = event.key.toUpperCase();
-  const optionKey = event.altKey && !/^[A-Z0-9]$/.test(key)
-    ? /^(?:Key([A-Z])|Digit([0-9]))$/.exec(event.code)
-    : null;
+  // Option characters and shifted digit punctuation cannot name supported
+  // shortcuts. Recover their key codes while preserving layout letters.
+  let key = event.key.toUpperCase();
+  if (!/^[A-Z0-9]$/.test(key)) {
+    const recovered = event.altKey
+      ? /^(?:Key([A-Z])|Digit([0-9]))$/.exec(event.code)
+      : event.shiftKey
+        ? /^Digit([0-9])$/.exec(event.code)
+        : null;
+    key = recovered?.[1] ?? recovered?.[2] ?? key;
+  }
   return [
     event.ctrlKey ? "Ctrl" : "",
     event.metaKey ? "Meta" : "",
     event.altKey ? "Alt" : "",
     event.shiftKey ? "Shift" : "",
-    optionKey ? optionKey[1] ?? optionKey[2] : key,
+    key,
   ]
     .filter(Boolean)
     .join("+");

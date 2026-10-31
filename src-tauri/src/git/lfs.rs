@@ -366,9 +366,11 @@ pub(crate) fn execute(repository: &Path, action: LfsAction) -> Result<GitOutput,
     };
     if !matches!(action, LfsAction::Initialize) {
         let state = inspect(repository)?;
-        if !state.filter_configured || !state.hook_installed {
+        if !state.filter_configured
+            || (matches!(action, LfsAction::Push { .. }) && !state.hook_installed)
+        {
             return Err(invalid(
-                "Explicitly initialize LFS filters and hooks before changing LFS state.",
+                "Configure LFS filters before changing LFS state; pushing also requires the LFS pre-push hook.",
             ));
         }
     }
@@ -384,12 +386,6 @@ pub(crate) fn execute(repository: &Path, action: LfsAction) -> Result<GitOutput,
             {
                 return Err(invalid(
                     "Enter a repository-relative LFS pattern without traversal or line breaks.",
-                ));
-            }
-            let state = inspect(repository)?;
-            if !state.filter_configured || !state.hook_installed {
-                return Err(invalid(
-                    "Explicitly initialize LFS filters and hooks before changing tracked patterns.",
                 ));
             }
             cwd = attributes_directory(repository, &directory)?;
@@ -775,6 +771,12 @@ mod tests {
             .join(&retained_oid[2..4])
             .join(retained_oid);
         fs::remove_file(retained).unwrap();
+        fs::write(
+            git_path(&f.0, "hooks/pre-push").unwrap(),
+            "#!/bin/sh\necho Shared hook\n",
+        )
+        .unwrap();
+        assert!(!inspect(&f.0).unwrap().hook_installed);
         execute(
             &f.0,
             LfsAction::Fetch {
@@ -800,6 +802,58 @@ mod tests {
         f.git(&["config", "lfs.storage", "custom-shared-storage"]);
         assert!(!inspect(&f.0).unwrap().prune_allowed);
         assert!(review_prune(&f.0).is_err());
+    }
+    #[test]
+    fn non_push_actions_work_with_configured_filters_and_an_unrelated_shared_hook() {
+        let f = Fixture::new();
+        if !f.installed() {
+            return;
+        }
+        execute(&f.0, LfsAction::Initialize).unwrap();
+        let hooks = f.0.join("shared-hooks");
+        fs::create_dir(&hooks).unwrap();
+        fs::write(
+            hooks.join("pre-push"),
+            "#!/bin/sh\necho Existing shared hook\n",
+        )
+        .unwrap();
+        f.git(&["config", "core.hooksPath", hooks.to_str().unwrap()]);
+        let state = inspect(&f.0).unwrap();
+        assert!(state.filter_configured && !state.hook_installed);
+        execute(
+            &f.0,
+            LfsAction::Track {
+                directory: "".into(),
+                pattern: "*.bin".into(),
+            },
+        )
+        .unwrap();
+        execute(
+            &f.0,
+            LfsAction::Untrack {
+                directory: "".into(),
+                pattern: "*.bin".into(),
+            },
+        )
+        .unwrap();
+        execute(
+            &f.0,
+            LfsAction::Checkout {
+                expected_head: f.head(),
+            },
+        )
+        .unwrap();
+        assert!(execute(
+            &f.0,
+            LfsAction::Push {
+                remote: "origin".into(),
+                expected_head: f.head()
+            }
+        )
+        .is_err());
+        assert!(fs::read_to_string(hooks.join("pre-push"))
+            .unwrap()
+            .contains("Existing shared hook"));
     }
     #[test]
     fn preserves_existing_hooks_and_rejects_symlinked_attributes_and_active_operations() {
