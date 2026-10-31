@@ -352,12 +352,13 @@ mod tests {
     impl Repository {
         fn new() -> Self {
             let path = std::env::temp_dir().join(format!(
-                "branchlight-inspection-{}-{}",
+                "branchlight-inspection-{}-{}-{}",
                 std::process::id(),
                 SystemTime::now()
                     .duration_since(UNIX_EPOCH)
                     .unwrap()
-                    .as_nanos()
+                    .as_nanos(),
+                crate::git::fixture_nonce()
             ));
             super::super::create_repository(&path, None).unwrap();
             let repo = Self(path);

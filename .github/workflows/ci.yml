@@ -32,6 +32,8 @@ jobs:
       - run: bun run scripts/check-version.ts
       - run: bun test
       - run: cargo fmt --check --manifest-path src-tauri/Cargo.toml
+      - name: Require system Git LFS for integration tests
+        run: git lfs version
       - run: cargo test --locked --manifest-path src-tauri/Cargo.toml
       - run: cargo clippy --locked --manifest-path src-tauri/Cargo.toml --all-targets --all-features -- -D warnings
       - name: Build macOS application (includes production frontend build)
@@ -69,6 +71,8 @@ jobs:
       - run: bun run scripts/check-version.ts
       - run: bun test
       - run: cargo fmt --check --manifest-path src-tauri/Cargo.toml
+      - name: Require system Git LFS for integration tests
+        run: git lfs version
       - run: cargo test --locked --manifest-path src-tauri/Cargo.toml
       - run: cargo clippy --locked --manifest-path src-tauri/Cargo.toml --all-targets --all-features -- -D warnings
       - name: Build Windows executable (includes production frontend build)

@@ -1,0 +1,48 @@
+.search {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: var(--type-label);
+  flex-shrink: 0;
+}
+.search p {
+  margin-block: 4px;
+  color: var(--text-secondary);
+}
+.fields {
+  display: flex;
+  gap: 8px;
+  align-items: end;
+}
+.fields label:first-child {
+  flex: 1;
+  min-width: 0;
+}
+.fields label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.fields select {
+  height: var(--size-control);
+}
+.results {
+  list-style: none;
+  padding: 0;
+  max-height: 24vh;
+  overflow: auto;
+}
+.results button {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  justify-content: start;
+  text-align: left;
+}
+.results span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.results code {
+  flex-shrink: 0;
+}

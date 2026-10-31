@@ -1,0 +1,24 @@
+.plan {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 45vh;
+  overflow: auto;
+  padding: 0 0 0 24px;
+}
+.plan li {
+  padding: 8px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-control);
+  overflow-wrap: anywhere;
+}
+.plan li > label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-block: 6px;
+}
+.plan textarea {
+  min-height: 80px;
+  resize: vertical;
+}

@@ -8,6 +8,17 @@ use crate::{
 use std::path::Path;
 
 #[tauri::command]
+pub(crate) async fn get_rebase_plan(
+    path: String,
+    revision: String,
+) -> Result<Vec<crate::git::rebase_plan::PlanCommit>, GitError> {
+    super::scheduler::run(Some(path.clone()), move || {
+        crate::git::rebase_plan::inspect(Path::new(&path), &revision)
+    })
+    .await
+}
+
+#[tauri::command]
 pub(crate) async fn execute_history_action(
     path: String,
     expected_head: String,

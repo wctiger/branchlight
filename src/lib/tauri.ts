@@ -136,6 +136,30 @@ export function abortRebase(path: string): Promise<GitOutput> {
   return invoke<GitOutput>("abort_rebase", { path });
 }
 
+export function recoverRebase(path: string, action: "continue" | "skip"): Promise<GitOutput> {
+  return invoke("recover_rebase", { path, action });
+}
+
+export function getRebasePlan(path: string, revision: string): Promise<{hash: string; subject: string}[]> {
+  return invoke("get_rebase_plan", { path, revision });
+}
+
+export interface ConflictFile {
+  filePath: string;
+  operation: string;
+  base: string;
+  current: string;
+  incoming: string;
+  output: string;
+  token: string;
+}
+export function getConflictFile(path: string, filePath: string): Promise<ConflictFile> {
+  return invoke("get_conflict_file", { path, filePath });
+}
+export function saveConflictFile(path: string, filePath: string, token: string, output: string, markResolved: boolean): Promise<void> {
+  return invoke("save_conflict_file", { path, filePath, token, output, markResolved });
+}
+
 /** Fetches remote refs using the repository's configured Git remotes. */
 export function fetchRemote(
   path: string,
@@ -369,4 +393,63 @@ export interface Diagnostics {
 }
 export function getDiagnostics(path: string): Promise<Diagnostics> {
   return invoke("get_diagnostics", { path });
+}
+
+export interface LocalTag { name: string; objectId: string }
+export interface TagDetails extends LocalTag {
+  targetId: string;
+  targetType: string;
+  annotated: boolean;
+  metadata: string;
+  metadataTruncated: boolean;
+}
+export function getLocalTags(path: string): Promise<LocalTag[]> {
+  return invoke("get_local_tags", {path});
+}
+export function inspectLocalTag(path: string, name: string): Promise<TagDetails> {
+  return invoke("inspect_local_tag", {path, name});
+}
+export function createLocalTag(path: string, name: string, revision: string, annotation: string | null): Promise<GitOutput> {
+  return invoke("create_local_tag", {path, name, revision, annotation});
+}
+export function deleteLocalTag(path: string, name: string, expectedOid: string): Promise<GitOutput> {
+  return invoke("delete_local_tag", {path, name, expectedOid});
+}
+
+export interface HistorySearchResult { commits: Commit[]; limit: number; hasMore: boolean }
+export function searchHistory(path: string, query: string, mode: "message" | "hash"): Promise<HistorySearchResult> {
+  return invoke("search_history", {path, query, mode});
+}
+
+export function launchExternalTool(path: string, request: import("@/types/external-tools").ToolRequest): Promise<import("@/types/external-tools").ToolLaunch> {
+  return invoke("launch_external_tool", {path, request});
+}
+export function getLauncherStatus(jobId: number): Promise<import("@/types/external-tools").LauncherStatus> {
+  return invoke("get_launcher_status", {jobId});
+}
+
+export function getLfsState(path: string): Promise<import("@/types/lfs").LfsState> {
+  return invoke("get_lfs_state", {path});
+}
+export function getLfsProgress(path: string): Promise<import("@/types/lfs").LfsProgress> {
+  return invoke("get_lfs_progress", {path});
+}
+export function reviewLfsPrune(path: string): Promise<import("@/types/lfs").LfsPruneReview> {
+  return invoke("review_lfs_prune", {path});
+}
+export function executeLfsAction(path: string, action: import("@/types/lfs").LfsAction): Promise<GitOutput> {
+  return invoke("execute_lfs_action", {path, action});
+}
+
+export function getSubmodules(path: string): Promise<import("@/types/submodules").Submodule[]> {
+  return invoke("get_submodules", {path});
+}
+export function openSubmodule(path: string, submodulePath: string): Promise<Repository> {
+  return invoke("open_submodule", {path, submodulePath});
+}
+export function reviewSubmoduleAction(path: string, action: import("@/types/submodules").SubmoduleAction): Promise<import("@/types/submodules").SubmoduleReview> {
+  return invoke("review_submodule_action", {path, action});
+}
+export function executeSubmoduleAction(path: string, action: import("@/types/submodules").SubmoduleAction, token: string): Promise<GitOutput> {
+  return invoke("execute_submodule_action", {path, action, token});
 }

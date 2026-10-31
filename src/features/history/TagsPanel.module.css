@@ -1,0 +1,41 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  border-top: 1px solid var(--border-subtle);
+  font-size: var(--type-label);
+}
+.panel h3 {
+  font-size: var(--type-body);
+}
+.panel p {
+  color: var(--text-secondary);
+}
+.list {
+  display: flex;
+  flex-direction: column;
+  list-style: none;
+  padding: 0;
+  max-height: 220px;
+  overflow: auto;
+}
+.list button {
+  justify-content: start;
+  width: 100%;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  text-align: left;
+}
+.metadata {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.metadata pre {
+  max-height: 180px;
+  overflow: auto;
+  white-space: pre-wrap;
+}

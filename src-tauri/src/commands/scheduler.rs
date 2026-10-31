@@ -15,32 +15,56 @@ pub(super) async fn run<T: Send + 'static>(
     path: Option<String>,
     operation: impl FnOnce() -> Result<T, GitError> + Send + 'static,
 ) -> Result<T, GitError> {
-    let context = if let Some(path) = path {
+    run_repositories(path.into_iter().collect(), operation).await
+}
+
+/// Acquire every participating repository lock in a stable order. Submodule
+/// lifecycle operations supply both parent and initialized child paths.
+pub(super) async fn run_repositories<T: Send + 'static>(
+    paths: Vec<String>,
+    operation: impl FnOnce() -> Result<T, GitError> + Send + 'static,
+) -> Result<T, GitError> {
+    let identities = if paths.is_empty() {
+        Vec::new()
+    } else {
         let identity_worker = WORKERS.acquire().await.map_err(join_error)?;
-        let identity = tauri::async_runtime::spawn_blocking(move || {
+        tauri::async_runtime::spawn_blocking(move || {
             let _worker = identity_worker;
-            git::repository_identity(std::path::Path::new(&path))
+            let mut identities = Vec::new();
+            for path in paths {
+                identities.extend(git::repository_lock_identities(std::path::Path::new(
+                    &path,
+                ))?);
+            }
+            identities.sort_unstable();
+            identities.dedup();
+            Ok::<_, GitError>(identities)
         })
         .await
-        .map_err(join_error)??;
+        .map_err(join_error)??
+    };
+    let contexts: Vec<_> = {
         let mut contexts = CONTEXTS
             .get_or_init(Default::default)
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner());
         contexts.retain(|_, context| context.strong_count() > 0);
-        let context = contexts
-            .get(&identity)
-            .and_then(Weak::upgrade)
-            .unwrap_or_else(|| Arc::new(AsyncMutex::new(())));
-        contexts.insert(identity, Arc::downgrade(&context));
-        Some(context)
-    } else {
-        None
+        identities
+            .into_iter()
+            .map(|identity| {
+                let context = contexts
+                    .get(&identity)
+                    .and_then(Weak::upgrade)
+                    .unwrap_or_else(|| Arc::new(AsyncMutex::new(())));
+                contexts.insert(identity, Arc::downgrade(&context));
+                context
+            })
+            .collect()
     };
-    let context_guard = match context {
-        Some(context) => Some(context.lock_owned().await),
-        None => None,
-    };
+    let mut context_guards = Vec::new();
+    for context in contexts {
+        context_guards.push(context.lock_owned().await);
+    }
     let worker = WORKERS
         .acquire()
         .await
@@ -49,7 +73,7 @@ pub(super) async fn run<T: Send + 'static>(
         })?;
     tauri::async_runtime::spawn_blocking(move || {
         // The worker owns guards even if its caller is dropped during an operation.
-        let _context_guard = context_guard;
+        let _context_guards = context_guards;
         let _worker = worker;
         operation()
     })
@@ -81,12 +105,13 @@ mod tests {
     impl Repositories {
         fn new() -> Self {
             let root = std::env::temp_dir().join(format!(
-                "branchlight-scheduler-{}-{}",
+                "branchlight-scheduler-{}-{}-{}",
                 std::process::id(),
                 SystemTime::now()
                     .duration_since(UNIX_EPOCH)
                     .unwrap()
-                    .as_nanos()
+                    .as_nanos(),
+                crate::git::fixture_nonce()
             ));
             fs::create_dir(&root).unwrap();
             for name in ["a", "b"] {
@@ -215,5 +240,60 @@ mod tests {
             .unwrap()
             .unwrap();
         tauri::async_runtime::block_on(linked).unwrap().unwrap();
+    }
+    #[test]
+    fn parent_and_submodule_share_locks_while_unrelated_repositories_progress() {
+        let repositories = Repositories::new();
+        let parent = repositories.path("a");
+        let source = repositories.path("b");
+        let output = Command::new("git")
+            .current_dir(&parent)
+            .args([
+                "-c",
+                "protocol.file.allow=always",
+                "submodule",
+                "add",
+                "--",
+                &source,
+                "nested child",
+            ])
+            .output()
+            .unwrap();
+        assert!(
+            output.status.success(),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        let child = repositories.path("a/nested child");
+        let identities = git::repository_lock_identities(std::path::Path::new(&child)).unwrap();
+        assert_eq!(identities.len(), 2);
+        assert!(identities
+            .contains(&git::repository_lock_identities(std::path::Path::new(&parent)).unwrap()[0]));
+        let (started, started_rx) = mpsc::channel();
+        let (release, release_rx) = mpsc::channel();
+        let first = tauri::async_runtime::spawn(run(Some(parent.clone()), move || {
+            started.send(()).unwrap();
+            release_rx.recv_timeout(Duration::from_secs(10)).unwrap();
+            Ok(())
+        }));
+        started_rx.recv_timeout(Duration::from_secs(10)).unwrap();
+        let (child_done, child_rx) = mpsc::channel();
+        let child_operation = tauri::async_runtime::spawn(run(Some(child.clone()), move || {
+            child_done.send(()).unwrap();
+            Ok(())
+        }));
+        let independent = tauri::async_runtime::spawn(run(Some(source), || Ok(())));
+        tauri::async_runtime::block_on(independent)
+            .unwrap()
+            .unwrap();
+        assert!(child_rx.recv_timeout(Duration::from_millis(200)).is_err());
+        release.send(()).unwrap();
+        tauri::async_runtime::block_on(first).unwrap().unwrap();
+        child_rx.recv_timeout(Duration::from_secs(5)).unwrap();
+        tauri::async_runtime::block_on(child_operation)
+            .unwrap()
+            .unwrap();
+        // Duplicate identities and opposite input ordering cannot self-deadlock.
+        tauri::async_runtime::block_on(run_repositories(vec![child, parent], || Ok(()))).unwrap();
     }
 }

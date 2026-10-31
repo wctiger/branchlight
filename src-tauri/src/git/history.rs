@@ -13,12 +13,25 @@ pub(crate) fn get_history(repository: &Path) -> Result<Vec<Commit>, GitError> {
     let limit = HISTORY_LIMIT.to_string();
     let output = run_git(
         repository,
-        &["log", "--all", "--topo-order", "-n", &limit, COMMIT_FORMAT],
+        &[
+            "log",
+            "--no-show-signature",
+            "--all",
+            "--topo-order",
+            "-n",
+            &limit,
+            COMMIT_FORMAT,
+        ],
     )?;
     let mut commits = parse_commits(&output.stdout_bytes)
         .map_err(|message| GitError::InvalidHistoryResponse { message, output })?;
+    decorate(repository, &mut commits)?;
+    Ok(commits)
+}
+
+fn decorate(repository: &Path, commits: &mut [Commit]) -> Result<(), GitError> {
     if commits.is_empty() {
-        return Ok(commits);
+        return Ok(());
     }
 
     let refs_output = run_git(
@@ -32,15 +45,129 @@ pub(crate) fn get_history(repository: &Path) -> Result<Vec<Commit>, GitError> {
         }
     })?;
 
-    for commit in &mut commits {
+    for commit in commits.iter_mut() {
         commit.refs = refs.get(&commit.hash).cloned().unwrap_or_default();
     }
 
-    Ok(commits)
+    let tags = run_git(
+        repository,
+        &[
+            "for-each-ref",
+            "--format=%(refname)%00%(objectname)%00%(*objectname)%00",
+            "refs/tags/",
+        ],
+    )?;
+    for record in tags.stdout.lines() {
+        let fields: Vec<_> = record.split('\0').collect();
+        if fields.len() != 4 || !fields[3].is_empty() {
+            return Err(super::inspection::invalid(
+                "Malformed history tag metadata.",
+            ));
+        }
+        let target = if fields[2].is_empty() {
+            fields[1]
+        } else {
+            fields[2]
+        };
+        if let Some(commit) = commits.iter_mut().find(|commit| commit.hash == target) {
+            commit.refs.push(format!(
+                "tag: {}",
+                fields[0]
+                    .strip_prefix("refs/tags/")
+                    .ok_or_else(|| super::inspection::invalid("Unexpected tag ref."))?
+            ));
+            commit.refs.sort();
+        }
+    }
+
+    Ok(())
+}
+
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) enum SearchMode {
+    Message,
+    Hash,
+}
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct SearchResult {
+    pub commits: Vec<Commit>,
+    pub limit: usize,
+    pub has_more: bool,
+}
+
+/// Search full commit messages across all refs, or resolve an unambiguous local hash.
+pub(crate) fn search(
+    repository: &Path,
+    query: &str,
+    mode: SearchMode,
+) -> Result<SearchResult, GitError> {
+    let query = query.trim();
+    if query.is_empty() || query.chars().count() > 256 || query.contains(['\0', '\n', '\r']) {
+        return Err(super::inspection::invalid(
+            "Enter a single-line search of 1–256 characters.",
+        ));
+    }
+    let grep = format!("--grep={query}");
+    let output = match mode {
+        SearchMode::Message => run_git(
+            repository,
+            &[
+                "log",
+                "--no-show-signature",
+                "--all",
+                "--topo-order",
+                "--fixed-strings",
+                "--regexp-ignore-case",
+                &grep,
+                "-n",
+                "201",
+                COMMIT_FORMAT,
+            ],
+        )?,
+        SearchMode::Hash => {
+            if !(4..=64).contains(&query.len())
+                || !query.bytes().all(|byte| byte.is_ascii_hexdigit())
+            {
+                return Err(super::inspection::invalid(
+                    "Enter an unambiguous commit hash of 4–64 hexadecimal characters.",
+                ));
+            }
+            let oid = super::inspection::resolve(repository, query)?;
+            run_git(
+                repository,
+                &[
+                    "log",
+                    "--no-show-signature",
+                    "--no-walk",
+                    "-n",
+                    "1",
+                    COMMIT_FORMAT,
+                    &oid,
+                    "--",
+                ],
+            )?
+        }
+    };
+    let mut commits = parse_commits_with_limit(&output.stdout_bytes, HISTORY_LIMIT + 1)
+        .map_err(|message| GitError::InvalidHistoryResponse { message, output })?;
+    let has_more = commits.len() > HISTORY_LIMIT;
+    commits.truncate(HISTORY_LIMIT);
+    decorate(repository, &mut commits)?;
+    Ok(SearchResult {
+        commits,
+        limit: HISTORY_LIMIT,
+        has_more,
+    })
 }
 
 /// Parses one newline-delimited record containing five NUL-delimited commit fields.
 fn parse_commits(output: &[u8]) -> Result<Vec<Commit>, String> {
+    parse_commits_with_limit(output, HISTORY_LIMIT)
+}
+
+fn parse_commits_with_limit(output: &[u8], limit: usize) -> Result<Vec<Commit>, String> {
     let mut commits = Vec::new();
 
     for raw_record in output.split(|byte| *byte == b'\n') {
@@ -77,9 +204,9 @@ fn parse_commits(output: &[u8]) -> Result<Vec<Commit>, String> {
         });
     }
 
-    if commits.len() > HISTORY_LIMIT {
+    if commits.len() > limit {
         return Err(format!(
-            "Git returned more than the requested {HISTORY_LIMIT} history entries."
+            "Git returned more than the requested {limit} history entries."
         ));
     }
 
@@ -193,6 +320,81 @@ mod tests {
             .current_dir(repository)
             .output()
             .expect("system Git should be available while building Branchlight")
+    }
+
+    #[test]
+    fn searches_full_messages_beyond_loaded_rows_and_reports_the_result_bound() {
+        let repository = temporary_repository("search");
+        assert!(git(
+            &repository,
+            &[
+                "commit",
+                "--allow-empty",
+                "-m",
+                "Old subject\n\nUnique BODY phrase literal [needle] --all"
+            ]
+        )
+        .status
+        .success());
+        let first = String::from_utf8(git(&repository, &["rev-parse", "HEAD"]).stdout)
+            .unwrap()
+            .trim()
+            .to_owned();
+        assert!(git(&repository, &["tag", "found", &first]).status.success());
+        for i in 0..201 {
+            assert!(git(
+                &repository,
+                &[
+                    "commit",
+                    "--allow-empty",
+                    "-m",
+                    &format!("Bounded target {i}")
+                ]
+            )
+            .status
+            .success());
+        }
+        assert!(!get_history(&repository)
+            .unwrap()
+            .iter()
+            .any(|commit| commit.hash == first));
+        let body = search(&repository, "unique body phrase", SearchMode::Message).unwrap();
+        assert_eq!(body.commits.len(), 1);
+        assert_eq!(body.commits[0].hash, first);
+        assert!(body.commits[0].refs.contains(&"tag: found".to_owned()));
+        assert!(!body.has_more);
+        assert_eq!(
+            search(&repository, "literal [needle]", SearchMode::Message)
+                .unwrap()
+                .commits
+                .len(),
+            1
+        );
+        assert_eq!(
+            search(&repository, "--all", SearchMode::Message)
+                .unwrap()
+                .commits
+                .len(),
+            1
+        );
+        let bounded = search(&repository, "bounded TARGET", SearchMode::Message).unwrap();
+        assert_eq!(bounded.commits.len(), 200);
+        assert!(bounded.has_more);
+        assert_eq!(
+            search(&repository, &first[..12], SearchMode::Hash)
+                .unwrap()
+                .commits[0]
+                .hash,
+            first
+        );
+        assert!(search(&repository, "absent message", SearchMode::Message)
+            .unwrap()
+            .commits
+            .is_empty());
+        for query in ["", "HEAD", "--all", "abc", "bad\0query"] {
+            assert!(search(&repository, query, SearchMode::Hash).is_err());
+        }
+        fs::remove_dir_all(repository).unwrap();
     }
 
     #[test]

@@ -5,12 +5,14 @@ import { FolderOpen, RefreshCw, LoaderCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DiagnosticsPanel } from "@/features/DiagnosticsPanel";
 import { RemoteControls } from "@/features/DeliveryControls";
+import { LfsPanel } from "@/features/LfsPanel";
 import { BranchSummary } from "@/workspace/BranchSummary";
 import { BranchlightMark } from "@/workspace/icons";
 import type { OpenState, RepositoryStatusState } from "@/workspace/types";
 import type { RunDelivery } from "@/types/delivery";
 import type { Repository } from "@/types/repository";
 import type { RepositoryStatus } from "@/types/status";
+import type { ReactNode } from "react";
 
 export function RepositoryToolbar({
   repository,
@@ -24,6 +26,8 @@ export function RepositoryToolbar({
   onStash,
   onRefresh,
   onOpenRepository,
+  externalTools,
+  submodules,
 }: {
   repository: Repository;
   status: RepositoryStatus | null;
@@ -36,6 +40,8 @@ export function RepositoryToolbar({
   onStash: () => void;
   onRefresh: () => void;
   onOpenRepository: () => void;
+  externalTools?: ReactNode;
+  submodules?: ReactNode;
 }) {
   return (
     <header className={styles["repository-bar"]}>
@@ -67,6 +73,9 @@ export function RepositoryToolbar({
 
       <div className={styles["repository-actions"]}>
         <DiagnosticsPanel path={repository.path} />
+        {externalTools}
+        {submodules}
+        <LfsPanel path={repository.path} disabled={isRefreshing || isMutating || hasActiveRepositoryOperation || openState !== "idle"} run={onDelivery} />
         <RemoteControls
           path={repository.path}
           disabled={
@@ -87,6 +96,7 @@ export function RepositoryToolbar({
             hasActiveRepositoryOperation ||
             openState !== "idle"
           }
+          data-command="stash.create"
           onClick={onStash}
         >
           Stash
@@ -96,6 +106,7 @@ export function RepositoryToolbar({
           type="button"
           disabled={isRefreshing || isMutating || openState !== "idle"}
           aria-busy={isRefreshing}
+          data-command="repository.refresh"
           onClick={onRefresh}
         >
           {isRefreshing ? (

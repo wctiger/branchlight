@@ -109,6 +109,8 @@ function ChangeSection({
                   type="button"
                   disabled={actionsDisabled}
                   aria-label={`${action.label} ${change.path}`}
+                  data-command={`file.${action.direction}`}
+                  data-command-file={change.path}
                   onClick={() => action.onClick(change.path)}
                 >
                   {busyPath === change.path ? (

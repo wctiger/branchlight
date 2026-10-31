@@ -12,13 +12,19 @@ import { HistoryControls } from "@/features/history/HistoryControls";
 import { BranchControls } from "@/features/DeliveryControls";
 import { BranchPanel } from "@/features/branches/BranchPanel";
 import { HistoryPanel } from "@/features/history/HistoryPanel";
+import { TagsPanel } from "@/features/history/TagsPanel";
+import { CommitSearch } from "@/features/history/CommitSearch";
 import { InspectionPanel } from "@/features/inspection/InspectionPanel";
 import { ChangesPanel } from "@/workspace/ChangesPanel";
 import { ConflictBanner } from "@/workspace/ConflictBanner";
 import { ErrorNotice } from "@/workspace/ErrorNotice";
+import { SubmodulesPanel } from "@/features/SubmodulesPanel";
+import { useWorkspaceStore } from "@/stores/workspace-context";
+import { ExternalTools } from "@/features/ExternalTools";
 
 /** Frames the active repository status and repository-level actions. */
 export function RepositoryScreen() {
+  const addRepository = useWorkspaceStore(state => state.addRepository);
   const {
     repository,
     repositoryError,
@@ -47,12 +53,15 @@ export function RepositoryScreen() {
     onMergeBranch,
     onRebaseBranch,
     onAbortOperation,
+    onRecoverRebase,
     onDelivery,
     onCreateStash,
     onApplyStash,
     onPopStash,
     onDropStash,
     onDiscard,
+    onSaveConflict,
+    onLaunchExternalTool,
   } = useRepositoryStore((state) => state);
   const [mode, setMode] = useState<"history" | "diff">("history");
   const [inspectorOpen, setInspectorOpen] = useState(true);
@@ -83,6 +92,12 @@ export function RepositoryScreen() {
   }, []);
   const [inspectionCommit, setInspectionCommit] = useState<string | null>(null);
   const status = statusState.state === "ready" ? statusState.status : null;
+  const externalSelection = selectedFile && status ? [
+    {kind: "unstaged", files: status.conflicts},
+    {kind: "unstaged", files: status.unstaged},
+    {kind: "staged", files: status.staged},
+  ].flatMap(group => group.files.filter(file => file.path === selectedFile.change.path).map(file => ({kind: group.kind, file}))) : [];
+  const externalFile = externalSelection.find(selection => selection.kind === selectedFile?.kind) ?? externalSelection[0];
   const isRefreshing =
     statusState.state === "loading" ||
     (statusState.state === "ready" && statusState.isRefreshing) ||
@@ -107,8 +122,12 @@ export function RepositoryScreen() {
       : null;
 
   return (
-    <main ref={screen} className={styles["repository-screen"]}>
+    <main ref={screen} data-repository-context={repository.path} data-selected-file={externalFile?.file.path} className={styles["repository-screen"]}>
       <RepositoryToolbar
+        submodules={<SubmodulesPanel path={repository.path} disabled={controlsDisabled || isRefreshing || hasActiveRepositoryOperation} run={onDelivery} error={conflictOperationError} onOpened={addRepository} />}
+        externalTools={<ExternalTools path={repository.path} file={externalFile?.file.path ?? null}
+          kind={externalFile?.kind ?? null} conflicted={!!externalFile && !!status?.conflicts.some(file => file.path === externalFile.file.path)}
+          disabled={controlsDisabled || isRefreshing} launch={onLaunchExternalTool} refresh={onRefresh} />}
         repository={repository}
         status={status}
         statusState={statusState}
@@ -166,6 +185,7 @@ export function RepositoryScreen() {
           controlsDisabled={controlsDisabled}
           onRefresh={onRefresh}
           onAbort={onAbortOperation}
+          onRecoverRebase={onRecoverRebase}
         />
       )}
 
@@ -202,18 +222,41 @@ export function RepositoryScreen() {
               run={onDelivery}
             />
           )}
+          <TagsPanel
+            path={repository.path}
+            revision={inspectionCommit ?? status?.branch.oid ?? null}
+            disabled={controlsDisabled || isRefreshing}
+            refreshKey={status}
+            run={onDelivery}
+            onInspectCommit={(hash) => {
+              setSelectedFile(null);
+              setInspectionCommit(hash);
+              setMode("diff");
+            }}
+          />
         </BranchPanel>
         <RepositoryMainContent
           mode={mode}
-          filePath={selectedFile?.change.path}
+          filePath={externalFile?.file.path}
           inspectorOpen={inspectorOpen}
           onModeChange={setMode}
           onInspectorToggle={() => setInspectorOpen(!inspectorOpen)}
           history={
             <HistoryPanel
+              onInspectCommit={(hash) => {
+                setSelectedFile(null);
+                setInspectionCommit(hash);
+                setMode("diff");
+              }}
+              search={<CommitSearch path={repository.path} refreshKey={historyState} onSelect={(hash) => {
+                setSelectedFile(null);
+                setInspectionCommit(hash);
+                setMode("diff");
+              }} />}
               renderActions={(commit) => (
                 <HistoryControls
                   key={commit.hash}
+                  path={repository.path}
                   commit={commit}
                   head={status?.branch.oid ?? null}
                   branch={status?.branch.name ?? null}
@@ -244,6 +287,7 @@ export function RepositoryScreen() {
               selectedFile={selectedFile}
               disabled={controlsDisabled}
               onDiscard={onDiscard}
+              onSaveConflict={onSaveConflict}
             />
           }
         />

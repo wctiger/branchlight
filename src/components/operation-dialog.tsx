@@ -36,11 +36,14 @@ export function OperationDialog({
       }}
     >
       <DialogContent
+        className="max-h-[calc(100dvh-2rem)] overflow-y-auto"
         showCloseButton={false}
         ref={contentRef}
         initialFocus={() => {
+          const content = contentRef.current;
+          if (!content) return false;
           const cancel = [
-            ...contentRef.current!.querySelectorAll<HTMLButtonElement>(
+            ...content.querySelectorAll<HTMLButtonElement>(
               "button",
             ),
           ].find((button) => button.textContent?.trim() === "Cancel");

@@ -80,6 +80,9 @@ export async function invoke<T>(
         exitCode: 0,
       };
       break;
+    case "get_local_tags":
+      result = [];
+      break;
     case "open_repository":
     case "create_repository":
       result = { path, name: path.split("/").pop() };
@@ -122,6 +125,37 @@ export async function invoke<T>(
         ],
       };
       break;
+    case "get_submodules":
+      result = [{name:"vendor/toolkit",path:"vendor/toolkit",url:"ssh://git@example.invalid/team/toolkit.git",branch:"main",expectedOid:commits[0].hash,currentOid:commits[1].hash,initialized:true,dirty:true,error:null,commonDirectory:`${path}/.git/modules/vendor/toolkit`}];
+      break;
+    case "open_submodule":
+      result = {name:"toolkit",path:`${path}/${args.submodulePath}`};
+      break;
+    case "review_submodule_action":
+      result = {action:args.action,token:"fixture-submodule",path:(args.action as {path:string}).path,parentHead:commits[0].hash,expectedOid:commits[0].hash,currentOid:commits[1].hash,effects:"Review this submodule's path and expected revision. Reset discards tracked child changes, preserves unrelated untracked files and local branch references, and does not recursively change nested submodules."};
+      break;
+    case "execute_submodule_action":
+      result = {stdout:"Submodule fixture operation completed",stderr:"",exitCode:0};
+      break;
+    case "get_lfs_state":
+      result = {
+        available: true, version: "git-lfs/3.8.1 (browser fixture)", filterConfigured: true,
+        hookInstalled: true, hookPath: `${path}/.git/hooks/pre-push`, storagePath: `${path}/.git/lfs/objects`,
+        pruneAllowed: true, pruneReason: "Default repository storage; remote verification is required before deletion.",
+        patterns: [{pattern:"*.psd",source:".gitattributes",tracked:true,lockable:false}],
+        files: [{name:"design/header.psd",oid:"a".repeat(64),size:16384,checkout:false,downloaded:true}],
+        head: commits[0].hash,
+      };
+      break;
+    case "review_lfs_prune":
+      result = {report:"1 file would be pruned (16 KB)\n * " + "b".repeat(64),token:"fixture-prune"};
+      break;
+    case "get_lfs_progress":
+      result = {active:false,message:"Git LFS operation completed."};
+      break;
+    case "execute_lfs_action":
+      result = {stdout:"LFS fixture operation completed",stderr:"",exitCode:0};
+      break;
     case "get_remotes":
       result = ["origin", "backup"];
       break;
@@ -152,6 +186,12 @@ export async function invoke<T>(
     case "get_history":
       result = commits;
       break;
+    case "search_history": {
+      const query = String(args.query ?? "").toLowerCase();
+      const matching = commits.filter(commit => args.mode === "hash" ? commit.hash.startsWith(query) : commit.subject.toLowerCase().includes(query));
+      result = {commits: matching.slice(0, args.mode === "hash" ? 1 : 200), limit: 200, hasMore: args.mode !== "hash" && matching.length > 200};
+      break;
+    }
     case "compare_revisions":
       result = {
         base: args.base,

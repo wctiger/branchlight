@@ -26,6 +26,7 @@ export function RepositoryMainContent({
         <Button
           variant="ghost"
           aria-pressed={mode === "history"}
+          data-command="view.history"
           onClick={() => onModeChange("history")}
         >
           History
@@ -33,6 +34,7 @@ export function RepositoryMainContent({
         <Button
           variant="ghost"
           aria-pressed={mode === "diff"}
+          data-command="view.diff"
           onClick={() => onModeChange("diff")}
         >
           Diff
@@ -45,6 +47,7 @@ export function RepositoryMainContent({
         <Button
           variant="outline"
           aria-expanded={inspectorOpen}
+          data-command="view.changes"
           onClick={() => onInspectorToggle()}
         >
           {inspectorOpen ? "Hide changes" : "Show changes"}

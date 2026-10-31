@@ -1,3 +1,4 @@
+import { notifyRepositoryMutation } from "@/stores/repository-refresh";
 import { createStore } from "zustand/vanilla";
 import type {
   OpenState,
@@ -9,7 +10,14 @@ import {
   abortMerge,
   abortHistoryOperation,
   executeHistoryAction,
+  executeLfsAction,
+  executeSubmoduleAction,
   abortRebase,
+  recoverRebase,
+  saveConflictFile,
+  createLocalTag,
+  deleteLocalTag,
+  launchExternalTool,
   applyStash,
   composeCommit,
   createBranchAt,
@@ -99,6 +107,7 @@ export type RepositoryState = {
   operationNotice: string | null;
   onOpenRepository: () => void;
   onRefresh: () => Promise<void>;
+  onRelatedRefresh: () => Promise<void>;
   onStage: (path: string) => void;
   onUnstage: (path: string) => void;
   onCommit: (options: CommitOptions) => Promise<boolean>;
@@ -112,6 +121,9 @@ export type RepositoryState = {
     kind: "merge" | "rebase" | "cherryPick" | "revert",
   ) => void;
   onDelivery: RunDelivery;
+  onRecoverRebase: (action: "continue" | "skip") => Promise<boolean>;
+  onSaveConflict: (snapshot: import("@/lib/tauri").ConflictFile, output: string, markResolved: boolean) => Promise<boolean>;
+  onLaunchExternalTool: (request: import("@/types/external-tools").ToolRequest) => Promise<import("@/types/external-tools").ToolLaunch | null>;
   onCreateStash: (message: string) => Promise<boolean>;
   onApplyStash: (stash: Stash) => Promise<boolean>;
   onPopStash: (stash: Stash) => Promise<boolean>;
@@ -361,6 +373,7 @@ export function createRepositoryStore(
         await refreshRepositoryState(repositoryPath);
       } finally {
         repositoryMutationInFlight = false;
+        notifyRepositoryMutation(repositoryPath);
         set({
           operation: {
             state: "idle",
@@ -669,17 +682,41 @@ export function createRepositoryStore(
       }
       await finishRepositoryMutation(repository.path);
     };
+    const handleRecoverRebase = async (action: "continue" | "skip"): Promise<boolean> => {
+      const { statusState, operation } = get();
+      if (operation.state !== "idle" || statusState.state !== "ready" ||
+          statusState.isRefreshing || statusState.status.operation !== "rebase" ||
+          (action === "continue" && statusState.status.conflicts.length > 0) ||
+          !beginRepositoryMutation()) return false;
+      clearOperationFeedback();
+      set({ operation: { state: "recoveringRebase" } });
+      let succeeded = false;
+      try {
+        await recoverRebase(repository.path, action);
+        succeeded = true;
+        set({ operationNotice: "Rebase step completed. Review the refreshed operation status." });
+      } catch (error) {
+        set({ conflictOperationError: normalizeGitError(error) });
+      }
+      await finishRepositoryMutation(repository.path);
+      return succeeded;
+    };
     const handleDelivery = async (action: DeliveryAction): Promise<boolean> => {
       if (get().operation.state !== "idle" || !beginRepositoryMutation())
         return false;
       clearOperationFeedback();
       const branchAction =
+        action.kind === "createTag" || action.kind === "deleteTag" ||
         action.kind === "createAt" ||
         action.kind === "checkoutRemote" ||
         action.kind === "upstream";
       set({
         operation:
-          action.kind === "history"
+          action.kind === "submodule" ? { state: "submodule" } :
+          action.kind === "lfs" ? { state: "lfs" } :
+          action.kind === "createTag" || action.kind === "deleteTag"
+            ? { state: "tagging" }
+          : action.kind === "history"
             ? { state: "editingHistory" }
             : branchAction
               ? {
@@ -698,6 +735,18 @@ export function createRepositoryStore(
       let succeeded = false;
       try {
         switch (action.kind) {
+          case "submodule":
+            await executeSubmoduleAction(repository.path, action.review.action, action.review.token);
+            break;
+          case "lfs":
+            await executeLfsAction(repository.path, action.action);
+            break;
+          case "createTag":
+            await createLocalTag(repository.path, action.name, action.revision, action.annotation);
+            break;
+          case "deleteTag":
+            await deleteLocalTag(repository.path, action.name, action.expectedOid);
+            break;
           case "history":
             await executeHistoryAction(
               repository.path,
@@ -746,7 +795,7 @@ export function createRepositoryStore(
         });
         succeeded = true;
       } catch (error) {
-        if (action.kind === "history")
+        if (action.kind === "history" || action.kind === "lfs" || action.kind === "submodule")
           set({ conflictOperationError: normalizeGitError(error) });
         else if (branchAction)
           set({
@@ -848,10 +897,12 @@ export function createRepositoryStore(
       conflictOperationError: null,
       operationNotice: null,
       onOpenRepository: () => void onOpen(),
-      onRefresh: () => {
+      onRefresh: async () => {
         clearOperationFeedback();
-        return refreshRepositoryState(repository.path);
+        await refreshRepositoryState(repository.path);
+        notifyRepositoryMutation(repository.path);
       },
+      onRelatedRefresh: () => refreshRepositoryState(repository.path),
       onStage: (path) => void handleFileOperation("stage", path),
       onUnstage: (path) => void handleFileOperation("unstage", path),
       onCommit: handleCommit,
@@ -882,6 +933,35 @@ export function createRepositoryStore(
         handleBranchIntegration("rebase", sourceBranch),
       onAbortOperation: (kind) => void handleAbortOperation(kind),
       onDelivery: handleDelivery,
+      onRecoverRebase: handleRecoverRebase,
+      onLaunchExternalTool: async (request) => {
+        if (get().operation.state !== "idle" || !beginRepositoryMutation()) return null;
+        clearOperationFeedback();
+        set({ operation: { state: "launchingTool" } });
+        let result = null;
+        try {
+          result = await launchExternalTool(repository.path, request);
+          set({ operationNotice: result.message });
+        } catch (error) { set({ conflictOperationError: normalizeGitError(error) }); }
+        await finishRepositoryMutation(repository.path);
+        return result;
+      },
+      onSaveConflict: async (snapshot, output, markResolved) => {
+        const state = get();
+        if (state.operation.state !== "idle" || state.statusState.state !== "ready" ||
+            state.statusState.isRefreshing || !state.statusState.status.conflicts.some(file => file.path === snapshot.filePath) ||
+            !beginRepositoryMutation()) return false;
+        clearOperationFeedback();
+        set({ operation: { state: "resolvingConflict", path: snapshot.filePath } });
+        let succeeded = false;
+        try {
+          await saveConflictFile(repository.path, snapshot.filePath, snapshot.token, output, markResolved);
+          succeeded = true;
+          set({ operationNotice: markResolved ? "Resolution saved and staged. Review the active operation before continuing." : "Draft saved. The file remains conflicted until explicitly marked resolved." });
+        } catch (error) { set({ conflictOperationError: normalizeGitError(error) }); }
+        await finishRepositoryMutation(repository.path);
+        return succeeded;
+      },
       onCreateStash: (message) =>
         handleStashMutation({
           kind: "create",

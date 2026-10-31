@@ -36,4 +36,10 @@ export type AppOperation =
   | { state: "merging"; branchName: string }
   | { state: "rebasing"; branchName: string }
   | { state: "abortingMerge" }
-  | { state: "abortingRebase" };
+  | { state: "abortingRebase" }
+  | { state: "recoveringRebase" }
+  | { state: "resolvingConflict"; path: string }
+  | { state: "tagging" }
+  | { state: "lfs" }
+  | { state: "submodule" }
+  | { state: "launchingTool" };

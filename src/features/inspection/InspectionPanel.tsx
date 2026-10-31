@@ -6,6 +6,7 @@ import { DiffRenderBoundary } from "@/features/inspection/DiffRenderBoundary";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 
 const DiffViewer = lazy(() => import("@/features/inspection/DiffViewer"));
+const ConflictResolver = lazy(() => import("@/features/inspection/ConflictResolver"));
 import {
   compareRevisions,
   getTextDiff,
@@ -49,6 +50,7 @@ export function InspectionPanel({
   commit,
   disabled,
   onDiscard,
+  onSaveConflict,
   selectedFile,
 }: {
   selectedFile?: { change: FileChange; kind: string } | null;
@@ -57,6 +59,7 @@ export function InspectionPanel({
   commit: string | null;
   disabled: boolean;
   onDiscard: (change: FileChange) => void;
+  onSaveConflict?: (snapshot: import("@/lib/tauri").ConflictFile, output: string, markResolved: boolean) => Promise<boolean>;
 }) {
   const [discardSelection, setDiscardSelection] = useState<FileChange | null>(
     null,
@@ -115,13 +118,16 @@ export function InspectionPanel({
     void load(() => compareRevisions(path, from, to), setComparison);
   }
   useEffect(() => {
-    if (commit) {
+    if (commit && !selectedFile) {
+      setFile("");
       setBase("@parent");
       setTarget(commit);
+      setRevision(commit);
       compare("@parent", commit);
     }
-    // Commit changes intentionally drive a new comparison; typed inputs do not.
-  }, [commit, path]);
+    // An inspected commit stays visible after a safe refresh or after leaving
+    // a working-file selection. Manual input edits do not trigger this effect.
+  }, [commit, path, selectedFile, status]);
   function showChange(change: FileChange, kind: string) {
     setFile(change.path);
     setComparison(null);
@@ -153,7 +159,7 @@ export function InspectionPanel({
     const current =
       matches.find(({ kind }) => kind === selectedFile.kind) ?? matches[0];
     if (current) showChange(current.change, current.kind);
-    else invalidate();
+    else {invalidate(); setFile("");}
     // Follow files between status groups, preserving the chosen comparison when both exist.
   }, [selectedFile, status, path]);
   const unsupportedPaths = new Set(
@@ -165,12 +171,21 @@ export function InspectionPanel({
   );
   const unavailable = (change: FileChange) =>
     unsupportedPaths.has(change.path) || change.path.endsWith("/");
+  const conflictPath = selectedFile && onSaveConflict && status?.conflicts.some(change => change.path === selectedFile.change.path)
+    ? selectedFile.change.path : null;
   return (
     <section
       className={styles["inspection-panel"]}
       aria-label="Change inspection"
     >
       <h2>{file || "Inspect changes"}</h2>
+      {conflictPath && onSaveConflict && (
+        <DiffRenderBoundary text={diff?.text ?? "Unable to load the conflict resolver. Use an external Git tool and refresh status."}>
+          <Suspense fallback={<p role="status">Loading conflict resolver…</p>}>
+            <ConflictResolver key={`${path}:${conflictPath}`} path={path} filePath={conflictPath} disabled={disabled} onSave={onSaveConflict} />
+          </Suspense>
+        </DiffRenderBoundary>
+      )}
       <p>
         Read-only text comparisons. Diffs are limited to 512 KiB. Binary content
         has no text preview.
@@ -251,6 +266,8 @@ export function InspectionPanel({
                           : "Discard both staged and unstaged changes for this path"
                       }
                       onClick={() => setDiscardSelection(change)}
+                      data-command="file.discard"
+                      data-command-file={change.path}
                     >
                       Discard
                     </Button>
@@ -313,44 +330,6 @@ export function InspectionPanel({
             Reverse
           </Button>
         </form>
-        {comparison && (
-          <section>
-            <p>
-              <code>{comparison.base}</code> → <code>{comparison.target}</code>
-            </p>
-            {!comparison.files.length && (
-              <p>No changed paths between these revisions.</p>
-            )}
-            <ul>
-              {comparison.files.map((change) => (
-                <li key={change.path}>
-                  <Button
-                    variant="outline"
-                    disabled={disabled}
-                    onClick={() => {
-                      setFile(change.path);
-                      void load(
-                        () =>
-                          getTextDiff(
-                            path,
-                            "revisions",
-                            change.path,
-                            comparison.base,
-                            comparison.target,
-                          ),
-                        setDiff,
-                      );
-                    }}
-                  >
-                    {change.status}{" "}
-                    {change.originalPath ? `${change.originalPath} → ` : ""}
-                    {change.path}
-                  </Button>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
         <form
           onSubmit={(event) => {
             event.preventDefault();
@@ -412,6 +391,44 @@ export function InspectionPanel({
           </Button>
         </form>
       </details>
+      {comparison && (
+        <section aria-label="Revision comparison">
+          <p>
+            <code>{comparison.base}</code> → <code>{comparison.target}</code>
+          </p>
+          {!comparison.files.length && (
+            <p>No changed paths between these revisions.</p>
+          )}
+          <ul>
+            {comparison.files.map((change) => (
+              <li key={change.path}>
+                <Button
+                  variant="outline"
+                  disabled={disabled}
+                  onClick={() => {
+                    setFile(change.path);
+                    void load(
+                      () =>
+                        getTextDiff(
+                          path,
+                          "revisions",
+                          change.path,
+                          comparison.base,
+                          comparison.target,
+                        ),
+                      setDiff,
+                    );
+                  }}
+                >
+                  {change.status}{" "}
+                  {change.originalPath ? `${change.originalPath} → ` : ""}
+                  {change.path}
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
       {loading && <p role="status">Loading inspection…</p>}
       {error && <p role="alert">{error}</p>}
       {history && (
@@ -442,7 +459,7 @@ export function InspectionPanel({
           </ul>
         </section>
       )}
-      {diff && (
+      {diff && !conflictPath && (
         <section>
           <h3>{diff.context}</h3>
           {diff.truncated && (

@@ -67,13 +67,52 @@ The application implements the following workflows:
   command names, exit codes, and timings, excluding arguments and output.
 - Detect active merges/rebases/cherry-picks/reverts, list conflicts, refresh after external
   resolution, and safely abort the matching operation.
-- Browse a bounded 200-commit history with a read-only SVG DAG.
+- Continue a stopped rebase after resolving and staging conflicts, or explicitly
+  skip its current commit after confirming that its changes will be discarded.
+- Review an interactive rebase plan for up to 200 commits on a linear local
+  branch range: pick, drop, reorder, squash, or reword. Confirm the branch rewrite
+  before applying; conflict stops retain continue, skip, and abort controls.
+- Navigate a bounded 200-commit SVG graph with pointer and keyboard selection,
+  parent navigation, and selected-commit inspection. Parents outside the loaded
+  snapshot are labeled explicitly; selection survives safe refreshes.
+- Search full commit messages across local refs using case-insensitive literal
+  text (up to 200 matching commits), or inspect an unambiguous local commit hash.
+  Search results open the existing commit inspection view.
+- Launch an external editor, terminal, file manager, or Git-configured diff/merge
+  tool in the current repository/file context. Editor and terminal preferences
+  use an executable plus structured arguments; refresh after external changes.
+  Git tool completion refreshes repository views even after a failure.
+- Discover repository and workspace actions through **Commands** (Command+K on
+  macOS, Ctrl+K on Windows by default). Configure local shortcuts, detect
+  duplicate bindings, disable bindings, or restore defaults. Commands reuse
+  the primary UI's guards and confirmations; shortcuts are ignored while typing
+  or another dialog is open.
+- Discover configured submodules, expected/current revisions and dirty state;
+  open initialized children as independent repository tabs. Review add, URL/branch
+  configuration, initialize/update-to-expected, reset and removal operations before
+  applying. Reset preserves unrelated untracked/ignored and nested repository work;
+  removal refuses dirty or untracked content and retains Git module metadata.
+  Parent/child mutations share repository locks and refresh related open views.
+  Existing `.gitmodules` edits must be committed or stashed before add/edit/remove.
+- Detect system Git LFS, inspect tracked patterns and pointer/content/cache state,
+  explicitly initialize local filters and pre-push hooks, and track/untrack patterns
+  in root or nested attributes files. Fetch/pull/push use configured remotes and
+  local credentials; cached checkout preserves modified files. Pruning requires
+  an eligibility preview, confirmation, and remote-adapter verification, and is
+  unavailable for custom/shared/symlinked storage. LFS is not bundled; install it
+  separately using its official setup guide. History migration is excluded.
+- List and inspect local tags, create unsigned lightweight or annotated tags at
+  a selected commit, and confirm deletion of the exact reviewed local tag.
+  Tag creation never overwrites an existing name; remote tag administration is
+  excluded.
 
 Text diffs use `@pierre/diffs` with unified/side-by-side layouts, syntax highlighting,
 virtualized rows, and hunk navigation. Highlighting workers and language assets
-are bundled locally. Combined conflict patches, truncated output, and unsupported
-patch formats retain a labeled plain-text fallback. Conflict resolution still uses
-external Git.
+are bundled locally. Truncated output and unsupported patch formats retain a
+labeled plain-text fallback. Ordinary UTF-8 text conflicts expose base, current,
+incoming, and editable output. Save a draft without resolving, or explicitly save
+and stage the resolution. Binary, deleted-file, missing-stage, symlink, and
+over-512-KiB conflicts require external tools.
 
 Repository views retain state while switching tabs. Backend commands queue by
 canonical common Git directory, coordinating linked worktrees while allowing
@@ -82,8 +121,8 @@ be closed until their operation and refresh finish. Git output capture is capped
 at 8 MiB per stream; text previews at 512 KiB.
 
 Worktree lifecycle remains planned. Merge and rebase
-target the checked-out branch; conflict resolution and rebase continuation require
-external tools/Git, including continuation of stopped cherry-picks/reverts. Repository history is limited to 200 commits; file history to
+target the checked-out branch; continuation of stopped merges/cherry-picks/reverts
+and unsupported conflict resolution require external tools/Git. Repository history is limited to 200 commits; file history to
 100 commits without rename tracing. Large-repository performance remains unverified.
 Delivery 1 acceptance is recorded in [PR #67](https://github.com/wctiger/branchlight/pull/67).
 Delivery 2 platform builds and desktop acceptance are tracked separately from
