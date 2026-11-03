@@ -1,3 +1,5 @@
+import { usePanelWidth } from "@/workspace/usePanelWidth";
+import sharedStyles from "@/styles/shared.module.css";
 import type { FileChange } from "@/types/status";
 import { useRepositoryStore } from "@/stores/repository-context";
 import styles from "@/workspace/RepositoryScreen.module.css";
@@ -69,7 +71,19 @@ export function RepositoryScreen() {
     change: FileChange;
     kind: string;
   } | null>(null);
-  const [inspectorWidth, setInspectorWidth] = useState(310);
+  const [inspectorWidth, setInspectorWidth] = usePanelWidth("branchlight.inspectorWidth", 310, 300, 420);
+  const [branchWidth, setBranchWidth] = usePanelWidth("branchlight.branchWidth", 230, 220, 360);
+  const body = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const element = body.current;
+    if (!element || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(([entry]) => {
+      // Preserve the main column on resize. The persistent toggle can explicitly reopen it.
+      if (entry.contentRect.width > 0 && entry.contentRect.width < branchWidth + 480 + inspectorWidth) setInspectorOpen(false);
+    });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [branchWidth, inspectorWidth]);
   const screen = useRef<HTMLElement>(null);
   useEffect(() => {
     const escape = (event: KeyboardEvent) => {
@@ -190,51 +204,56 @@ export function RepositoryScreen() {
       )}
 
       <div
+        ref={body}
         className={cn(
           styles["repository-body"],
           !inspectorOpen && styles["repository-body--inspector-hidden"],
         )}
         style={
-          { "--inspector-width": `${inspectorWidth}px` } as React.CSSProperties
+          { "--inspector-width": `${inspectorWidth}px`, "--branch-width": `${branchWidth}px` } as React.CSSProperties
         }
       >
-        <BranchPanel
-          state={branchesState}
-          operationError={branchOperationError}
-          operationNotice={branchOperationNotice}
-          actionsDisabled={controlsDisabled || hasActiveRepositoryOperation}
-          busyBranchName={busyBranchName}
-          onRefresh={onRefresh}
-          onSwitch={onSwitchBranch}
-          onCreate={onCreateBranch}
-          onRename={onRenameBranch}
-          onDelete={onDeleteBranch}
-          onMerge={onMergeBranch}
-          onRebase={onRebaseBranch}
-        >
-          {branchesState.state === "ready" && (
-            <BranchControls
-              branches={branchesState.branches}
-              commit={inspectionCommit}
-              disabled={
-                controlsDisabled || isRefreshing || hasActiveRepositoryOperation
-              }
+        <div className={styles["branch-column"]}>
+          <BranchPanel
+            state={branchesState}
+            operationError={branchOperationError}
+            operationNotice={branchOperationNotice}
+            actionsDisabled={controlsDisabled || hasActiveRepositoryOperation}
+            busyBranchName={busyBranchName}
+            onRefresh={onRefresh}
+            onSwitch={onSwitchBranch}
+            onCreate={onCreateBranch}
+            onRename={onRenameBranch}
+            onDelete={onDeleteBranch}
+            onMerge={onMergeBranch}
+            onRebase={onRebaseBranch}
+          >
+            {branchesState.state === "ready" && (
+              <BranchControls
+                branches={branchesState.branches}
+                commit={inspectionCommit}
+                disabled={
+                  controlsDisabled || isRefreshing || hasActiveRepositoryOperation
+                }
+                run={onDelivery}
+              />
+            )}
+            <TagsPanel
+              path={repository.path}
+              revision={inspectionCommit ?? status?.branch.oid ?? null}
+              disabled={controlsDisabled || isRefreshing}
+              refreshKey={status}
               run={onDelivery}
+              onInspectCommit={(hash) => {
+                setSelectedFile(null);
+                setInspectionCommit(hash);
+                setMode("diff");
+              }}
             />
-          )}
-          <TagsPanel
-            path={repository.path}
-            revision={inspectionCommit ?? status?.branch.oid ?? null}
-            disabled={controlsDisabled || isRefreshing}
-            refreshKey={status}
-            run={onDelivery}
-            onInspectCommit={(hash) => {
-              setSelectedFile(null);
-              setInspectionCommit(hash);
-              setMode("diff");
-            }}
-          />
-        </BranchPanel>
+          </BranchPanel>
+          <input className={sharedStyles["sidebar-width"]} type="range" min="220" max="360" step="10"
+            value={branchWidth} onChange={(event) => setBranchWidth(Number(event.target.value))} aria-label="Branch sidebar width" />
+        </div>
         <RepositoryMainContent
           mode={mode}
           filePath={externalFile?.file.path}
@@ -287,6 +306,8 @@ export function RepositoryScreen() {
               selectedFile={selectedFile}
               disabled={controlsDisabled}
               onDiscard={onDiscard}
+              onStage={onStage}
+              onUnstage={onUnstage}
               onSaveConflict={onSaveConflict}
             />
           }

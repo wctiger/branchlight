@@ -3,7 +3,7 @@ import { WorkspaceStoreContext } from "@/stores/workspace-context";
 
 import "./setup-dom";
 import { afterEach, expect, mock, test } from "bun:test";
-import { cleanup, render, waitFor } from "@testing-library/react";
+import { fireEvent, cleanup, render, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { invoke as fixture } from "./fixtures/backend";
 import type { CommitOptions, DeliveryAction } from "../src/types/delivery";
@@ -95,6 +95,7 @@ test("failed commit preserves summary/body and successful commit resets the per-
   );
   await user.type(view.getByLabelText("Summary"), "Keep draft");
   await user.type(view.getByLabelText("Body (optional)"), "Detailed body");
+  await user.click(view.getByText("Commit options"));
   await user.click(view.getByRole("checkbox", { name: /Skip pre-commit/ }));
   await user.click(view.getByRole("button", { name: "Commit", exact: true }));
   expect((view.getByLabelText("Summary") as HTMLInputElement).value).toBe(
@@ -339,6 +340,25 @@ test("selected diff follows staging and unstaging, preserves partial comparison,
   view.rerender(<InspectionPanel {...props} status={emptyStatus} />);
   expect(diffs()).toHaveLength(count);
   expect(view.queryByRole("region", { name: "File diff" })).toBeNull();
+});
+
+test("diff staging follows the current status group and disappears for revision comparisons", async () => {
+  const staged: string[] = [];
+  const unstaged: string[] = [];
+  const props = { path: "/repo", commit: null, disabled: false, onDiscard: () => {},
+    onStage: (path: string) => staged.push(path), onUnstage: (path: string) => unstaged.push(path),
+    selectedFile: { change, kind: "unstaged" } };
+  const view = render(<InspectionPanel {...props} status={{ ...emptyStatus, unstaged: [change] }} />);
+  await waitFor(() => expect((view.getByRole("button", { name: "Stage file" }) as HTMLButtonElement).disabled).toBe(false));
+  fireEvent.click(view.getByRole("button", { name: "Stage file" }));
+  expect(staged).toEqual([change.path]);
+  view.rerender(<InspectionPanel {...props} status={{ ...emptyStatus, staged: [change] }} />);
+  await waitFor(() => expect((view.getByRole("button", { name: "Unstage file" }) as HTMLButtonElement).disabled).toBe(false));
+  fireEvent.click(view.getByRole("button", { name: "Unstage file" }));
+  expect(unstaged).toEqual([change.path]);
+  view.rerender(<InspectionPanel {...props} selectedFile={null} commit={"b".repeat(40)} status={{ ...emptyStatus, staged: [change] }} />);
+  expect(view.queryByRole("button", { name: "Unstage file" })).toBeNull();
+  expect(view.queryByRole("button", { name: "Stage file" })).toBeNull();
 });
 
 test("conflict selection uses the supported unstaged comparison and refreshes from conflict status", async () => {

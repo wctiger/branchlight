@@ -38,6 +38,9 @@ pub(crate) struct FileChange {
     pub(crate) path: String,
     pub(crate) original_path: Option<String>,
     pub(crate) status: FileStatus,
+    pub(crate) additions: Option<u32>,
+    pub(crate) deletions: Option<u32>,
+    pub(crate) binary: bool,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]

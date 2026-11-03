@@ -179,3 +179,5 @@
 .branch-item > code {
   display: none;
 }
+
+.branch-divergence { flex-shrink: 0; font-size: var(--type-meta); color: var(--text-secondary); }

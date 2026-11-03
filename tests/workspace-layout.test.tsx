@@ -6,6 +6,7 @@ import { cleanup, fireEvent, render } from "@testing-library/react";
 import { RepositoryMainContent } from "@/workspace/RepositoryMainContent";
 import { ChangesInspector } from "@/workspace/ChangesInspector";
 import { RepositorySidebar } from "@/workspace/RepositorySidebar";
+import { usePanelWidth } from "@/workspace/usePanelWidth";
 import { useRepositorySidebar } from "@/workspace/useRepositorySidebar";
 
 afterEach(() => {
@@ -91,4 +92,20 @@ test("repository sidebar restores a bounded width and persists compact mode", ()
   expect(
     JSON.parse(window.localStorage.getItem("branchlight.repositorySidebar")!),
   ).toEqual({ compact: true, width: 420 });
+});
+
+
+test("panel widths clamp stored values and restore changes across remounts", () => {
+  Object.defineProperty(globalThis, "localStorage", { configurable: true, value: window.localStorage });
+  window.localStorage.setItem("branchlight.branchWidth", "999");
+  function Harness() {
+    const [width, setWidth] = usePanelWidth("branchlight.branchWidth", 230, 220, 360);
+    return <><output aria-label="Branch width">{width}</output><button onClick={() => setWidth(280)}>Resize</button></>;
+  }
+  const first = render(<Harness />);
+  expect(first.getByLabelText("Branch width").textContent).toBe("360");
+  fireEvent.click(first.getByRole("button", { name: "Resize" }));
+  first.unmount();
+  const second = render(<Harness />);
+  expect(second.getByLabelText("Branch width").textContent).toBe("280");
 });

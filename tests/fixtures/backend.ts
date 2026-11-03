@@ -50,11 +50,15 @@ export async function invoke<T>(
     commit: commits[0].hash,
     isCurrent: true,
     upstream: "origin/main",
+    ahead: 3, behind: 0,
   };
   const changed = Array.from({ length: 16 }, (_, i) => ({
     path: `src/features/${i % 2 ? "payments" : "workspace"}/component-${i}.tsx`,
     originalPath: null,
     status: i % 3 ? "modified" : "untracked",
+    additions: i % 3 ? i + 2 : null,
+    deletions: i % 3 ? i : null,
+    binary: i === 5,
   }));
   let result: unknown;
   switch (command) {

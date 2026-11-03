@@ -15,4 +15,6 @@ pub(crate) struct Branch {
     pub(crate) commit: Option<String>,
     pub(crate) is_current: bool,
     pub(crate) upstream: Option<String>,
+    pub(crate) ahead: Option<u32>,
+    pub(crate) behind: Option<u32>,
 }

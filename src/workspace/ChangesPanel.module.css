@@ -221,3 +221,8 @@ button.change-path {
   max-height: 55%;
   overflow: auto;
 }
+
+.change-stats { flex-shrink: 0; font-size: var(--type-meta); color: var(--text-secondary); }
+.change-stats > span:first-child { color: var(--git-add-text); }
+.change-stats > span:last-child { color: var(--git-delete-text); }
+.change-section { border-inline: 0; border-radius: 0; }

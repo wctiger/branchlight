@@ -15,7 +15,7 @@ export function BranchSummary({ branch }: { branch: BranchStatus }) {
     <div className={styles["branch-summary"]}>
       <GitBranch className={styles["branch-symbol"]} aria-hidden="true" />
       <div className={styles["branch-summary__identity"]}>
-        <strong>{branchLabel}</strong>
+        <strong title={branchLabel}>{branchLabel}</strong>
         <span>{trackingLabel}</span>
       </div>
       {branch.upstream && (

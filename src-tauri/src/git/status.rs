@@ -27,9 +27,77 @@ pub(crate) fn get_repository_status(repository: &Path) -> Result<RepositoryStatu
     match parsed {
         Ok(mut status) => {
             status.operation = get_repository_operation(repository)?;
+            // Statistics are supplementary: a failed/racing diff must not hide status.
+            for (cached, changes) in [(true, &mut status.staged), (false, &mut status.unstaged)] {
+                if !changes.iter().any(|change| {
+                    !matches!(
+                        change.status,
+                        FileStatus::Untracked | FileStatus::Conflicted
+                    )
+                }) {
+                    continue;
+                }
+                let mut args = vec![
+                    "diff",
+                    "--numstat",
+                    "-z",
+                    "--no-ext-diff",
+                    "--no-textconv",
+                    "--find-renames",
+                ];
+                if cached {
+                    args.push("--cached");
+                }
+                args.push("--");
+                if let Ok(stats) = run_git(repository, &args) {
+                    apply_numstat(changes, &stats.stdout_bytes);
+                }
+            }
             Ok(status)
         }
         Err(message) => Err(GitError::InvalidStatusResponse { message, output }),
+    }
+}
+
+/// Numstat -z leaves paths unquoted; renames use an empty path then old/new records.
+fn apply_numstat(changes: &mut [FileChange], output: &[u8]) {
+    let paths: std::collections::HashMap<_, _> = changes
+        .iter()
+        .enumerate()
+        .map(|(index, change)| (change.path.clone(), index))
+        .collect();
+    let mut records = output.split(|byte| *byte == 0);
+    while let Some(record) = records.next() {
+        let fields: Vec<_> = record.splitn(3, |byte| *byte == b'\t').collect();
+        if fields.len() != 3 {
+            continue;
+        }
+        let path = if fields[2].is_empty() {
+            let _old = records.next();
+            let Some(new) = records.next() else {
+                break;
+            };
+            new
+        } else {
+            fields[2]
+        };
+        let Some(index) = paths.get(&decode_git_bytes(path)) else {
+            continue;
+        };
+        let change = &mut changes[*index];
+        if matches!(
+            change.status,
+            FileStatus::Untracked | FileStatus::Conflicted
+        ) {
+            continue;
+        }
+        change.binary = fields[0] == b"-" && fields[1] == b"-";
+        change.additions = std::str::from_utf8(fields[0])
+            .ok()
+            .and_then(|v| v.parse().ok());
+        change.deletions = std::str::from_utf8(fields[1])
+            .ok()
+            .and_then(|v| v.parse().ok());
     }
 }
 
@@ -101,6 +169,9 @@ fn parse_porcelain_v2(output: &[u8]) -> Result<RepositoryStatus, String> {
                 path: decode_git_bytes(fields[9]),
                 original_path: None,
                 status: FileStatus::Conflicted,
+                additions: None,
+                deletions: None,
+                binary: false,
             });
         } else if let Some(path) = record.strip_prefix(b"? ") {
             validate_path(path)?;
@@ -108,6 +179,9 @@ fn parse_porcelain_v2(output: &[u8]) -> Result<RepositoryStatus, String> {
                 path: decode_git_bytes(path),
                 original_path: None,
                 status: FileStatus::Untracked,
+                additions: None,
+                deletions: None,
+                binary: false,
             });
         } else {
             return Err(format!(
@@ -199,6 +273,9 @@ fn push_tracked_change(
             path: decode_git_bytes(path),
             original_path: original_path.map(decode_git_bytes),
             status,
+            additions: None,
+            deletions: None,
+            binary: false,
         });
     }
 
@@ -207,6 +284,9 @@ fn push_tracked_change(
             path: decode_git_bytes(path),
             original_path: original_path.map(decode_git_bytes),
             status,
+            additions: None,
+            deletions: None,
+            binary: false,
         });
     }
 
@@ -398,6 +478,76 @@ mod tests {
         assert_eq!(refreshed_status.unstaged[0].status, FileStatus::Untracked);
 
         fs::remove_dir_all(repository).expect("the test repository should be removed");
+    }
+
+    #[test]
+    fn statistics_separate_index_and_worktree_and_preserve_special_paths() {
+        let repository = temporary_directory("numstat");
+        fs::create_dir_all(&repository).unwrap();
+        run_git(&repository, &["init", "-b", "main"]).unwrap();
+        run_git(&repository, &["config", "user.name", "Test"]).unwrap();
+        run_git(
+            &repository,
+            &["config", "user.email", "test@example.invalid"],
+        )
+        .unwrap();
+        let name = if cfg!(windows) {
+            "space file.txt"
+        } else {
+            "space and tab\tfile.txt"
+        };
+        fs::write(repository.join(name), "one\ntwo\n").unwrap();
+        fs::write(repository.join("binary"), b"a\0b").unwrap();
+        run_git(&repository, &["add", "."]).unwrap();
+        // An unborn index is also a valid comparison against the empty tree.
+        let initial = get_repository_status(&repository).unwrap();
+        assert_eq!(
+            initial
+                .staged
+                .iter()
+                .find(|c| c.path == name)
+                .unwrap()
+                .additions,
+            Some(2)
+        );
+        assert!(
+            initial
+                .staged
+                .iter()
+                .find(|c| c.path == "binary")
+                .unwrap()
+                .binary
+        );
+        run_git(&repository, &["commit", "-m", "Base"]).unwrap();
+        fs::write(repository.join(name), "one\ntwo\nthree\n").unwrap();
+        run_git(&repository, &["add", "--", name]).unwrap();
+        fs::write(repository.join(name), "one\nthree\n").unwrap();
+        fs::write(repository.join("untracked"), "unknown\n").unwrap();
+        let status = get_repository_status(&repository).unwrap();
+        assert_eq!(
+            (status.staged[0].additions, status.staged[0].deletions),
+            (Some(1), Some(0))
+        );
+        let worktree = status.unstaged.iter().find(|c| c.path == name).unwrap();
+        assert_eq!((worktree.additions, worktree.deletions), (Some(0), Some(1)));
+        assert_eq!(
+            status
+                .unstaged
+                .iter()
+                .find(|c| c.path == "untracked")
+                .unwrap()
+                .additions,
+            None
+        );
+        run_git(&repository, &["reset", "--hard", "HEAD"]).unwrap();
+        run_git(&repository, &["mv", "--", name, "renamed.txt"]).unwrap();
+        let renamed = get_repository_status(&repository).unwrap();
+        assert_eq!(renamed.staged[0].path, "renamed.txt");
+        assert_eq!(
+            (renamed.staged[0].additions, renamed.staged[0].deletions),
+            (Some(0), Some(0))
+        );
+        fs::remove_dir_all(repository).unwrap();
     }
 
     // macOS rejects filenames containing invalid UTF-8 before Git can inspect them.
