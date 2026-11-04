@@ -1,3 +1,5 @@
+import { IconButton } from "@/components/icon-button";
+import { CloudDownload, ArrowDownToLine, ArrowUpFromLine, ChevronsUp } from "lucide-react";
 import styles from "@/features/DeliveryControls.module.css";
 import { useEffect, useState } from "react";
 import { OperationDialog } from "../components/operation-dialog";
@@ -153,38 +155,38 @@ export function RemoteControls({
   }
   return (
     <>
-      <Button
+      <IconButton
         variant="outline"
         disabled={disabled}
         data-command="remote.fetch"
         onClick={() => setMode("fetch")}
-      >
-        Fetch…
-      </Button>
-      <Button
+        label="Fetch…"
+        icon={CloudDownload}
+      />
+      <IconButton
         variant="outline"
         disabled={disabled}
         data-command="remote.pull"
         onClick={() => setMode("pull")}
-      >
-        Pull…
-      </Button>
-      <Button
+        label="Pull…"
+        icon={ArrowDownToLine}
+      />
+      <IconButton
         variant="outline"
         disabled={disabled}
         data-command="remote.push"
         onClick={() => void run({ kind: "push" })}
-      >
-        Push
-      </Button>
-      <Button
+        label="Push"
+        icon={ArrowUpFromLine}
+      />
+      <IconButton
         variant="outline"
         disabled={disabled}
         data-command="remote.force"
         onClick={() => setMode("force")}
-      >
-        Force push…
-      </Button>
+        label="Force push…"
+        icon={ChevronsUp}
+      />
       {mode && (
         <OperationDialog
           title={

@@ -1,6 +1,7 @@
+import { IconButton } from "@/components/icon-button";
+import { History, FileDiff, PanelRightClose, PanelRightOpen } from "lucide-react";
 import styles from "@/workspace/RepositoryMainContent.module.css";
 import type { ReactNode } from "react";
-import { Button } from "@/components/ui/button";
 
 /** Keep both modes mounted so history selection, scroll, and inspection state survive switches. */
 export function RepositoryMainContent({
@@ -23,35 +24,35 @@ export function RepositoryMainContent({
   return (
     <div className={styles["main-column"]}>
       <div className={styles["main-view-toolbar"]}>
-        <Button
+        <IconButton
           variant="ghost"
           aria-pressed={mode === "history"}
           data-command="view.history"
           onClick={() => onModeChange("history")}
-        >
-          History
-        </Button>
-        <Button
+          label="History"
+          icon={History}
+        />
+        <IconButton
           variant="ghost"
           aria-pressed={mode === "diff"}
           data-command="view.diff"
           onClick={() => onModeChange("diff")}
-        >
-          Diff
-        </Button>
+          label="Diff"
+          icon={FileDiff}
+        />
         <span className={styles["selected-file-path"]} title={filePath}>
           {mode === "diff"
             ? (filePath ?? "Compare revisions")
             : "Commit history"}
         </span>
-        <Button
+        <IconButton
           variant="outline"
           aria-expanded={inspectorOpen}
           data-command="view.changes"
           onClick={() => onInspectorToggle()}
-        >
-          {inspectorOpen ? "Hide changes" : "Show changes"}
-        </Button>
+          label={inspectorOpen ? "Hide changes" : "Show changes"}
+          icon={inspectorOpen ? PanelRightClose : PanelRightOpen}
+        />
       </div>
 
       <div className={styles["main-mode"]} hidden={mode !== "history"}>

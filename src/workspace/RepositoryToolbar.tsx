@@ -1,8 +1,8 @@
 import styles from "@/workspace/RepositoryToolbar.module.css";
 import summaryStyles from "@/workspace/BranchSummary.module.css";
 import sharedStyles from "@/styles/shared.module.css";
-import { FolderOpen, RefreshCw, LoaderCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { FolderOpen, RefreshCw, LoaderCircle, Archive } from "lucide-react";
+import { IconButton } from "@/components/icon-button";
 import { DiagnosticsPanel } from "@/features/DiagnosticsPanel";
 import { RemoteControls } from "@/features/DeliveryControls";
 import { LfsPanel } from "@/features/LfsPanel";
@@ -86,7 +86,7 @@ export function RepositoryToolbar({
           }
           run={onDelivery}
         />
-        <Button
+        <IconButton
           variant="outline"
           type="button"
           disabled={
@@ -98,38 +98,29 @@ export function RepositoryToolbar({
           }
           data-command="stash.create"
           onClick={onStash}
-        >
-          Stash
-        </Button>
-        <Button
+          label="Stash"
+          icon={Archive}
+        />
+        <IconButton
           variant="outline"
           type="button"
           disabled={isRefreshing || isMutating || openState !== "idle"}
           aria-busy={isRefreshing}
           data-command="repository.refresh"
           onClick={onRefresh}
-        >
-          {isRefreshing ? (
-            <LoaderCircle
-              className={sharedStyles["small-spinner"]}
-              aria-hidden="true"
-              data-icon="inline-start"
-            />
-          ) : (
-            <RefreshCw aria-hidden="true" data-icon="inline-start" />
-          )}
-          {isRefreshing ? "Refreshing…" : "Refresh"}
-        </Button>
-        <Button
+          label={isRefreshing ? "Refreshing…" : "Refresh"}
+          icon={isRefreshing ? LoaderCircle : RefreshCw}
+          iconClassName={isRefreshing ? sharedStyles["small-spinner"] : undefined}
+        />
+        <IconButton
           variant="outline"
           type="button"
           disabled={isMutating || openState !== "idle"}
           aria-busy={openState !== "idle"}
           onClick={onOpenRepository}
-        >
-          <FolderOpen aria-hidden="true" data-icon="inline-start" />
-          {openState === "idle" ? "Open another" : "Opening…"}
-        </Button>
+          label={openState === "idle" ? "Open another" : "Opening…"}
+          icon={FolderOpen}
+        />
       </div>
     </header>
   );

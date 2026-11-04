@@ -1,3 +1,5 @@
+import { IconButton } from "@/components/icon-button";
+import { GitBranch, Pencil, GitMerge, Trash2 } from "lucide-react";
 import styles from "@/features/branches/BranchPanel.module.css";
 import sharedStyles from "@/styles/shared.module.css";
 import { cn } from "@/lib/utils";
@@ -497,7 +499,7 @@ export function BranchPanel({
           className={styles["branch-actions"]}
           aria-label="Selected local branch actions"
         >
-          <Button
+          <IconButton
             variant="outline"
             type="button"
             disabled={
@@ -505,19 +507,19 @@ export function BranchPanel({
             }
             onClick={() => void onSwitch(selectedLocalBranch.name)}
             data-command="branch.switch"
-          >
-            Switch
-          </Button>
-          <Button
+            label="Switch"
+            icon={GitBranch}
+          />
+          <IconButton
             variant="outline"
             type="button"
             disabled={actionsDisabled || isRefreshing}
             onClick={openRename}
             data-command="branch.rename"
-          >
-            Rename
-          </Button>
-          <Button
+            label="Rename"
+            icon={Pencil}
+          />
+          <IconButton
             variant="outline"
             ref={integrationTriggerRef}
             type="button"
@@ -526,10 +528,10 @@ export function BranchPanel({
             }
             onClick={() => openIntegration(selectedLocalBranch)}
             data-command="branch.integrate"
-          >
-            Merge / rebase…
-          </Button>
-          <Button
+            label="Merge / rebase…"
+            icon={GitMerge}
+          />
+          <IconButton
             variant="destructive"
             className={styles["branch-action--danger"]}
             type="button"
@@ -545,9 +547,9 @@ export function BranchPanel({
               setEditor({ mode: "delete", branch: selectedLocalBranch })
             }
             data-command="branch.delete"
-          >
-            Delete
-          </Button>
+            label="Delete"
+            icon={Trash2}
+          />
         </div>
       )}
 

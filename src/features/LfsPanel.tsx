@@ -1,3 +1,5 @@
+import { IconButton } from "@/components/icon-button";
+import { HardDrive } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,13 +29,13 @@ export function LfsPanel(props: {
   const [open, setOpen] = useState(false);
   return (
     <>
-      <Button
+      <IconButton
         variant="outline"
         data-command="repository.lfs"
         onClick={() => setOpen(true)}
-      >
-        LFS
-      </Button>
+        label="LFS"
+        icon={HardDrive}
+      />
       {open && (
         <LfsManager key={props.path} {...props} close={() => setOpen(false)} />
       )}

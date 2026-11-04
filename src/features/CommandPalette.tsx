@@ -1,3 +1,5 @@
+import { IconButton } from "@/components/icon-button";
+import { Command } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -122,7 +124,9 @@ export function CommandPalette() {
   }
   return (
     <>
-      <Button
+      <IconButton
+        label="Commands"
+        icon={Command}
         variant="ghost"
         title={
           bindings[paletteCommand]
@@ -136,9 +140,7 @@ export function CommandPalette() {
           setError("");
           setOpen(true);
         }}
-      >
-        Commands
-      </Button>
+      />
       {open && (
         <OperationDialog
           title={settings ? "Keyboard shortcuts" : "Commands"}
