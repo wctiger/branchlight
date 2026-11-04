@@ -1,0 +1,25 @@
+.divider {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 9px;
+  z-index: 2;
+  cursor: col-resize;
+  touch-action: none;
+  user-select: none;
+  outline: none;
+}
+.divider[data-edge="right"] { right: -4px; }
+.divider[data-edge="left"] { left: -5px; }
+.divider::after {
+  content: "";
+  position: absolute;
+  inset: 0 4px;
+  background: var(--border-subtle);
+}
+.divider:hover::after,
+.divider:focus-visible::after,
+.divider[data-dragging]::after {
+  background: var(--text-accent);
+  box-shadow: 0 0 0 1px var(--text-accent);
+}

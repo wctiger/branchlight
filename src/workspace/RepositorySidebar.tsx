@@ -1,5 +1,5 @@
 import styles from "@/workspace/RepositorySidebar.module.css";
-import sharedStyles from "@/styles/shared.module.css";
+import { PaneDivider } from "@/workspace/PaneDivider";
 import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
@@ -42,16 +42,7 @@ export function RepositorySidebar({
       </header>
       {children}
       {!compact && (
-        <input
-          className={sharedStyles["sidebar-width"]}
-          type="range"
-          min="300"
-          max="420"
-          step="10"
-          value={sidebarWidth}
-          onChange={(event) => onWidthChange(Number(event.target.value))}
-          aria-label="Repository sidebar width"
-        />
+        <PaneDivider label="Repository sidebar width" width={sidebarWidth} min={300} max={420} onWidthChange={onWidthChange} />
       )}
     </aside>
   );

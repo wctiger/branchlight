@@ -29,10 +29,3 @@
     transform: rotate(360deg);
   }
 }
-.sidebar-width {
-  width: calc(100% - 24px);
-  margin: 8px 12px;
-  height: 12px;
-  flex-shrink: 0;
-  accent-color: var(--text-accent);
-}

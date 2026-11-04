@@ -1,15 +1,17 @@
 import changesStyles from "@/workspace/ChangesPanel.module.css";
-import sharedStyles from "@/styles/shared.module.css";
+import { PaneDivider } from "@/workspace/PaneDivider";
 import type { ReactNode } from "react";
 
 export function ChangesInspector({
   open,
   width,
+  maxWidth = 420,
   onWidthChange,
   children,
 }: {
   open: boolean;
   width: number;
+  maxWidth?: number;
   onWidthChange: (width: number) => void;
   children: ReactNode;
 }) {
@@ -20,16 +22,7 @@ export function ChangesInspector({
       aria-label="Changes inspector"
     >
       {children}
-      <input
-        className={sharedStyles["sidebar-width"]}
-        type="range"
-        min="300"
-        max="420"
-        step="10"
-        value={width}
-        onChange={(event) => onWidthChange(Number(event.target.value))}
-        aria-label="Changes inspector width"
-      />
+      <PaneDivider label="Changes inspector width" width={width} min={300} max={maxWidth} edge="left" onWidthChange={onWidthChange} />
     </aside>
   );
 }
