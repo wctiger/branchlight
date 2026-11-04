@@ -1,0 +1,23 @@
+/* Share the same compact scrollbars with the diff viewer's shadow root. */
+* {
+  scrollbar-width: thin;
+}
+
+/* Older WebKit versions do not support scrollbar-width. */
+@supports not (scrollbar-width: thin) {
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track,
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border-control);
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
+  }
+}

@@ -2,6 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import Workspace from "@/Workspace";
 import "@/styles/global.css";
+import "@/styles/scrollbars.css";
 import "@/styles/theme.css";
 import { DiffWorkerProvider } from "@/features/inspection/DiffWorkerProvider";
 import { TooltipProvider } from "@/components/ui/tooltip";

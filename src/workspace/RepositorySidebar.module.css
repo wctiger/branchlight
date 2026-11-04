@@ -9,7 +9,6 @@
   display: flex;
   gap: 3px;
   overflow-x: auto;
-  scrollbar-width: thin;
   min-width: 0;
   flex: 1;
   padding: 3px 2px;

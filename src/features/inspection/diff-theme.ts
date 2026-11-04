@@ -1,6 +1,9 @@
+import scrollbarStyles from "@/styles/scrollbars.css?raw";
+
 // Static, application-owned CSS crosses the library's Shadow DOM boundary.
 // Repository text is never inserted into CSS or raw HTML.
-export const tokenStyles = `
+export const tokenStyles = `${scrollbarStyles}
+
 :host {
   --diffs-font-family: var(--font-mono);
   --diffs-font-size: var(--type-body);
