@@ -6,6 +6,7 @@ import { cleanup, fireEvent, render } from "@testing-library/react";
 import { RepositoryMainContent } from "@/workspace/RepositoryMainContent";
 import { ChangesInspector } from "@/workspace/ChangesInspector";
 import { RepositorySidebar } from "@/workspace/RepositorySidebar";
+import { PaneDivider } from "@/workspace/PaneDivider";
 import { usePanelWidth } from "@/workspace/usePanelWidth";
 import { useRepositorySidebar } from "@/workspace/useRepositorySidebar";
 
@@ -84,8 +85,8 @@ test("repository sidebar restores a bounded width and persists compact mode", ()
   fireEvent.click(
     view.getByRole("button", { name: "Expand repository sidebar" }),
   );
-  const width = view.getByRole("slider", { name: "Repository sidebar width" });
-  expect((width as HTMLInputElement).value).toBe("420");
+  const width = view.getByRole("separator", { name: "Repository sidebar width" });
+  expect(width.getAttribute("aria-valuenow")).toBe("420");
   fireEvent.click(
     view.getByRole("button", { name: "Collapse repository sidebar" }),
   );
@@ -109,3 +110,45 @@ test("panel widths clamp stored values and restore changes across remounts", () 
   const second = render(<Harness />);
   expect(second.getByLabelText("Branch width").textContent).toBe("280");
 });
+
+for (const edge of ["left", "right"] as const) {
+  test(`${edge} divider follows pointer movement, clamps widths, and releases drag state`, () => {
+    function Harness() {
+      const [width, setWidth] = useState(310);
+      return <PaneDivider label="Pane width" width={width} min={300} max={420} edge={edge} onWidthChange={setWidth} />;
+    }
+    const view = render(<Harness />);
+    const divider = view.getByRole("separator");
+    const captured: number[] = [];
+    divider.setPointerCapture = (id) => { captured.push(id); };
+    divider.releasePointerCapture = () => {};
+    const sign = edge === "right" ? 1 : -1;
+    fireEvent.pointerDown(divider, { button: 0, pointerId: 1, clientX: 500 });
+    expect(captured).toEqual([1]);
+    expect(document.body.style.userSelect).toBe("none");
+    fireEvent.pointerMove(divider, { pointerId: 2, clientX: 550 });
+    expect(divider.getAttribute("aria-valuenow")).toBe("310");
+    fireEvent.pointerMove(divider, { pointerId: 1, clientX: 500 + 50 * sign });
+    expect(divider.getAttribute("aria-valuenow")).toBe("360");
+    fireEvent.pointerMove(divider, { pointerId: 1, clientX: 500 + 500 * sign });
+    expect(divider.getAttribute("aria-valuenow")).toBe("420");
+    fireEvent.pointerMove(divider, { pointerId: 1, clientX: 500 - 500 * sign });
+    expect(divider.getAttribute("aria-valuenow")).toBe("300");
+    fireEvent.pointerUp(divider, { pointerId: 1 });
+    expect(document.body.style.userSelect).toBe("");
+    fireEvent.pointerMove(divider, { pointerId: 1, clientX: 550 });
+    expect(divider.getAttribute("aria-valuenow")).toBe("300");
+    fireEvent.keyDown(divider, { key: edge === "right" ? "ArrowRight" : "ArrowLeft" });
+    expect(divider.getAttribute("aria-valuenow")).toBe("310");
+    fireEvent.keyDown(divider, { key: "End" });
+    expect(divider.getAttribute("aria-valuenow")).toBe("420");
+    fireEvent.keyDown(divider, { key: "Home" });
+    expect(divider.getAttribute("aria-valuenow")).toBe("300");
+    fireEvent.pointerDown(divider, { button: 0, pointerId: 3, clientX: 500 });
+    fireEvent.pointerCancel(divider, { pointerId: 3 });
+    expect(document.body.style.cursor).toBe("");
+    fireEvent.pointerDown(divider, { button: 0, pointerId: 4, clientX: 500 });
+    view.unmount();
+    expect(document.body.style.userSelect).toBe("");
+  });
+}

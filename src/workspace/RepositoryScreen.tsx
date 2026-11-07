@@ -1,5 +1,5 @@
 import { usePanelWidth } from "@/workspace/usePanelWidth";
-import sharedStyles from "@/styles/shared.module.css";
+import { PaneDivider } from "@/workspace/PaneDivider";
 import type { FileChange } from "@/types/status";
 import { useRepositoryStore } from "@/stores/repository-context";
 import styles from "@/workspace/RepositoryScreen.module.css";
@@ -74,10 +74,18 @@ export function RepositoryScreen() {
   const [inspectorWidth, setInspectorWidth] = usePanelWidth("branchlight.inspectorWidth", 310, 300, 420);
   const [branchWidth, setBranchWidth] = usePanelWidth("branchlight.branchWidth", 230, 220, 360);
   const body = useRef<HTMLDivElement>(null);
+  const [bodyWidth, setBodyWidth] = useState(0);
+  const branchMax = bodyWidth > 0
+    ? Math.max(220, Math.min(360, bodyWidth - 480 - (inspectorOpen ? inspectorWidth : 0)))
+    : 360;
+  const inspectorMax = bodyWidth > 0
+    ? Math.max(300, Math.min(420, bodyWidth - branchWidth - 480))
+    : 420;
   useEffect(() => {
     const element = body.current;
     if (!element || typeof ResizeObserver === "undefined") return;
     const observer = new ResizeObserver(([entry]) => {
+      setBodyWidth(entry.contentRect.width);
       // Preserve the main column on resize. The persistent toggle can explicitly reopen it.
       if (entry.contentRect.width > 0 && entry.contentRect.width < branchWidth + 480 + inspectorWidth) setInspectorOpen(false);
     });
@@ -251,8 +259,7 @@ export function RepositoryScreen() {
               }}
             />
           </BranchPanel>
-          <input className={sharedStyles["sidebar-width"]} type="range" min="220" max="360" step="10"
-            value={branchWidth} onChange={(event) => setBranchWidth(Number(event.target.value))} aria-label="Branch sidebar width" />
+          <PaneDivider label="Branch sidebar width" width={branchWidth} min={220} max={branchMax} onWidthChange={setBranchWidth} />
         </div>
         <RepositoryMainContent
           mode={mode}
@@ -315,6 +322,7 @@ export function RepositoryScreen() {
         <ChangesInspector
           open={inspectorOpen}
           width={inspectorWidth}
+          maxWidth={inspectorMax}
           onWidthChange={setInspectorWidth}
         >
           <ChangesPanel

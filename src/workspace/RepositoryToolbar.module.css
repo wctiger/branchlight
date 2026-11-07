@@ -23,7 +23,6 @@
   min-width: 0;
   gap: 4px;
   overflow-x: auto;
-  scrollbar-width: thin;
 }
 .repository-actions > * { flex-shrink: 0; }
 .repository-actions svg { height: var(--size-icon); width: var(--size-icon); }

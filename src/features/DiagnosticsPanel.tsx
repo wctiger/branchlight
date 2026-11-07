@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { IconButton } from "@/components/icon-button";
 import { Bug } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { OperationDialog } from "@/components/operation-dialog";
@@ -34,10 +35,7 @@ export function DiagnosticsPanel({ path }: { path: string }) {
   }, [path, open, revision]);
   return (
     <>
-      <Button data-command="repository.diagnostics" size="sm" variant="ghost" onClick={() => setOpen(true)}>
-        <Bug data-icon="inline-start" aria-hidden="true" />
-        Diagnostics
-      </Button>
+      <IconButton data-command="repository.diagnostics" variant="ghost" onClick={() => setOpen(true)} label="Diagnostics" icon={Bug} />
       {open && (
         <OperationDialog
           title="Git diagnostics"

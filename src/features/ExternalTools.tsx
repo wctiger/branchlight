@@ -1,3 +1,5 @@
+import { IconButton } from "@/components/icon-button";
+import { SquareTerminal } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -96,7 +98,7 @@ export function ExternalTools({
   }
   return (
     <>
-      <Button
+      <IconButton
         data-command="repository.tools"
         variant="outline"
         disabled={disabled}
@@ -104,9 +106,9 @@ export function ExternalTools({
           setOpen(true);
           setError("");
         }}
-      >
-        External tools…
-      </Button>
+        label="External tools…"
+        icon={SquareTerminal}
+      />
       {open && (
         <OperationDialog
           title="External tools"

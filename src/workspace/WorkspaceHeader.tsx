@@ -1,5 +1,6 @@
 import styles from "@/workspace/WorkspaceHeader.module.css";
-import { Button } from "@/components/ui/button";
+import { IconButton } from "@/components/icon-button";
+import { FolderOpen, Folders } from "lucide-react";
 import { DialogTrigger } from "@/components/ui/dialog";
 import { ThemeSelect } from "@/components/theme-select";
 import { CommandPalette } from "@/features/CommandPalette";
@@ -21,17 +22,15 @@ export function WorkspaceHeader({
           <BranchlightMark />
           Branchlight<span> / Workspace</span>
         </strong>
-        <Button
+        <IconButton
           data-command="workspace.open"
           variant="outline"
           onClick={() => onOpen()}
           disabled={opening || !gitReady}
-        >
-          {opening ? "Opening…" : "Open repository"}
-        </Button>
-        <DialogTrigger render={<Button variant="ghost" data-command="workspace.groups" />}>
-          Groups
-        </DialogTrigger>
+          label={opening ? "Opening…" : "Open repository"}
+          icon={FolderOpen}
+        />
+        <DialogTrigger render={<IconButton variant="ghost" data-command="workspace.groups" label="Groups" icon={Folders} />} />
         <ThemeSelect />
         <CommandPalette />
       </div>

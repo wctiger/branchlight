@@ -39,6 +39,10 @@
   padding-inline: var(--space-controlInline);
   border-radius: var(--radius-control);
 }
+[data-slot="button"][data-size="icon-sm"] {
+  width: var(--size-control);
+  padding: 0;
+}
 [data-slot="button"][data-variant="default"] {
   background: var(--action-primary);
   color: var(--action-onPrimary);

@@ -1,3 +1,5 @@
+import { IconButton } from "@/components/icon-button";
+import { Network } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,13 +33,13 @@ export function SubmodulesPanel(props: Props) {
   const [open, setOpen] = useState(false);
   return (
     <>
-      <Button
+      <IconButton
         variant="outline"
         data-command="repository.submodules"
         onClick={() => setOpen(true)}
-      >
-        Submodules
-      </Button>
+        label="Submodules"
+        icon={Network}
+      />
       {open && (
         <SubmoduleManager
           key={props.path}
