@@ -1,3 +1,4 @@
+import { relativeTime } from "@/lib/relative-time";
 import styles from "@/features/history/HistoryPanel.module.css";
 import {
   type ReactNode,
@@ -59,6 +60,11 @@ export function HistoryPanel({
   onInspectCommit,
 }: HistoryPanelProps) {
   const titleId = useId();
+  const [now, setNow] = useState(Date.now);
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
   const commits = useMemo(
     () => (state.state === "ready" ? state.commits : []),
     [state],
@@ -329,7 +335,7 @@ export function HistoryPanel({
                     <span className={styles["history-item__author"]}>
                       {commit.author || "Unknown author"}
                     </span>
-                    <time>{dateText(commit.timestamp)}</time>
+                    <time title={dateText(commit.timestamp)}>{relativeTime(commit.timestamp, now)}</time>
                   </button>
                 </li>
               );
@@ -349,6 +355,8 @@ export function HistoryPanel({
               Inspect selected commit
             </Button>
           )}
+          <details className={styles["commit-details"]}>
+            <summary>Commit details and actions</summary>
           {renderActions?.(selected)}
           <code>{selected.hash.slice(0, 12)}</code>
           <strong>{selected.subject || "(no subject)"}</strong>
@@ -382,6 +390,7 @@ export function HistoryPanel({
               );
             })}
           </span>
+          </details>
         </footer>
       )}
     </aside>

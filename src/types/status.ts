@@ -12,6 +12,9 @@ export interface FileChange {
   path: string;
   originalPath: string | null;
   status: FileStatus;
+  additions?: number | null;
+  deletions?: number | null;
+  binary?: boolean;
 }
 
 export interface BranchStatus {

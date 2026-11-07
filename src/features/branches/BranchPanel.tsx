@@ -119,6 +119,11 @@ function BranchItem({
           <strong>{branch.name}</strong>
           <span>{trackingLabel}</span>
         </span>
+        {!isRemote && branch.upstream && branch.ahead != null && branch.behind != null && (
+          <span className={styles["branch-divergence"]} title={`${branch.ahead} ahead, ${branch.behind} behind ${branch.upstream}`}>
+            ↑{branch.ahead} ↓{branch.behind}
+          </span>
+        )}
         {isBusy ? (
           <LoaderCircle
             className={sharedStyles["small-spinner"]}

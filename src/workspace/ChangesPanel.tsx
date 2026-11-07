@@ -102,6 +102,10 @@ function ChangeSection({
                   </span>
                 )}
               </button>
+              <span className={styles["change-stats"]} title={change.binary ? "Binary file" : change.additions == null || change.deletions == null ? "Line counts unavailable" : `${change.additions} additions, ${change.deletions} deletions`}>
+                {change.binary ? "Binary" : change.additions != null && change.deletions != null
+                  ? <><span>+{change.additions}</span> <span>−{change.deletions}</span></> : "—"}
+              </span>
               {action ? (
                 <Button
                   variant="outline"
@@ -124,7 +128,7 @@ function ChangeSection({
                   ) : (
                     <Minus aria-hidden="true" data-icon="inline-start" />
                   )}
-                  {busyPath === change.path ? action.busyLabel : action.label}
+                  <span className="sr-only">{busyPath === change.path ? action.busyLabel : action.label}</span>
                 </Button>
               ) : (
                 <span className={styles["change-kind"]}>

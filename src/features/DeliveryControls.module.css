@@ -98,3 +98,6 @@
   margin-right: 16px;
   padding-block: 6px;
 }
+
+.commit-panel summary { cursor: pointer; font-size: var(--type-label); color: var(--text-secondary); }
+.commit-panel label { margin-block: 2px; }

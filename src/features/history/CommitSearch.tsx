@@ -58,7 +58,7 @@ export function CommitSearch({
     <section className={styles.search} aria-label="Commit search">
       <div className={styles.fields}>
         <label>
-          Search commits
+          <span className="sr-only">Search commits</span>
           <Input
             data-command="history.search"
             type="search"
@@ -69,7 +69,7 @@ export function CommitSearch({
           />
         </label>
         <label>
-          Search by
+          <span className="sr-only">Search by</span>
           <select
             value={mode}
             onChange={(event) =>
@@ -88,11 +88,11 @@ export function CommitSearch({
           Clear search
         </Button>
       </div>
-      <p>
+      <details><summary>Search scope</summary><p>
         {mode === "message"
           ? "Search full commit messages across local refs, not just loaded rows. Up to 200 matching commits; literal text, case insensitive."
           : "Look up one unambiguous commit hash in this repository’s local object database (at least 4 hexadecimal characters)."}
-      </p>
+      </p></details>
       {normalized && (!current || current.loading) && (
         <p role="status">Searching commits…</p>
       )}

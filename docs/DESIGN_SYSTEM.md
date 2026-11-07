@@ -143,7 +143,9 @@ unless focus is in a text editor/control or a dialog is open.
 
 History keeps graph, abbreviated SHA, subject, refs, author, and relative time in
 one row. Truncate long subjects without losing the other metadata columns. The
-current renderer retains calendar dates; relative time remains a design target.
+renderer updates relative times every minute and retains calendar dates in row
+tooltips and commit details. Search scope and selected-commit details/actions
+use disclosures so the timeline retains most of the column.
 History and its graph share fixed 32px coordinates, with eight rows of overscan on
 each side. Up/Down/Home/End navigate commits; retain a focusable scroll region
 when a focused virtual row scrolls out of view. Refreshes retain hash selection
@@ -154,16 +156,17 @@ The inspector presents staged and unstaged groups with inline path/status,
 per-file stage/unstage controls, and a commit composer. File lists scroll while
 the composer remains accessible; the larger Delivery 2 composer scrolls internally
 within a bounded area. Preserve summary/body, hook options, and push-after-commit
-controls. Stashes remain available through a disclosure. Per-file +/- counts are
-a design target and are not currently supplied by the status model.
+controls, with hook and push options in a disclosure. Stashes remain available
+through a disclosure. Per-file +/- counts come from separate index/worktree Git
+numstat comparisons. Binary files show “Binary”; untracked/conflicted paths and
+unavailable statistics show an em dash rather than misleading zero counts.
 
-Diff is a full-width scrollable code view. Syntax coloring, line numbers, changed-
-hunk navigation, file/hunk stage and unstage actions, and an optional unified /
-side-by-side switch are the target capabilities. **Further diff rendering and
-styling belong to the separate third-party library integration.** The current
-viewer provides a unified comparison, basic line numbers and hunk navigation;
-syntax highlighting, hunk mutation controls, and side-by-side rendering remain
-pending. This document does not establish their implementation or verification.
+Diff provides syntax coloring, line numbers, changed-hunk navigation, and a
+unified / side-by-side selector. Whole-file Stage/Unstage is available for the
+selected working-tree/index comparison even when Changes is hidden; revision
+comparisons remain read-only. The original #72 hunk-mutation target remains
+**deferred**, consistent with GK-13 in `FEATURE_SELECTION.md`; this layout work
+does not expand that approved scope to hunk/line staging.
 
 ### Resize and accessibility
 
@@ -171,7 +174,14 @@ The default desktop window is 1200×800 with an 800×600 minimum. At narrow desk
 widths, keep the main column readable with a roughly 480px minimum and contain
 horizontal overflow within the repository workspace. Do not stack History below
 sidebars or introduce a graph/diff vertical split. Hiding Changes releases its
-entire column; compact repository mode releases additional width.
+entire column; compact repository mode releases additional width. On initial
+layout or resize, Changes collapses when the available body width cannot fit the
+branch column, 480px main column, and inspector. Show changes can explicitly
+reopen it with contained horizontal overflow; widening does not unexpectedly
+reopen a hidden inspector. Header actions scroll independently while branch
+identity stays visible. Branch width (220–360px, default 230px) and inspector width
+(300–420px, default 310px) persist under `branchlight.branchWidth` and
+`branchlight.inspectorWidth`. Keyboard-operable sliders resize the panels.
 
 Use accessible toggle names and expanded/pressed states, visible focus outlines,
 and tooltips/titles for truncated content. Coarse-pointer targets may exceed the

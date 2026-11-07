@@ -100,3 +100,7 @@
   color: var(--text-secondary);
   font-size: var(--type-label);
 }
+
+.inspection-header { display: flex; align-items: center; gap: 8px; min-height: 30px; }
+.inspection-header h2 { flex: 1; min-width: 0; font-size: var(--type-body); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.inspection-header button { flex-shrink: 0; }

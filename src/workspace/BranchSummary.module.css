@@ -33,3 +33,7 @@
 .branch-summary__identity span {
   display: none;
 }
+
+.branch-summary__identity { min-width: 0; }
+.branch-summary__identity strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.branch-counts, .branch-symbol { flex-shrink: 0; }

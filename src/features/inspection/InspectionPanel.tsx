@@ -50,6 +50,8 @@ export function InspectionPanel({
   commit,
   disabled,
   onDiscard,
+  onStage,
+  onUnstage,
   onSaveConflict,
   selectedFile,
 }: {
@@ -59,6 +61,8 @@ export function InspectionPanel({
   commit: string | null;
   disabled: boolean;
   onDiscard: (change: FileChange) => void;
+  onStage?: (path: string) => void;
+  onUnstage?: (path: string) => void;
   onSaveConflict?: (snapshot: import("@/lib/tauri").ConflictFile, output: string, markResolved: boolean) => Promise<boolean>;
 }) {
   const [discardSelection, setDiscardSelection] = useState<FileChange | null>(
@@ -67,6 +71,7 @@ export function InspectionPanel({
   const [base, setBase] = useState("HEAD");
   const [target, setTarget] = useState("HEAD");
   const [file, setFile] = useState("");
+  const [workingKind, setWorkingKind] = useState<string | null>(null);
   const [revision, setRevision] = useState("HEAD");
   const [comparison, setComparison] = useState<Comparison | null>(null);
   const [diff, setDiff] = useState<TextDiff | null>(null);
@@ -78,6 +83,7 @@ export function InspectionPanel({
   function invalidate() {
     request.current++;
     setLoading(false);
+    setWorkingKind(null);
     setDiff(null);
     setHistory(null);
     setBlame(null);
@@ -114,6 +120,7 @@ export function InspectionPanel({
     }
   }
   function compare(from: string, to: string) {
+    setWorkingKind(null);
     setComparison(null);
     void load(() => compareRevisions(path, from, to), setComparison);
   }
@@ -133,11 +140,13 @@ export function InspectionPanel({
     setComparison(null);
     if (change.status === "untracked") {
       invalidate();
+      setWorkingKind(kind);
       setError(
         "Untracked contents have no index comparison. Stage the whole file to inspect its addition, or use an external editor.",
       );
       return;
     }
+    setWorkingKind(kind);
     void load(() => getTextDiff(path, kind, change.path), setDiff);
   }
   useEffect(() => {
@@ -173,12 +182,21 @@ export function InspectionPanel({
     unsupportedPaths.has(change.path) || change.path.endsWith("/");
   const conflictPath = selectedFile && onSaveConflict && status?.conflicts.some(change => change.path === selectedFile.change.path)
     ? selectedFile.change.path : null;
+  const workingChange = (workingKind === "staged" ? status?.staged : workingKind === "unstaged" ? status?.unstaged : [])?.find(change => change.path === file);
+  const mutateFile = workingKind === "staged" ? onUnstage : onStage;
   return (
     <section
       className={styles["inspection-panel"]}
       aria-label="Change inspection"
     >
-      <h2>{file || "Inspect changes"}</h2>
+      <div className={styles["inspection-header"]}>
+        <h2 title={file}>{file || "Inspect changes"}</h2>
+        {workingChange && mutateFile && <Button variant="outline"
+          disabled={disabled || loading || !!status?.conflicts.length}
+          onClick={() => mutateFile(workingChange.path)}>
+          {workingKind === "staged" ? "Unstage file" : "Stage file"}
+        </Button>}
+      </div>
       {conflictPath && onSaveConflict && (
         <DiffRenderBoundary text={diff?.text ?? "Unable to load the conflict resolver. Use an external Git tool and refresh status."}>
           <Suspense fallback={<p role="status">Loading conflict resolver…</p>}>
@@ -186,10 +204,7 @@ export function InspectionPanel({
           </Suspense>
         </DiffRenderBoundary>
       )}
-      <p>
-        Read-only text comparisons. Diffs are limited to 512 KiB. Binary content
-        has no text preview.
-      </p>
+
       {discardSelection && (
         <OperationDialog
           title="Discard selected file?"
@@ -223,6 +238,7 @@ export function InspectionPanel({
       )}
       <details className={styles["inspection-tools"]}>
         <summary>Compare revisions, file history and discard</summary>
+        <p>Text previews are limited to 512 KiB. Binary content has no text preview.</p>
         <div className={styles["inspection-columns"]}>
           {[
             {
@@ -333,6 +349,7 @@ export function InspectionPanel({
         <form
           onSubmit={(event) => {
             event.preventDefault();
+            setWorkingKind(null);
             setComparison(null);
             void load(() => getFileHistory(path, file, revision), setHistory);
           }}
@@ -377,6 +394,7 @@ export function InspectionPanel({
             type="button"
             disabled={disabled || !file || !revision}
             onClick={() => {
+              setWorkingKind(null);
               setComparison(null);
               void load(
                 () => getFileBlame(path, file, revision),
@@ -406,6 +424,7 @@ export function InspectionPanel({
                   variant="outline"
                   disabled={disabled}
                   onClick={() => {
+                    setWorkingKind(null);
                     setFile(change.path);
                     void load(
                       () =>

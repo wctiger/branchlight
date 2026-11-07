@@ -2,21 +2,22 @@ use std::path::Path;
 
 use crate::models::{Branch, Branches, GitError, GitOutput};
 
-use super::runner::{decode_git_bytes, run_git};
+use super::runner::{decode_git_bytes, run_git, run_git_with_env};
 
 const LOCAL_PREFIX: &[u8] = b"refs/heads/";
 const REMOTE_PREFIX: &[u8] = b"refs/remotes/";
 
 /// Reads local and remote branch refs using stable, machine-oriented fields.
 pub(crate) fn get_branches(repository: &Path) -> Result<Branches, GitError> {
-    let output = run_git(
+    let output = run_git_with_env(
         repository,
         &[
             "for-each-ref",
-            "--format=%(refname)%00%(objectname)%00%(HEAD)%00%(upstream)%00%(symref)",
+            "--format=%(refname)%00%(objectname)%00%(HEAD)%00%(upstream)%00%(symref)%00%(upstream:track,nobracket)",
             "refs/heads/",
             "refs/remotes/",
         ],
+        &[("LC_ALL", "C")],
     )?;
     let mut branches = parse_branch_refs(&output.stdout_bytes).map_err(|message| {
         GitError::InvalidBranchesResponse {
@@ -130,9 +131,9 @@ fn parse_branch_refs(output: &[u8]) -> Result<Branches, String> {
         }
 
         let fields: Vec<_> = record.split(|byte| *byte == b'\0').collect();
-        if fields.len() != 5 {
+        if fields.len() != 6 {
             return Err(format!(
-                "Git returned a malformed branch ref with {} of 5 fields.",
+                "Git returned a malformed branch ref with {} of 6 fields.",
                 fields.len()
             ));
         }
@@ -168,12 +169,15 @@ fn parse_branch_refs(output: &[u8]) -> Result<Branches, String> {
                 ))
             }
         };
+        let (ahead, behind) = tracking_counts(fields[5]);
         let branch = Branch {
             name: decode_git_bytes(name_bytes),
             full_ref: decode_git_bytes(full_ref_bytes),
             commit: Some(decode_git_bytes(fields[1])),
             is_current,
             upstream: (!fields[3].is_empty()).then(|| short_ref_name(fields[3])),
+            ahead: if fields[3].is_empty() { None } else { ahead },
+            behind: if fields[3].is_empty() { None } else { behind },
         };
 
         match kind {
@@ -184,6 +188,29 @@ fn parse_branch_refs(output: &[u8]) -> Result<Branches, String> {
 
     sort_branches(&mut branches);
     Ok(branches)
+}
+
+fn tracking_counts(value: &[u8]) -> (Option<u32>, Option<u32>) {
+    if value == b"gone" {
+        return (None, None);
+    }
+    let mut ahead = 0;
+    let mut behind = 0;
+    for part in value.split(|byte| *byte == b',') {
+        let part = decode_git_bytes(part);
+        let part = part.trim();
+        if part.is_empty() {
+            continue;
+        }
+        if let Some(number) = part.strip_prefix("ahead ").and_then(|n| n.parse().ok()) {
+            ahead = number;
+        } else if let Some(number) = part.strip_prefix("behind ").and_then(|n| n.parse().ok()) {
+            behind = number;
+        } else {
+            return (None, None);
+        }
+    }
+    (Some(ahead), Some(behind))
 }
 
 /// Adds the symbolic `HEAD` branch when it does not yet point to a commit.
@@ -223,6 +250,8 @@ fn add_unborn_head(branches: &mut Branches, output: &GitOutput) -> Result<(), Gi
         commit: None,
         is_current: true,
         upstream: None,
+        ahead: None,
+        behind: None,
     });
     Ok(())
 }
@@ -316,14 +345,17 @@ mod tests {
     #[test]
     fn parses_local_and_remote_refs_and_ignores_remote_head_aliases() {
         let output = concat!(
-            "refs/heads/main\0abc123\0*\0refs/remotes/origin/main\0\n",
-            "refs/heads/topic\0def456\0 \0\0\n",
-            "refs/remotes/origin/HEAD\0abc123\0 \0\0refs/remotes/origin/main\n",
-            "refs/remotes/origin/main\0abc123\0 \0\0\n",
+            "refs/heads/main\0abc123\0*\0refs/remotes/origin/main\0\0ahead 2, behind 3\n",
+            "refs/heads/topic\0def456\0 \0\0\0\n",
+            "refs/remotes/origin/HEAD\0abc123\0 \0\0refs/remotes/origin/main\0\n",
+            "refs/remotes/origin/main\0abc123\0 \0\0\0\n",
         );
 
         let branches = parse_branch_refs(output.as_bytes()).expect("the refs should parse");
 
+        assert_eq!(branches.local[0].ahead, Some(2));
+        assert_eq!(branches.local[0].behind, Some(3));
+        assert_eq!(branches.local[1].ahead, None);
         assert_eq!(branches.local.len(), 2);
         assert_eq!(branches.local[0].name, "main");
         assert!(branches.local[0].is_current);
@@ -338,7 +370,37 @@ mod tests {
         let error = parse_branch_refs(b"refs/heads/main\0abc123\0*\n")
             .expect_err("an incomplete ref should not parse");
 
-        assert!(error.contains("3 of 5 fields"));
+        assert!(error.contains("3 of 6 fields"));
+    }
+
+    #[test]
+    fn reads_tracking_counts_from_git_and_handles_missing_upstream() {
+        let repository = temporary_repository("tracking-counts");
+        commit_file(&repository, "base.txt", "base\n", "Base");
+        run_git(&repository, &["branch", "upstream"]).unwrap();
+        run_git(
+            &repository,
+            &["branch", "--set-upstream-to=upstream", "main"],
+        )
+        .unwrap();
+        let branches = get_branches(&repository).unwrap();
+        assert_eq!(
+            (branches.local[0].ahead, branches.local[0].behind),
+            (Some(0), Some(0))
+        );
+        commit_file(&repository, "new.txt", "new\n", "Ahead");
+        let branches = get_branches(&repository).unwrap();
+        assert_eq!(
+            (branches.local[0].ahead, branches.local[0].behind),
+            (Some(1), Some(0))
+        );
+        run_git(&repository, &["branch", "-D", "upstream"]).unwrap();
+        let branches = get_branches(&repository).unwrap();
+        assert_eq!(
+            (branches.local[0].ahead, branches.local[0].behind),
+            (None, None)
+        );
+        fs::remove_dir_all(repository).unwrap();
     }
 
     #[test]

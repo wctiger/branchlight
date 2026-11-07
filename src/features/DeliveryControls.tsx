@@ -57,6 +57,8 @@ export function CommitComposer({
           onChange={(event) => setBody(event.target.value)}
         />
       </label>
+      <details>
+        <summary>Commit options{skipHooks || pushAfterCommit ? " (enabled)" : ""}</summary>
       <label>
         <input
           type="checkbox"
@@ -79,6 +81,7 @@ export function CommitComposer({
         />{" "}
         Push to upstream after a successful commit
       </label>
+      </details>
       <Button type="submit" disabled={disabled || !staged || !summary.trim()}>
         Commit
       </Button>
