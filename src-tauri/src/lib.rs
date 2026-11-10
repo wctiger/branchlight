@@ -1,13 +1,25 @@
 mod commands;
 mod git;
+mod mcp;
 mod models;
+use tauri::Manager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
+        .setup(|app| {
+            let repositories = mcp::OpenRepositories::default();
+            if std::env::args_os().any(|arg| arg == "--mcp") {
+                let server = tauri::async_runtime::block_on(mcp::start(repositories.clone()))?;
+                app.manage(server);
+            }
+            app.manage(repositories);
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
+            mcp::set_mcp_repositories,
             commands::system::get_git_version,
             commands::delivery::get_remotes,
             commands::delivery::create_branch_at,
@@ -68,6 +80,13 @@ pub fn run() {
             commands::remotes::pull_remote,
             commands::remotes::push_remote
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while starting Branchlight")
+        .run(|app, event| {
+            if let tauri::RunEvent::Exit = event {
+                if let Some(server) = app.try_state::<mcp::ServerShutdown>() {
+                    server.stop();
+                }
+            }
+        });
 }

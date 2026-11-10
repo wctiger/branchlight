@@ -235,3 +235,29 @@ configured push refspecs.
 Prepare-commit-msg and post-commit still run, and push hooks are unaffected.
 Failed commits retain the draft. If an optional push fails after committing,
 resolve its error and use **Push**; the local commit already exists.
+
+## Local MCP server for coding agents
+
+Quit any running instance, then launch Branchlight with `--mcp` to enable its
+Streamable HTTP endpoint for this session. On macOS, run
+`open -a Branchlight --args --mcp`. On Windows, run the installed
+`branchlight.exe --mcp`. From a development checkout, use
+`bun run tauri dev -- -- --mcp`.
+
+For Claude Code, run this command from the repository you want to inspect:
+
+```sh
+claude mcp add --transport http branchlight http://127.0.0.1:47831/mcp
+```
+
+Open the repository in Branchlight and ask the agent to call
+`read_operation_log` with `repository` set to its absolute worktree root.
+Staging a file adds an `add` entry. Results are newest first and contain the
+repository, command, Unix timestamp (seconds), duration (milliseconds), and
+exit code when available. An open repository with no recorded operations
+returns `[]`.
+
+The endpoint listens only on IPv4 loopback. While enabled, local clients that
+know an open repository's path can read its operation metadata. Closing its tab
+revokes access. Quitting Branchlight stops the endpoint and clears the session
+log. Launch again with `--mcp` to reconnect at the same URL.

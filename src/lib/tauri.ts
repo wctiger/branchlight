@@ -48,6 +48,10 @@ function isGitOutput(value: unknown): value is GitOutput {
   );
 }
 
+export function setMcpRepositories(paths: string[]): Promise<void> {
+  return invoke("set_mcp_repositories", { paths });
+}
+
 export function getGitVersion(): Promise<GitOutput> {
   return invoke<GitOutput>("get_git_version");
 }
