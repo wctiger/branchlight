@@ -1,5 +1,6 @@
 import { IconButton } from "@/components/icon-button";
-import { History, FileDiff, PanelRightClose, PanelRightOpen } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { PanelRightClose, PanelRightOpen } from "lucide-react";
 import styles from "@/workspace/RepositoryMainContent.module.css";
 import type { ReactNode } from "react";
 
@@ -24,26 +25,26 @@ export function RepositoryMainContent({
   return (
     <div className={styles["main-column"]}>
       <div className={styles["main-view-toolbar"]}>
-        <IconButton
+        <Button
           variant="ghost"
           aria-pressed={mode === "history"}
           data-command="view.history"
           onClick={() => onModeChange("history")}
-          label="History"
-          icon={History}
-        />
-        <IconButton
+        >
+          History
+        </Button>
+        <Button
           variant="ghost"
           aria-pressed={mode === "diff"}
           data-command="view.diff"
           onClick={() => onModeChange("diff")}
-          label="Diff"
-          icon={FileDiff}
-        />
+        >
+          Diff
+        </Button>
         <span className={styles["selected-file-path"]} title={filePath}>
           {mode === "diff"
             ? (filePath ?? "Compare revisions")
-            : "Commit history"}
+            : ""}
         </span>
         <IconButton
           variant="outline"

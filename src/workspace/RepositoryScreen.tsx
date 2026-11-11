@@ -84,10 +84,14 @@ export function RepositoryScreen() {
   useEffect(() => {
     const element = body.current;
     if (!element || typeof ResizeObserver === "undefined") return;
+    let previousWidth = 0;
     const observer = new ResizeObserver(([entry]) => {
-      setBodyWidth(entry.contentRect.width);
+      const width = entry.contentRect.width;
+      if (!width || width === previousWidth) return;
+      previousWidth = width;
+      setBodyWidth(width);
       // Preserve the main column on resize. The persistent toggle can explicitly reopen it.
-      if (entry.contentRect.width > 0 && entry.contentRect.width < branchWidth + 480 + inspectorWidth) setInspectorOpen(false);
+      if (width < branchWidth + 480 + inspectorWidth) setInspectorOpen(false);
     });
     observer.observe(element);
     return () => observer.disconnect();
@@ -114,12 +118,16 @@ export function RepositoryScreen() {
   }, []);
   const [inspectionCommit, setInspectionCommit] = useState<string | null>(null);
   const status = statusState.state === "ready" ? statusState.status : null;
-  const externalSelection = selectedFile && status ? [
-    {kind: "unstaged", files: status.conflicts},
-    {kind: "unstaged", files: status.unstaged},
-    {kind: "staged", files: status.staged},
-  ].flatMap(group => group.files.filter(file => file.path === selectedFile.change.path).map(file => ({kind: group.kind, file}))) : [];
-  const externalFile = externalSelection.find(selection => selection.kind === selectedFile?.kind) ?? externalSelection[0];
+  const [displayedFile, setDisplayedFile] = useState<{ path: string; kind: string | null }>({
+    path: "",
+    kind: null,
+  });
+  const currentFile = displayedFile.kind === "staged"
+    ? status?.staged.find(file => file.path === displayedFile.path)
+    : displayedFile.kind === "unstaged"
+      ? status?.conflicts.find(file => file.path === displayedFile.path)
+        ?? status?.unstaged.find(file => file.path === displayedFile.path)
+      : undefined;
   const isRefreshing =
     statusState.state === "loading" ||
     (statusState.state === "ready" && statusState.isRefreshing) ||
@@ -144,11 +152,11 @@ export function RepositoryScreen() {
       : null;
 
   return (
-    <main ref={screen} data-repository-context={repository.path} data-selected-file={externalFile?.file.path} className={styles["repository-screen"]}>
+    <main ref={screen} data-repository-context={repository.path} data-selected-file={currentFile?.path} className={styles["repository-screen"]}>
       <RepositoryToolbar
         submodules={<SubmodulesPanel path={repository.path} disabled={controlsDisabled || isRefreshing || hasActiveRepositoryOperation} run={onDelivery} error={conflictOperationError} onOpened={addRepository} />}
-        externalTools={<ExternalTools path={repository.path} file={externalFile?.file.path ?? null}
-          kind={externalFile?.kind ?? null} conflicted={!!externalFile && !!status?.conflicts.some(file => file.path === externalFile.file.path)}
+        externalTools={<ExternalTools path={repository.path} file={currentFile?.path ?? null}
+          kind={currentFile ? displayedFile.kind : null} conflicted={currentFile?.status === "conflicted"}
           disabled={controlsDisabled || isRefreshing} launch={onLaunchExternalTool} refresh={onRefresh} />}
         repository={repository}
         status={status}
@@ -263,7 +271,7 @@ export function RepositoryScreen() {
         </div>
         <RepositoryMainContent
           mode={mode}
-          filePath={externalFile?.file.path}
+          filePath={displayedFile.path || undefined}
           inspectorOpen={inspectorOpen}
           onModeChange={setMode}
           onInspectorToggle={() => setInspectorOpen(!inspectorOpen)}
@@ -311,6 +319,8 @@ export function RepositoryScreen() {
               status={status}
               commit={inspectionCommit}
               selectedFile={selectedFile}
+              onSelectFile={setSelectedFile}
+              onDisplayFile={setDisplayedFile}
               disabled={controlsDisabled}
               onDiscard={onDiscard}
               onStage={onStage}
@@ -326,6 +336,8 @@ export function RepositoryScreen() {
           onWidthChange={setInspectorWidth}
         >
           <ChangesPanel
+            currentKind={displayedFile.kind}
+            currentFile={mode === "diff" ? currentFile : undefined}
             onSelectFile={(change, kind) => {
               setSelectedFile({ change, kind });
               setMode("diff");

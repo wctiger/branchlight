@@ -253,7 +253,7 @@ function LfsManager({
                       <ul>
                         {state.patterns.map((item, index) => (
                           <li key={`${item.source}:${item.pattern}:${index}`}>
-                            <code>{item.pattern}</code> — {item.source}
+                            <code>{item.pattern}</code> ({item.source})
                             {item.lockable ? " (lockable)" : ""}
                             {!item.tracked ? " (excluded)" : ""}
                           </li>
@@ -313,7 +313,7 @@ function LfsManager({
                       <ul>
                         {state.files.map((file) => (
                           <li key={file.name}>
-                            <strong>{file.name}</strong> —{" "}
+                            <strong>{file.name}</strong>{" "}
                             {file.checkout ? "full content" : "pointer"};{" "}
                             {file.downloaded ? "cached" : "not cached"};{" "}
                             {file.size} bytes

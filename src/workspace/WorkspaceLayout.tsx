@@ -40,14 +40,13 @@ export function WorkspaceLanding({
       <section className={styles["landing-card"]}>
         <h1>
           <BranchlightMark />
-          Branchlight
+          Open a repository
         </h1>
         <p>
-          Switch repositories from the sidebar. Each uses your installed Git and
-          local configuration.
+          Branchlight uses your installed Git and local configuration.
         </p>
         <Button
-          variant="outline"
+          variant="default"
           onClick={() => onOpen()}
           disabled={opening || !gitReady}
         >

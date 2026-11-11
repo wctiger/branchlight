@@ -109,7 +109,6 @@ export function StashPanel({
     <section className={styles["stash-panel"]} aria-labelledby={titleId}>
       <header className={styles["stash-panel__header"]}>
         <div>
-          <p data-slot="eyebrow" className={sharedStyles["eyebrow"]}>Saved work</p>
           <h3 id={titleId}>Stashes</h3>
         </div>
         <span>{stashes.length}</span>
