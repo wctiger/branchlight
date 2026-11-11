@@ -28,7 +28,16 @@ pub(super) fn run_git_observed(
     progress: Option<ProgressObserver<'_>>,
 ) -> Result<GitOutput, GitError> {
     let started = std::time::Instant::now();
-    let mut child = Command::new("git")
+    let mut command = Command::new("git");
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+
+        // Git runs with piped output and needs no visible console.
+        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+        command.creation_flags(CREATE_NO_WINDOW);
+    }
+    let mut child = command
         .current_dir(repository)
         .args(arguments)
         .envs(environment.iter().copied())
