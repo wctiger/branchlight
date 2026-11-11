@@ -1,3 +1,4 @@
+import { setMcpRepositories } from "@/lib/tauri";
 import { createWorkspaceStore } from "@/stores/workspace-store";
 import {
   WorkspaceStoreContext,
@@ -20,6 +21,21 @@ import { useRepositorySidebar } from "@/workspace/useRepositorySidebar";
 
 export default function Workspace() {
   const [store] = useState(createWorkspaceStore);
+  useEffect(() => {
+    let previous: string[] | undefined;
+    let pending = Promise.resolve();
+    function sync() {
+      const paths = store.getState().tabs.map((tab) => tab.repository.path);
+      if (previous && paths.length === previous.length &&
+          paths.every((path, index) => path === previous?.[index])) return;
+      previous = paths;
+      pending = pending.then(() => setMcpRepositories(paths)).catch((error) => {
+        store.getState().setError(`Could not update MCP repository access: ${String(error)}`);
+      });
+    }
+    sync();
+    return store.subscribe(sync);
+  }, [store]);
   return (
     <WorkspaceStoreContext value={store}>
       <WorkspaceContent />

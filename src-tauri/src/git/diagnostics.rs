@@ -118,8 +118,15 @@ pub(crate) fn inspect(repository: &Path) -> Result<Diagnostics, GitError> {
                 .find(|p| p.is_file())
         })
         .map(|p| p.to_string_lossy().into_owned());
-    let logs = LOG
-        .get_or_init(Mutex::default)
+    Ok(Diagnostics {
+        version,
+        path_candidate,
+        logs: recent_operations(repository),
+    })
+}
+
+pub(crate) fn recent_operations(repository: &Path) -> Vec<LogEntry> {
+    LOG.get_or_init(Mutex::default)
         .lock()
         .map(|entries| {
             entries
@@ -129,12 +136,7 @@ pub(crate) fn inspect(repository: &Path) -> Result<Diagnostics, GitError> {
                 .rev()
                 .collect()
         })
-        .unwrap_or_default();
-    Ok(Diagnostics {
-        version,
-        path_candidate,
-        logs,
-    })
+        .unwrap_or_default()
 }
 
 #[cfg(test)]
@@ -173,6 +175,30 @@ mod tests {
             operation_name(&["--literal-pathspecs", "restore", "--", "commit"]),
             Some("restore")
         );
+    }
+
+    #[test]
+    fn session_logs_are_scoped_metadata_in_reverse_recording_order() {
+        let repository = Path::new("/diagnostics-test/main");
+        let other = Path::new("/diagnostics-test/worktree");
+        assert!(recent_operations(repository).is_empty());
+        record(repository, &["add", "--", "private.txt"], Some(0), 9);
+        record(other, &["switch", "secret-branch"], Some(0), 2);
+        record(
+            repository,
+            &["commit", "-m", "private message"],
+            Some(1),
+            11,
+        );
+        let entries = serde_json::to_value(recent_operations(repository)).unwrap();
+        let rows = entries.as_array().unwrap();
+        assert_eq!(rows.len(), 2);
+        assert_eq!(rows[0]["command"], "commit");
+        assert_eq!(rows[0]["exitCode"], 1);
+        assert_eq!(rows[0]["durationMs"], 11);
+        assert!(rows[0]["timestamp"].is_u64());
+        assert_eq!(rows[1]["command"], "add");
+        assert!(!entries.to_string().contains("private"));
     }
 
     #[test]

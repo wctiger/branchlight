@@ -43,6 +43,7 @@ export async function invoke<T>(
   command: string,
   args: Record<string, unknown> = {},
 ): Promise<T> {
+  if (command === "set_mcp_repositories") return undefined as T;
   const path = String(args.path ?? args.destination ?? "/fixtures/branchlight");
   const branch = {
     name: "main",
