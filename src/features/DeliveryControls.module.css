@@ -2,13 +2,12 @@
   display: none;
 }
 .commit-panel {
-  margin-top: 10px;
+  margin-top: 8px;
   display: grid;
   gap: 6px;
   padding: 8px;
   background: var(--surface-panel);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-control);
+  border-top: 1px solid var(--border-subtle);
 }
 .commit-panel__heading {
   display: flex;

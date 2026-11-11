@@ -37,6 +37,7 @@ const fileStatusSymbols: Record<FileStatus, string> = {
 
 /** Renders one status group and its optional whole-file action. */
 function ChangeSection({
+  currentFile,
   title,
   description,
   emptyMessage,
@@ -47,6 +48,7 @@ function ChangeSection({
   actionsDisabled,
   onSelect,
 }: {
+  currentFile?: FileChange;
   onSelect?: (change: FileChange) => void;
   title: string;
   description: string;
@@ -94,8 +96,13 @@ function ChangeSection({
                 className={styles["change-path"]}
                 onClick={() => onSelect?.(change)}
                 title={change.path}
+                aria-label={change.path}
+                aria-current={change === currentFile ? "true" : undefined}
               >
-                <code title={change.path}>{change.path}</code>
+                <code>{change.path.split("/").pop()}</code>
+                {change.path.includes("/") && (
+                  <small>{change.path.slice(0, change.path.lastIndexOf("/"))}</small>
+                )}
                 {change.originalPath && (
                   <span title={change.originalPath}>
                     from <code>{change.originalPath}</code>
@@ -145,6 +152,8 @@ function ChangeSection({
 
 /** Renders repository changes and coordinates the daily commit workflow. */
 export function ChangesPanel({
+  currentFile,
+  currentKind,
   onSelectFile,
   state,
   stashesState,
@@ -161,6 +170,8 @@ export function ChangesPanel({
   onPopStash,
   onDropStash,
 }: {
+  currentFile?: FileChange;
+  currentKind?: string | null;
   onSelectFile: (change: FileChange, kind: string) => void;
   state: RepositoryStatusState;
   stashesState: StashesState;
@@ -231,19 +242,8 @@ export function ChangesPanel({
   return (
     <section className={styles["repository-workspace"]} aria-labelledby={changesTitleId}>
       <header className={styles["workspace-heading"]}>
-        <div>
-          <p data-slot="eyebrow" className={sharedStyles["eyebrow"]}>Working tree</p>
-          <h2 id={changesTitleId}>Repository changes</h2>
-          <p>
-            {changeCount === 0
-              ? "Everything is clean and up to date."
-              : `${changeCount} ${changeCount === 1 ? "change" : "changes"} reported by Git.`}
-          </p>
-        </div>
-        <div className={styles["workspace-facts"]}>
-          <span>{status.stashCount} stashed</span>
-          <span>{changeCount} total</span>
-        </div>
+        <h2 id={changesTitleId}>Changes</h2>
+        <span className={styles["change-count"]}>{changeCount}</span>
       </header>
 
       {(operationError || state.refreshError) && (
@@ -271,7 +271,7 @@ export function ChangesPanel({
       )}
 
       <details className={styles["stash-disclosure"]}>
-        <summary>Stashes</summary>
+        <summary>Stashes ({status.stashCount})</summary>
         <StashPanel
           state={stashesState}
           operationError={stashOperationError}
@@ -287,48 +287,55 @@ export function ChangesPanel({
         />
       </details>
       <div className={styles["changes-grid"]}>
-        <ChangeSection
-          title="Conflicts"
-          description="Files that need manual resolution"
-          emptyMessage="No conflicted files"
-          changes={status.conflicts}
-          tone="conflict"
-          onSelect={(change) => onSelectFile(change, "unstaged")}
-        />
-        <ChangeSection
-          title="Unstaged"
-          description="Working-tree changes not in the index"
-          emptyMessage="No unstaged changes"
-          changes={status.unstaged}
-          tone="unstaged"
-          onSelect={(change) => onSelectFile(change, "unstaged")}
-          action={{
-            label: "Stage",
-            busyLabel: "Staging…",
-            direction: "stage",
-            onClick: onStage,
-          }}
-          busyPath={operation.state === "staging" ? operation.path : undefined}
-          actionsDisabled={actionsDisabled}
-        />
-        <ChangeSection
-          title="Staged"
-          description="Changes ready for the next commit"
-          emptyMessage="No staged changes"
-          changes={status.staged}
-          tone="staged"
-          onSelect={(change) => onSelectFile(change, "staged")}
-          action={{
-            label: "Unstage",
-            busyLabel: "Unstaging…",
-            direction: "unstage",
-            onClick: onUnstage,
-          }}
-          busyPath={
-            operation.state === "unstaging" ? operation.path : undefined
-          }
-          actionsDisabled={actionsDisabled}
-        />
+        {changeCount === 0 ? <p className={styles["change-section__empty"]}>Working tree clean</p> : (
+          <>
+            <ChangeSection
+              currentFile={currentKind === "unstaged" ? currentFile : undefined}
+              title="Conflicts"
+              description="Files that need manual resolution"
+              emptyMessage="No conflicted files"
+              changes={status.conflicts}
+              tone="conflict"
+              onSelect={(change) => onSelectFile(change, "unstaged")}
+            />
+            <ChangeSection
+              currentFile={currentKind === "staged" ? currentFile : undefined}
+              title="Staged"
+              description="Changes ready for the next commit"
+              emptyMessage="No staged changes"
+              changes={status.staged}
+              tone="staged"
+              onSelect={(change) => onSelectFile(change, "staged")}
+              action={{
+                label: "Unstage",
+                busyLabel: "Unstaging…",
+                direction: "unstage",
+                onClick: onUnstage,
+              }}
+              busyPath={
+                operation.state === "unstaging" ? operation.path : undefined
+              }
+              actionsDisabled={actionsDisabled}
+            />
+            <ChangeSection
+              currentFile={currentKind === "unstaged" ? currentFile : undefined}
+              title="Unstaged"
+              description="Working-tree changes not in the index"
+              emptyMessage="No unstaged changes"
+              changes={status.unstaged}
+              tone="unstaged"
+              onSelect={(change) => onSelectFile(change, "unstaged")}
+              action={{
+                label: "Stage",
+                busyLabel: "Staging…",
+                direction: "stage",
+                onClick: onStage,
+              }}
+              busyPath={operation.state === "staging" ? operation.path : undefined}
+              actionsDisabled={actionsDisabled}
+            />
+          </>
+        )}
       </div>
 
       <CommitComposer

@@ -1162,7 +1162,9 @@ test("commit inspection exposes changed paths outside advanced controls and relo
   const user=userEvent.setup({document});
   const revision="c".repeat(40), base="b".repeat(40);
   intercept=(command,args)=>command==="compare_revisions"?Promise.resolve({base,target:args.target,files:[change]}):undefined;
-  const props={path:"/repo",commit:revision,status:emptyStatus,selectedFile:null,disabled:false,onDiscard:()=>{}};
+  const displayed: { path: string; kind: string | null }[] = [];
+  const onDisplayFile = (file: { path: string; kind: string | null }) => { displayed.push(file); };
+  const props={onDisplayFile,path:"/repo",commit:revision,status:emptyStatus,selectedFile:null,disabled:false,onDiscard:()=>{}};
   const view=render(<InspectionPanel {...props} />);
   await waitFor(()=>expect(view.getByRole("region",{name:"Revision comparison"})).toBeTruthy());
   const region=view.getByRole("region",{name:"Revision comparison"});
@@ -1170,9 +1172,11 @@ test("commit inspection exposes changed paths outside advanced controls and relo
   expect(region.textContent).toContain(revision);
   await user.click(view.getByRole("button",{name:`modified ${change.path}`}));
   await waitFor(()=>expect(calls.filter(call=>call.command==="get_text_diff").at(-1)?.args).toMatchObject({path:"/repo",kind:"revisions",filePath:change.path,base,target:revision}));
+  expect(displayed.at(-1)).toEqual({ path: change.path, kind: null });
   const status={...emptyStatus,unstaged:[change]};
   view.rerender(<InspectionPanel {...props} status={status} selectedFile={{change,kind:"unstaged"}} />);
   await waitFor(()=>expect(calls.filter(call=>call.command==="get_text_diff").at(-1)?.args.kind).toBe("unstaged"));
+  expect(displayed.at(-1)).toEqual({ path: change.path, kind: "unstaged" });
   const comparisons=()=>calls.filter(call=>call.command==="compare_revisions");
   const before=comparisons().length;
   view.rerender(<InspectionPanel {...props} status={status} />);

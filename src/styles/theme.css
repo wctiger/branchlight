@@ -61,7 +61,7 @@
   color: var(--text-accent);
 }
 [data-slot="button"]:disabled {
-  opacity: 1;
+  cursor: not-allowed;
   color: var(--text-disabled);
   background: var(--action-disabled);
 }

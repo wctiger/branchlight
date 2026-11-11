@@ -67,9 +67,6 @@ export function ConflictBanner({
           aria-hidden="true"
         />
         <div>
-          <p data-slot="eyebrow" className={sharedStyles["eyebrow"]}>
-            Git operation
-          </p>
           <h2 id={headingId}>
             {activeOperation === "none"
               ? operationLabel

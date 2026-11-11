@@ -48,7 +48,7 @@ export function RepositoryToolbar({
       <div className={styles["repository-brand"]}>
         <BranchlightMark />
         <div className={styles["repository-identity"]}>
-          <h1>{repository.name}</h1>
+          <h1 title={repository.name}>{repository.name}</h1>
           <span title={repository.path}>{repository.path}</span>
         </div>
       </div>

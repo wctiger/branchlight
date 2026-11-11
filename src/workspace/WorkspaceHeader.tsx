@@ -20,7 +20,7 @@ export function WorkspaceHeader({
       <div className={styles["workspace-tools"]}>
         <strong className={styles["app-wordmark"]}>
           <BranchlightMark />
-          Branchlight<span> / Workspace</span>
+          Branchlight
         </strong>
         <IconButton
           data-command="workspace.open"

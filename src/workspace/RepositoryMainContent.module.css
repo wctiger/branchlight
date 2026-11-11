@@ -8,7 +8,9 @@
   background: var(--surface-panel);
 }
 .main-view-toolbar [aria-pressed="true"] {
-  background: var(--selection-background);
+  box-shadow: inset 0 -2px var(--selection-text);
+  border-radius: 0;
+  background: var(--surface-panel);
   color: var(--selection-text);
 }
 .selected-file-path {

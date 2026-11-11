@@ -54,7 +54,11 @@ export function InspectionPanel({
   onUnstage,
   onSaveConflict,
   selectedFile,
+  onSelectFile,
+  onDisplayFile,
 }: {
+  onSelectFile?: (selection: { change: FileChange; kind: string }) => void;
+  onDisplayFile?: (selection: { path: string; kind: string | null }) => void;
   selectedFile?: { change: FileChange; kind: string } | null;
   path: string;
   status: RepositoryStatus | null;
@@ -80,6 +84,9 @@ export function InspectionPanel({
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const request = useRef(0);
+  useEffect(() => {
+    onDisplayFile?.({ path: file, kind: workingKind });
+  }, [file, workingKind, onDisplayFile]);
   function invalidate() {
     request.current++;
     setLoading(false);
@@ -120,6 +127,7 @@ export function InspectionPanel({
     }
   }
   function compare(from: string, to: string) {
+    setFile("");
     setWorkingKind(null);
     setComparison(null);
     void load(() => compareRevisions(path, from, to), setComparison);
@@ -261,7 +269,9 @@ export function InspectionPanel({
                     <Button
                       variant="outline"
                       disabled={disabled}
-                      onClick={() => showChange(change, section.kind)}
+                      onClick={() => onSelectFile
+                        ? onSelectFile({ change, kind: section.kind })
+                        : showChange(change, section.kind)}
                     >
                       {change.status}: {change.path}
                     </Button>

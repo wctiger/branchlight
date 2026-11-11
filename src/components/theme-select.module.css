@@ -2,7 +2,6 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-left: auto;
   color: var(--text-secondary);
   font-size: var(--type-label);
 }

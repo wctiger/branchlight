@@ -160,7 +160,7 @@ export function CommandPalette() {
             <>
               <p>
                 Mod means Command on macOS and Ctrl on Windows. Use
-                Ctrl/Meta/Alt with a letter or digit, or F1–F12. An empty
+                Ctrl/Meta/Alt with a letter or digit, or F1 through F12. An empty
                 binding disables its shortcut.
               </p>
               <div className={styles.bindings}>

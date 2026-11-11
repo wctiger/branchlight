@@ -393,7 +393,6 @@ export function BranchPanel({
     <aside className={styles["branch-panel"]} aria-labelledby={titleId}>
       <header className={styles["branch-panel__header"]}>
         <div>
-          <p data-slot="eyebrow" className={sharedStyles["eyebrow"]}>Repository refs</p>
           <h2 id={titleId}>Branches</h2>
         </div>
         <Button

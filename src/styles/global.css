@@ -1,8 +1,18 @@
+/* Hallmark v2 | redesign: full | scope: app | theme: Branchlight neutral | signature: commit graph and file inspection */
+/* Critique: neutral navigation keeps Git status and the commit action distinct. */
 * {
   box-sizing: border-box;
 }
 [hidden] {
   display: none !important;
+}
+html,
+body {
+  overflow-x: clip;
+}
+::selection {
+  background: var(--selection-text);
+  color: var(--selection-background);
 }
 html {
   background: var(--surface-canvas);
@@ -13,7 +23,7 @@ html {
 }
 body {
   margin: 0;
-  min-width: 360px;
+  min-width: 0;
 }
 button,
 input,

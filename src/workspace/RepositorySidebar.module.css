@@ -124,7 +124,7 @@
   flex-direction: column;
   min-height: 0;
   min-width: 0;
-  background: var(--surface-panel);
+  background: var(--surface-canvas);
   border-right: 1px solid var(--border-subtle);
 }
 .sidebar-heading {
@@ -174,7 +174,7 @@
 }
 .repository-row-branch {
   flex: 0 1 65px;
-  color: var(--text-accent);
+  color: var(--text-secondary);
   font-size: var(--type-meta);
 }
 .repository-sidebar .tab-icon {

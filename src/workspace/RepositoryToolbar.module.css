@@ -1,17 +1,18 @@
 .repository-bar {
   display: flex;
   align-items: center;
-  min-height: 36px;
+  min-height: 48px;
   flex-shrink: 0;
-  padding: 3px 8px;
+  padding: 4px 12px;
   gap: 8px;
   background: var(--surface-panel);
   border-bottom: 1px solid var(--border-subtle);
 }
-.repository-brand { min-width: 0; flex: 0 1 120px; }
-.repository-brand img, .repository-identity > span { display: none; }
+.repository-brand { min-width: 0; flex: 0 1 180px; }
+.repository-brand img { display: none; }
 .repository-identity h1 {
-  font-size: var(--type-body);
+  font-size: var(--type-section);
+  line-height: 1.25;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -27,3 +28,12 @@
 .repository-actions > * { flex-shrink: 0; }
 .repository-actions svg { height: var(--size-icon); width: var(--size-icon); }
 .repository-actions > button:last-child { display: none; }
+
+.repository-identity > span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--type-meta);
+  color: var(--text-secondary);
+}
